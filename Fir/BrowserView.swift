@@ -184,6 +184,7 @@ struct BrowserView: View {
     /// New-tab search asked for from outside, in Private or else the current tab's workspace; a search
     /// already open switches over.
     private func openSearch(_ request: BrowserModel.SearchRequest) {
+        FrameMeter.mark("open search")
         if request == .privateTab {
             browser.space = BrowserModel.privateSpace
         } else if browser.space == BrowserModel.privateSpace {
@@ -314,6 +315,7 @@ struct BrowserView: View {
     }
 
     private func openPage() {
+        FrameMeter.mark("open page")
         let a = CGPoint(x: screen.midX, y: screen.midY)
         cover = browser.selected.snapshot
         transitioning = true
@@ -360,6 +362,7 @@ struct BrowserView: View {
     /// Like Safari after a search: the page is already full screen under the search screen as it
     /// slides away, so neither the deck nor a grow-from-card shows in between.
     private func showPageAtOnce() {
+        FrameMeter.mark("show page")
         transitionID += 1
         swipedToNewTab = false
         swipeX = 0
@@ -369,6 +372,7 @@ struct BrowserView: View {
     }
 
     private func closePage() {
+        FrameMeter.mark("close page")
         let reordered = bringSelectedToEnd()
         beginTransition()
         transitionID += 1
@@ -431,9 +435,11 @@ struct BrowserView: View {
     }
 
     private func endSwipe(_ dx: CGFloat, predicted: CGFloat) {
+        FrameMeter.mark("swipe end")
         let width = screen.width + Self.swipeGap
         let committed = abs(dx) > width * 0.35 || abs(predicted) > width * 0.6
         if swipeOpensNewTab, committed {
+            FrameMeter.mark("swipe to new tab")
             swipeCommits += 1
             swipedToNewTab = true
             withAnimation(swipeCommit) { swipeX = -width }
@@ -1593,6 +1599,7 @@ private struct PageView: View {
 
     /// Opens search for a tab in the current workspace, or in Private.
     private func newTab(private isPrivate: Bool) {
+        FrameMeter.mark("new tab")
         let current = browser.selected
         if isPrivate {
             browser.space = BrowserModel.privateSpace
@@ -1766,6 +1773,7 @@ private struct WebHost: UIViewRepresentable {
             container.addSubview(selected)
         }
         for case let webView as WKWebView in container.subviews {
+            if webView === selected, webView.isHidden { FrameMeter.mark("web view shown \(webView.url?.host() ?? "-")") }
             webView.isHidden = webView !== selected
             if webView !== selected { InsetAnimator.apply(insets, to: webView) }
         }
