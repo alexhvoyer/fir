@@ -219,13 +219,12 @@ struct BrowserView: View {
                 PageImage(image: cover, view: coverView, host: browser.selected.isPrivate ? nil : browser.selected.url?.host(),
                           blank: browser.selected.url == nil, spaceID: browser.selected.spaceID)
                     .frame(width: screen.width, height: screen.height)
-                    .clipShape(PageMask(progress: progress, cropHeight: card.height / k,
-                                        radius: max(34 / k * progress, swipeRadius)))
+                    .clipShape(PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k))
                     // The card's shadow, growing in as the page shrinks: without it the shadow blinked out
                     // while the page moved. Divided by the scale, so it lands at the card's size.
                     .background {
                         let scale = 1 + (k - 1) * progress
-                        PageMask(progress: progress, cropHeight: card.height / k, radius: max(34 / k * progress, swipeRadius))
+                        PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k)
                             .fill(.black)
                             .shadow(color: .black.opacity(0.25 * progress), radius: 18 / scale, x: -6 / scale, y: 8 / scale)
                     }
@@ -739,16 +738,27 @@ private struct SnapshotHost: UIViewRepresentable {
 /// Full screen at 0; at 1 a rounded crop from the top with the card's aspect.
 private struct PageMask: Shape {
     var progress: CGFloat
+    /// The swipe's rounding, animated with it.
+    var minRadius: CGFloat
     let cropHeight: CGFloat
-    let radius: CGFloat
+    /// The card's size against the screen's; the page is drawn unscaled and shrunk afterwards.
+    let scale: CGFloat
 
-    var animatableData: CGFloat {
-        get { progress }
-        set { progress = newValue }
+    /// The radius is worked out per frame from these: passed in whole, it held its end value for the
+    /// whole animation, and a page opening from the deck kept square corners until it landed.
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(progress, minRadius) }
+        set { (progress, minRadius) = (newValue.first, newValue.second) }
     }
+
+    private static let cardRadius: CGFloat = 34
+    /// The smallest screen corner of a Face ID iPhone, so at full size the corners hide behind the screen's.
+    private static let screenRadius: CGFloat = 39
 
     func path(in rect: CGRect) -> Path {
         let height = rect.height + (cropHeight - rect.height) * progress
+        let onScreen = Self.screenRadius + (Self.cardRadius - Self.screenRadius) * progress
+        let radius = max(onScreen / (1 + (scale - 1) * progress), minRadius)
         return Path(roundedRect: CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: height),
                     cornerRadius: radius, style: .continuous)
     }
