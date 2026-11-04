@@ -13,6 +13,8 @@ struct FirApp: App {
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = false
     @Environment(\.scenePhase) private var scenePhase
 
+    private var lockCovers: Bool { lock.isLocked || (AppLock.isEnabled && scenePhase != .active) }
+
     init() {
         // Rust components (NSS, HTTP) must be initialized before any FxA or sync call.
         MozillaAppServices.initialize()
@@ -30,9 +32,11 @@ struct FirApp: App {
                 .environment(account)
                 .environment(browser)
                 .overlay {
-                    // Also hides the page in the app switcher, where the lock hasn't engaged yet.
-                    if lock.isLocked || (AppLock.isEnabled && scenePhase != .active) { LockScreen(lock: lock) }
+                    // Also hides the page in the app switcher, where the lock hasn't engaged yet. The
+                    // window covers sheets; this covers the browser before the window exists.
+                    if lockCovers { LockScreen(lock: lock) }
                 }
+                .onChange(of: lockCovers, initial: true) { LockWindow.show(lockCovers, lock: lock, tint: accent.color) }
                 .fullScreenCover(isPresented: Binding(get: { !onboardingDone }, set: { onboardingDone = !$0 })) {
                     OnboardingView { onboardingDone = true }
                         .environment(account)

@@ -131,7 +131,13 @@ final class BrowserTab: NSObject, Identifiable {
         webView.scrollView.refreshControl = refresh
         webView.scrollView.panGestureRecognizer.addTarget(self, action: #selector(panChanged(_:)))
         observations = [
-            webView.observe(\.url) { [weak self] web, _ in MainActor.assumeIsolated { self?.pageURL = web.url } },
+            webView.observe(\.url) { [weak self] web, _ in
+                MainActor.assumeIsolated {
+                    // A cross-origin URL may still be loading under the old page, which could fake it; didCommit sets it.
+                    guard let self, Self.sameOrigin(self.pageURL, web.url) else { return }
+                    self.pageURL = web.url
+                }
+            },
             webView.observe(\.title) { [weak self] web, _ in MainActor.assumeIsolated { self?.pageTitle = web.title ?? "" } },
             webView.observe(\.isLoading) { [weak self] web, _ in MainActor.assumeIsolated { self?.isLoading = web.isLoading } },
             webView.observe(\.estimatedProgress) { [weak self] web, _ in
@@ -157,6 +163,13 @@ final class BrowserTab: NSObject, Identifiable {
     }
 
     var url: URL? { pageURL ?? pendingURL ?? requestedURL }
+
+    /// Scheme, host and port, with default ports filled in.
+    nonisolated static func sameOrigin(_ a: URL?, _ b: URL?) -> Bool {
+        guard let a, let b, let scheme = a.scheme?.lowercased(), scheme == b.scheme?.lowercased() else { return false }
+        func port(_ url: URL) -> Int? { url.port ?? ["http": 80, "https": 443][scheme] }
+        return a.host()?.lowercased() == b.host()?.lowercased() && port(a) == port(b)
+    }
 
     var title: String {
         if !pageTitle.isEmpty { return pageTitle }
@@ -358,11 +371,20 @@ extension BrowserTab: WKNavigationDelegate {
               !["http", "https", "about", "data", "blob", "file", "javascript"].contains(scheme) else {
             return (.allow, preferences)
         }
+        // Like Safari: only the page itself may hand off, after asking; a tapped call or draft link
+        // skips the question, since iOS confirms calls and drafts need a tap to send.
+        guard navigationAction.targetFrame?.isMainFrame != false else { return (.cancel, preferences) }
+        let quiet = ["tel", "facetime", "facetime-audio", "mailto", "sms"].contains(scheme)
+        if !(quiet && navigationAction.navigationType == .linkActivated) {
+            guard await PageDialog.present("Open this page in another app?", host: pageURL?.host() ?? scheme,
+                                           cancel: "Cancel", confirm: "Open") != nil else { return (.cancel, preferences) }
+        }
         await UIApplication.shared.open(url)
         return (.cancel, preferences)
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        pageURL = webView.url
         upgradedFrom = nil
         isReaderable = false
         webView.pageZoom = SiteSettings.shared.entry(for: webView.url).zoom

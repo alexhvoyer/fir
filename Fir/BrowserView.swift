@@ -904,6 +904,13 @@ private struct PageView: View {
             }
         }
         .onChange(of: tab.isTouching) { fingerChanged() }
+        // These sheets sit above the locked page's cover and would keep showing the private tab.
+        .onChange(of: browser.privateLocked) {
+            guard browser.privateLocked, tab.isPrivate else { return }
+            reader = nil
+            showPageSheet = false
+            search = nil
+        }
         .sheet(isPresented: $showSettings) { SettingsView() }
         .sheet(isPresented: $showDownloads) { NavigationStack { DownloadsView() } }
         // Presented here, beside the address capsule it grows out of: from the root the zoom found no

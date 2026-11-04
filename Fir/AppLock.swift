@@ -36,6 +36,31 @@ final class AppLock {
     }
 }
 
+/// The lock screen in its own window above the scene's sheets and covers, which an overlay on the
+/// browser sat under: an open Passwords sheet stayed usable behind a cancelled Face ID.
+@MainActor
+enum LockWindow {
+    private static var window: UIWindow?
+
+    static func show(_ shown: Bool, lock: AppLock, tint: Color?) {
+        guard shown else {
+            window?.isHidden = true
+            window = nil
+            return
+        }
+        guard window == nil,
+              let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
+        let window = UIWindow(windowScene: scene)
+        window.windowLevel = .alert + 1
+        window.overrideUserInterfaceStyle = scene.windows.first?.overrideUserInterfaceStyle ?? .unspecified
+        let host = UIHostingController(rootView: LockScreen(lock: lock).tint(tint))
+        host.view.backgroundColor = .clear
+        window.rootViewController = host
+        window.isHidden = false
+        Self.window = window
+    }
+}
+
 /// Covers the browser while locked, and in the app switcher while the lock is on.
 struct LockScreen: View {
     let lock: AppLock

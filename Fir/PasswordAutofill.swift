@@ -13,6 +13,8 @@ final class PasswordAutofill: NSObject {
     struct FillOffer {
         weak var webView: WKWebView?
         let frame: WKFrameInfo
+        /// As `location.origin` spells it; the frame may hold another document by the time of the fill.
+        let origin: String
         let host: String
         let logins: [Login]
     }
@@ -46,9 +48,10 @@ final class PasswordAutofill: NSObject {
     func fill(_ login: Login) async {
         guard let offer, let webView = offer.webView else { return }
         if AppLock.isAvailable, !(await AppLock.authenticate(reason: "Fill your password")) { return }
+        // Checked in the same call: a frame keeps its identity when its page navigates to another site.
         _ = try? await webView.callAsyncJavaScript(
-            "window.__zenFill(username, password)",
-            arguments: ["username": login.username, "password": login.password],
+            "if (location.origin === origin) window.__zenFill(username, password)",
+            arguments: ["username": login.username, "password": login.password, "origin": offer.origin],
             in: offer.frame, contentWorld: Self.world
         )
         self.offer = nil
@@ -68,6 +71,12 @@ final class PasswordAutofill: NSObject {
 
     // MARK: - Messages
 
+    private static func documentOrigin(_ security: WKSecurityOrigin) -> String {
+        let host = security.host.contains(":") ? "[\(security.host)]" : security.host
+        let isDefault = security.port == 0 || security.port == (security.protocol == "https" ? 443 : 80)
+        return isDefault ? "\(security.protocol)://\(host)" : "\(security.protocol)://\(host):\(security.port)"
+    }
+
     private func received(_ body: [String: Any], frame: WKFrameInfo, webView: WKWebView?) {
         let security = frame.securityOrigin
         guard ["https", "http"].contains(security.protocol), !security.host.isEmpty else { return }
@@ -79,7 +88,8 @@ final class PasswordAutofill: NSObject {
             hideTask?.cancel()
             Task {
                 let logins = await Task.detached { PasswordStore.shared?.logins(for: origin) ?? [] }.value
-                offer = logins.isEmpty ? nil : FillOffer(webView: webView, frame: frame, host: security.host, logins: logins)
+                offer = logins.isEmpty ? nil : FillOffer(webView: webView, frame: frame, origin: Self.documentOrigin(security),
+                                                         host: security.host, logins: logins)
             }
         case "blur":
             // A moment's grace: focus moving to the next field of the same form shouldn't flicker the bar.

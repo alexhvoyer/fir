@@ -56,13 +56,17 @@ struct PrivacySettingsView: View {
         .onChange(of: lockApp) { old, new in
             guard new != AppLock.isEnabled else { return }
             Task {
-                // Turning the lock on proves the check works first, so it can't lock you out.
-                if new, !(await AppLock.authenticate(reason: "Turn on the Fir lock")) {
-                    lockApp = false
+                // On: proves the check works, so it can't lock you out. Off: only the owner may.
+                if !(await AppLock.authenticate(reason: new ? "Turn on the Fir lock" : "Turn off the Fir lock")) {
+                    lockApp = old
                     return
                 }
                 UserDefaults.standard.set(new, forKey: SettingsKey.lockApp)
             }
+        }
+        .onChange(of: lockPrivateTabs) { old, new in
+            guard old, !new, AppLock.isAvailable else { return }
+            Task { if !(await AppLock.authenticate(reason: "Turn off the private tabs lock")) { lockPrivateTabs = true } }
         }
         .confirmationDialog("Clear all website data?", isPresented: $confirmClear, titleVisibility: .visible) {
             Button("Clear", role: .destructive) {

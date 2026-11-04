@@ -4,6 +4,7 @@ import SwiftUI
 /// Saved passwords, behind Face ID or the passcode each time the screen opens, as in Safari.
 struct PasswordsView: View {
     @Environment(AccountService.self) private var account
+    @Environment(\.scenePhase) private var scenePhase
     @State private var unlocked = false
     @State private var logins: [Login] = []
     @State private var query = ""
@@ -23,6 +24,12 @@ struct PasswordsView: View {
         }
         .navigationTitle("Passwords")
         .task { await unlock() }
+        // A screen left open locks again with the app, as in Safari.
+        .onChange(of: scenePhase) {
+            guard scenePhase == .background else { return }
+            unlocked = false
+            logins = []
+        }
     }
 
     private var list: some View {
@@ -74,6 +81,7 @@ private struct PasswordDetailView: View {
     let login: Login
     let onChange: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var revealed = false
     @State private var confirmDelete = false
 
@@ -101,6 +109,8 @@ private struct PasswordDetailView: View {
         }
         .navigationTitle(PasswordStore.host(login.origin))
         .navigationBarTitleDisplayMode(.inline)
+        // Back to the list, which locks itself.
+        .onChange(of: scenePhase) { if scenePhase == .background { dismiss() } }
         .confirmationDialog("Delete this password? It is deleted from Zen too.", isPresented: $confirmDelete,
                             titleVisibility: .visible) {
             Button("Delete", role: .destructive) {

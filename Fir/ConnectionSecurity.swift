@@ -45,7 +45,7 @@ struct ConnectionSecurityView: View {
         // A bar, not an inset: the system fades the list scrolling under it.
         .safeAreaBar(edge: .top) { header }
         .toolbar(.hidden, for: .navigationBar)
-        .task { report = await ConnectionReport.make(for: tab.webView) }
+        .task { report = await ConnectionReport.make(for: tab) }
     }
 
     private var header: some View {
@@ -126,10 +126,12 @@ struct ConnectionReport {
     }
 
     @MainActor
-    static func make(for webView: WKWebView) async -> ConnectionReport {
-        let host = webView.url?.host() ?? ""
+    static func make(for tab: BrowserTab) async -> ConnectionReport {
+        // The committed address: webView.url can be a load still pending, while serverTrust is the page shown.
+        let webView = tab.webView
+        let host = tab.pageURL?.host() ?? ""
         let mixed = !webView.hasOnlySecureContent
-        guard webView.url?.scheme == "https", let trust = webView.serverTrust else {
+        guard tab.pageURL?.scheme == "https", let trust = webView.serverTrust else {
             return ConnectionReport(host: host, secure: false, mixed: mixed, valid: false, chain: [])
         }
         // Evaluation can reach the network for revocation, so it stays off the main thread.
