@@ -169,7 +169,13 @@ struct BrowserView: View {
             browser.searchRequested = nil
             openSearch(request)
         }
-        .onChange(of: browser.linksOpened) { search = nil }
+        // From the deck too: the new tab's page shows, not just its card.
+        .onChange(of: browser.linksOpened) {
+            search = nil
+            showPageAtOnce()
+        }
+        // A restored tab's snapshot is held over it until it paints; another tab must not show under it.
+        .onChange(of: browser.selectedID) { veil = nil }
     }
 
     /// New-tab search asked for from outside, in Private or else the current tab's workspace; a search
@@ -200,7 +206,8 @@ struct BrowserView: View {
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
                         .offset(x: swipeX + screen.width + Self.swipeGap)
                 } else if swipeX != 0, let neighbour = swipeNeighbour {
-                    PageImage(image: neighbour.snapshot, host: neighbour.url?.host(), blank: neighbour.url == nil,
+                    PageImage(image: neighbour.snapshot, host: neighbour.isPrivate ? nil : neighbour.url?.host(),
+                              blank: neighbour.url == nil,
                               spaceID: neighbour.spaceID)
                         .frame(width: screen.width, height: screen.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
@@ -930,6 +937,8 @@ private struct PageView: View {
         }
         .onChange(of: tab.readerRequest) {
             guard tab.readerRequest != nil else { return }
+            // Once per load: left set, every switch back to this tab opened Reader again.
+            tab.readerRequest = nil
             Task { reader = await ReaderArticle.extract(from: tab.webView) }
         }
         .fullScreenCover(item: $reader) { article in
@@ -1530,8 +1539,8 @@ private struct PageView: View {
             if pin, let url = tab.url, let space = zenSpace(of: tab) {
                 tab.zenPinID = await account.addToZen(url, title: tab.title, in: space, essential: false)
             } else if !pin, let id = tab.zenPinID {
-                tab.zenPinID = nil
-                await account.removeFromZen(id)
+                // Kept on failure, so the tab still knows its Zen pin and a later unpin can retry.
+                if await account.removeFromZen(id) { tab.zenPinID = nil }
             } else {
                 return
             }
@@ -1544,8 +1553,7 @@ private struct PageView: View {
     private func toggleEssential(_ tab: BrowserTab) {
         Task {
             if let id = tab.zenEssentialID {
-                tab.zenEssentialID = nil
-                await account.removeFromZen(id)
+                if await account.removeFromZen(id) { tab.zenEssentialID = nil }
             } else if let url = tab.url, let space = zenSpace(of: tab) {
                 tab.zenEssentialID = await account.addToZen(url, title: tab.title, in: space, essential: true)
             }

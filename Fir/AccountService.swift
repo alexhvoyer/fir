@@ -43,6 +43,8 @@ final class AccountService {
     private(set) var isSignedIn = false
 
     private var tabsSync: RemoteTabsSync?
+    /// Bumped by sign-out; a sync still running from before must not bring the old account's data back.
+    private var generation = 0
 
     /// Other devices on the account that accept tabs sent from here, such as Zen on the Mac.
     private(set) var sendTargets: [Device] = []
@@ -80,6 +82,13 @@ final class AccountService {
         }
         isSignedIn = manager.hasAccount()
         if case .failure(let error) = result { lastError = "\(error)" }
+        // Shown from the cache at launch; with no account (say, its keychain entry gone) it is someone's old data.
+        if case .success = result, !isSignedIn {
+            remoteClients = []
+            spacesRecords = []
+            zenWorkspaces = nil
+            SyncCache.clear()
+        }
         tabsSync = try? RemoteTabsSync()
         refreshProfile()
         if isSignedIn { await sync() }
@@ -117,11 +126,16 @@ final class AccountService {
         _ = await withCheckedContinuation { continuation in
             manager.logout { continuation.resume(returning: $0) }
         }
+        generation += 1
         isSignedIn = false
         email = nil
         remoteClients = []
         spacesRecords = []
+        pendingAdds = [:]
+        pendingRemovals = []
         zenWorkspaces = nil
+        sendTargets = []
+        receivedTabs = []
         SyncCache.clear()
     }
 
@@ -139,22 +153,29 @@ final class AccountService {
         }
         // Zen's workspaces load alongside the tabs, not after them: the deck waits on both at launch.
         let loadsSpaces = defaults.bool(forKey: SettingsKey.syncWorkspaces, default: true)
+        let generation = generation
         async let spaces: Void = loadsSpaces ? loadSpaces(manager) : ()
         do {
+            var failure: String?
             if !engines.isEmpty {
-                remoteClients = try await tabsSync.sync(with: manager, engines: engines)
+                let synced = try await tabsSync.sync(with: manager, engines: engines)
+                guard generation == self.generation else { return }
+                remoteClients = synced.clients
                     .filter { !$0.remoteTabs.isEmpty }
                     .sorted { $0.lastModified > $1.lastModified }
+                failure = synced.failure
             }
-            lastError = nil
-            lastSynced = .now
+            lastError = failure
+            if failure == nil { lastSynced = .now }
             // The profile fetch kicked off at sign-in has usually landed by now.
             email = manager.accountProfile()?.email
         } catch {
+            guard generation == self.generation else { return }
             lastError = "\(error)"
         }
         if !engines.contains("tabs") { remoteClients = [] }
         await spaces
+        guard generation == self.generation else { return }
         if !loadsSpaces {
             spacesRecords = []
             zenWorkspaces = nil
@@ -218,15 +239,21 @@ final class AccountService {
     }
 
     /// Removes a pin or essential this app added; Zen closes the tab when the tombstone reaches it.
-    func removeFromZen(_ id: String) async {
-        guard let manager else { return }
-        if pendingAdds.removeValue(forKey: id) == nil { pendingRemovals.insert(id) }
+    /// False when the deletion didn't reach the server; the item then shows again, as Zen still has it.
+    @discardableResult func removeFromZen(_ id: String) async -> Bool {
+        guard let manager else { return false }
+        let hidden = pendingAdds.removeValue(forKey: id) == nil
+        if hidden { pendingRemovals.insert(id) }
         rebuildSpaces()
         do {
             try await SyncStorageReader(auth: RemoteTabsSync.authInfo(for: manager))
                 .upload([["id": id, "deleted": true]], to: "spaces")
+            return true
         } catch {
+            if hidden { pendingRemovals.remove(id) }
+            rebuildSpaces()
             spacesError = "\(error)"
+            return false
         }
     }
 
@@ -263,9 +290,12 @@ final class AccountService {
     }
 
     private func loadSpaces(_ manager: FxAccountManager) async {
+        let generation = generation
         do {
             let reader = SyncStorageReader(auth: try await RemoteTabsSync.authInfo(for: manager))
-            spacesRecords = try await reader.records(in: "spaces")
+            let records = try await reader.records(in: "spaces")
+            guard generation == self.generation else { return }
+            spacesRecords = records
             rebuildSpaces()
             spacesError = nil
         } catch {

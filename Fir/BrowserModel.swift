@@ -484,8 +484,11 @@ final class BrowserModel {
     }
     /// The workspace the deck shows and new tabs go into; nil for this iPhone's own tabs.
     var space: String? {
-        // Leaving Private locks it, as in Yab: coming back asks for Face ID.
-        didSet { if oldValue == Self.privateSpace, space != Self.privateSpace { lockPrivate() } }
+        // Leaving Private locks it, as in Yab: coming back asks for Face ID. Not while a private page is
+        // still in front: a regular new tab from it moves here first, and the lock closed its search.
+        didSet {
+            if oldValue == Self.privateSpace, space != Self.privateSpace, !selected.isPrivate { lockPrivate() }
+        }
     }
     static let privateSpace = "private"
     /// Private tabs are hidden behind Face ID until unlocked.
@@ -572,8 +575,10 @@ final class BrowserModel {
     }
 
     func select(_ tab: BrowserTab) {
+        let leavesPrivate = selected.isPrivate && !tab.isPrivate
         selectedID = tab.id
         space = tab.spaceID
+        if leavesPrivate { lockPrivate() }
     }
 
     /// A window the page opened becomes a new tab in the opener's workspace, shown at once, as in Safari.
@@ -598,8 +603,14 @@ final class BrowserModel {
         save()
     }
 
-    func open(_ url: URL?, in space: String? = nil) {
-        let spaceID = space ?? self.space
+    /// In the workspace the deck shows.
+    func open(_ url: URL?) {
+        open(url, in: space)
+    }
+
+    /// In exactly that workspace; nil is this iPhone's own tabs, never "the current one", which was
+    /// Private for links from other apps arriving while a private tab was in front.
+    func open(_ url: URL?, in spaceID: String?) {
         let tab = BrowserTab(url: url, spaceID: spaceID, dataStore: dataStore(for: spaceID))
         tabs.append(tab)
         select(tab)

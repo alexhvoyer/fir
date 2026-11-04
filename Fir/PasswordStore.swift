@@ -19,7 +19,7 @@ final class PasswordStore: @unchecked Sendable {
         )
         let path = dir.appendingPathComponent("logins.db").path
         let key: String
-        if let saved = Keychain.read() {
+        if let saved = try Keychain.read() {
             key = saved
         } else {
             // Without its key an old database can't be read; Sync restores the passwords into a new one.
@@ -82,13 +82,16 @@ final class PasswordStore: @unchecked Sendable {
             kSecAttrAccount as String: "database-key",
         ]
 
-        static func read() -> String? {
+        /// Nil only when there is no key. Any other failure throws: treated as missing, it deleted the database.
+        static func read() throws -> String? {
             var request = query
             request[kSecReturnData as String] = true
             var result: AnyObject?
-            guard SecItemCopyMatching(request as CFDictionary, &result) == errSecSuccess,
-                  let data = result as? Data else { return nil }
-            return String(data: data, encoding: .utf8)
+            let status = SecItemCopyMatching(request as CFDictionary, &result)
+            if status == errSecItemNotFound { return nil }
+            guard status == errSecSuccess, let data = result as? Data,
+                  let key = String(data: data, encoding: .utf8) else { throw StoreError.keychain }
+            return key
         }
 
         static func save(_ key: String) -> Bool {

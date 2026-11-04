@@ -17,7 +17,9 @@ final class RemoteTabsSync: @unchecked Sendable {
 
     /// Engines left out are skipped on this device only; declining them would turn them off account-wide.
     @MainActor
-    func sync(with manager: FxAccountManager, engines: [String]) async throws -> [ClientRemoteTabs] {
+    /// The other devices' tabs, plus the first engine that failed: one failing, say passwords,
+    /// still leaves the tabs that did sync.
+    func sync(with manager: FxAccountManager, engines: [String]) async throws -> (clients: [ClientRemoteTabs], failure: String?) {
         let deviceID = try await call { manager.getCurrentDeviceId(completionHandler: $0) }
         let params = SyncParams(
             reason: .user,
@@ -40,8 +42,10 @@ final class RemoteTabsSync: @unchecked Sendable {
             if !result.persistedState.isEmpty {
                 UserDefaults.standard.set(result.persistedState, forKey: Self.persistedStateKey)
             }
-            if let (engine, failure) = result.failures.first { throw SyncError.engineFailed("\(engine): \(failure)") }
-            return engines.contains("tabs") ? store.getAll() : []
+            // Offline, a revoked login or a server backoff comes back as a status, not a thrown error.
+            guard result.status == .ok else { throw SyncError.service("\(result.status)") }
+            let failure = result.failures.first.map { "\($0.key): \($0.value)" }
+            return (engines.contains("tabs") ? store.getAll() : [], failure)
         }.value
     }
 
@@ -61,7 +65,7 @@ final class RemoteTabsSync: @unchecked Sendable {
 
     enum SyncError: Error {
         case missingScopedKey
-        case engineFailed(String)
+        case service(String)
     }
 }
 

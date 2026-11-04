@@ -41,6 +41,7 @@ final class AppLock {
 @MainActor
 enum LockWindow {
     private static var window: UIWindow?
+    static var isShown: Bool { window != nil }
 
     static func show(_ shown: Bool, lock: AppLock, tint: Color?) {
         guard shown else {
@@ -50,6 +51,8 @@ enum LockWindow {
         }
         guard window == nil,
               let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
+        // A keyboard already up stays above any window; it goes, or it types into the page behind.
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         let window = UIWindow(windowScene: scene)
         window.windowLevel = .alert + 1
         window.overrideUserInterfaceStyle = scene.windows.first?.overrideUserInterfaceStyle ?? .unspecified

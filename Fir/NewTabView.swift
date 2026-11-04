@@ -169,7 +169,8 @@ struct NewTabView: View {
         autofill = nil
         let text = query.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty, text != browser.selected.url?.absoluteString else { return }
-        if historyEnabled, !browser.selected.isPrivate {
+        // The sheet's own privacy, not the tab behind it: a private new tab from a regular page showed history.
+        if historyEnabled, !isPrivate {
             let (matches, completion) = await Task.detached {
                 (HistoryStore.shared?.search(text, limit: 4) ?? [], HistoryStore.shared?.autofill(text))
             }.value
@@ -428,7 +429,8 @@ private struct SheetKeyboard: UIViewControllerRepresentable {
 
         override func viewIsAppearing(_ animated: Bool) {
             super.viewIsAppearing(animated)
-            guard !focused else { return }
+            // Under the app lock the keyboard would sit above it and type into the hidden field.
+            guard !focused, !LockWindow.isShown else { return }
             focused = true
             Self.field(in: sheet.view)?.becomeFirstResponder()
             observer = NotificationCenter.default.addObserver(

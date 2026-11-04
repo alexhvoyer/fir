@@ -171,7 +171,8 @@ final class PasswordAutofill: NSObject {
           };
           document.addEventListener('submit', (e) => capture(e.target), true);
           document.addEventListener('click', (e) => {
-            const button = e.target.closest && e.target.closest('button, input[type=submit]');
+            // Only buttons that submit: a show-password toggle (type=button) saved a half-typed password.
+            const button = e.target.closest && e.target.closest('button:not([type]), button[type=submit], input[type=submit]');
             if (button) capture(button.form || document);
           }, true);
           document.addEventListener('keydown', (e) => {

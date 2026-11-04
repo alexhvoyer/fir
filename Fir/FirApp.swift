@@ -62,7 +62,7 @@ struct FirApp: App {
                     let urls = account.receivedTabs
                     account.receivedTabs = []
                     for url in urls.dropLast() { browser.openInBackground(url, in: browser.selected.spaceID) }
-                    if let last = urls.last { browser.open(last, in: browser.selected.isPrivate ? nil : browser.selected.spaceID) }
+                    if let last = urls.last { browser.openLink(last) }
                 }
                 // The search widget opens firbrowser://search; web links come from other apps.
                 .onOpenURL { url in

@@ -7,6 +7,7 @@ struct SignInView: View {
     @Environment(AccountService.self) private var account
     @Environment(\.dismiss) private var dismiss
     @State private var url: URL?
+    @State private var failed = false
 
     var body: some View {
         NavigationStack {
@@ -17,6 +18,15 @@ struct SignInView: View {
                             await account.finishSignIn(code: code, state: state)
                             dismiss()
                         }
+                    }
+                } else if failed {
+                    ContentUnavailableView {
+                        Label("Couldn't Reach Mozilla", systemImage: "wifi.exclamationmark")
+                    } description: {
+                        Text("Check the connection and try again.")
+                    } actions: {
+                        Button("Try Again") { Task { await load() } }
+                            .buttonStyle(.glassProminent)
                     }
                 } else {
                     ProgressView()
@@ -30,7 +40,15 @@ struct SignInView: View {
                 }
             }
         }
-        .task { url = await account.beginSignIn() }
+        .task { await load() }
+    }
+
+    private func load() async {
+        failed = false
+        // At first launch the account may still be starting; give it a moment before calling it a failure.
+        for _ in 0..<20 where account.manager == nil { try? await Task.sleep(for: .milliseconds(250)) }
+        url = await account.beginSignIn()
+        failed = url == nil
     }
 }
 

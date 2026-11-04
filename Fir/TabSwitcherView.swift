@@ -31,7 +31,8 @@ struct TabSwitcherView: View {
     var body: some View {
         GeometryReader { geo in
             let items = switcherItems
-            let selected = items.firstIndex { $0.id == selectionID } ?? 0
+            // Never Private as the fallback: it put that page, or its Face ID, in place of the real one.
+            let selected = items.firstIndex { $0.id == selectionID } ?? 1
             // Workspaces sit side by side, as in Safari: the switcher's drag slides them under the finger.
             SpacePager(index: scrub ?? CGFloat(selected), ids: items.map(\.id), width: geo.size.width) { id in
                 page(id, live: id == items[selected].id)
@@ -252,7 +253,11 @@ struct TabSwitcherView: View {
         let devices = account.recentClients.map {
             SpaceSwitcher.Item(id: Self.devicePrefix + $0.clientId, title: ($0.deviceType == .mobile ? "📱 " : "💻 ") + NewTabView.shortName($0.clientName))
         }
-        return [incognito, local] + zen + devices
+        var items = [incognito, local] + zen + devices
+        // A workspace Zen no longer lists (sync off, signed out, deleted there) keeps its tabs reachable.
+        let orphans = Set(browser.tabs.compactMap(\.spaceID)).subtracting(items.map(\.id)).sorted()
+        items += orphans.map { SpaceSwitcher.Item(id: $0, title: "Other Tabs") }
+        return items
     }
 
     private static let devicePrefix = "device:"

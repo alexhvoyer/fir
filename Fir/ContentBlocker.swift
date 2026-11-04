@@ -226,8 +226,12 @@ final class ContentBlocker {
             do {
                 var texts: [String] = []
                 for list in lists {
-                    let (data, _) = try await URLSession.shared.data(from: list.url)
-                    texts.append(String(decoding: data, as: UTF8.self))
+                    let (data, response) = try await URLSession.shared.data(from: list.url)
+                    let text = String(decoding: data, as: UTF8.self)
+                    // A captive portal or a rate-limited host answers with a web page; compiled, it replaced the rules.
+                    guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode),
+                          !text.prefix(512).lowercased().contains("<html") else { throw URLError(.badServerResponse) }
+                    texts.append(text)
                 }
                 let (list, count) = try await Self.compile(texts, identifier: identifier)
                 ruleLists[group] = (list, count)
