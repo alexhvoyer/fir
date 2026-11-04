@@ -12,6 +12,9 @@ struct StartPage: View {
     var background = Color(.systemGroupedBackground)
     /// The search sheet's cue to grow: the content was pulled up past its top.
     var onPullUp: (() -> Void)? = nil
+    /// A deck card or transition: the same content without a scroll view. A hosted scroll view in a card
+    /// left hidden while its page was open came back black, and stayed so until something re-laid it out.
+    var isPreview = false
     let onOpen: (URL) -> Void
     private var isPrivate: Bool { spaceID == BrowserModel.privateSpace }
     @Environment(AccountService.self) private var account
@@ -30,62 +33,15 @@ struct StartPage: View {
     ].compactMap(URL.init(string:))
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                if isFirstRun { welcome }
-                if loaded, !isPrivate, !account.isSignedIn, !signInCardHidden { signInCard }
-                if let zen = account.zenWorkspaces {
-                    let space = zen.spaces.first { $0.id == spaceID }
-                    let essentials = zen.essentials(in: space)
-                    if !essentials.isEmpty {
-                        section("Essentials") {
-                            PinGrid(urls: essentials.map { ($0.id, $0.url) },
-                                    removeTitle: { _ in "Remove from Essentials" }, onOpen: onOpen)
-                        }
-                    }
-                    if let space { pinned(space) }
-                }
-                if account.zenWorkspaces == nil, !frequent.isEmpty {
-                    section("Frequently Visited") {
-                        PinGrid(urls: frequent, onOpen: onOpen)
-                    }
-                }
-                if isPrivate {
-                    Label("Private Browsing: pages you open here aren't saved.", systemImage: "eyes")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } else {
-                    if let device = latestDevice {
-                        section("From \(NewTabView.shortName(device.clientName))") {
-                            rows(
-                                device.remoteTabs.sorted { $0.lastUsed > $1.lastUsed }.prefix(4).compactMap { tab in
-                                    tab.urlHistory.first.flatMap(URL.init(string:)).map { (tab.title, $0) }
-                                }, onSelect: onOpen)
-                        }
-                    }
-                    if !recent.isEmpty {
-                        section("Recently Visited") {
-                            rows(recent.map { ($0.title, $0.url) }, onSelect: onOpen)
-                        }
-                    }
-                }
+        Group {
+            if isPreview {
+                // Where the live page last had its content, so a card and its page line up.
+                content
+                    .offset(y: StartPageScroll.shared.tops[spaceID] ?? insets.top)
+                    .frame(maxHeight: .infinity, alignment: .top)
+            } else {
+                scrolling
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 24)
-            .padding(.bottom, insets.bottom + 80)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        // The status bar's inset as the scroll view's, not the content's: the refresh spinner sits at
-        // the top of that inset, which had put it behind the Dynamic Island.
-        .safeAreaPadding(.top, insets.top)
-        .scrollIndicators(.hidden)
-        // Pull down for Zen's latest pins and essentials; not on the search sheet, where it closes the sheet.
-        .refreshable(isEnabled: onPullUp == nil && account.isSignedIn) { await account.sync() }
-        // On the search sheet the keyboard stays while scrolling, as in Lens.
-        .scrollDismissesKeyboard(.never)
-        // Any pull up once past the top, not only the first: back at the low height the list stays scrolled.
-        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: {
-            if $1 > $0, $1 > 40 { onPullUp?() }
         }
         .background(background)
         .sheet(isPresented: $showSignIn) { SignInView() }
@@ -102,6 +58,76 @@ struct StartPage: View {
             }.value
             Self.cache = (topSites, recent)
         }
+    }
+
+
+    private var scrolling: some View {
+        ScrollView {
+            content
+                // Where the content's top is on screen, the page being full screen: what a preview copies.
+                // Read globally; scroll-relative values left out an inset that differs between devices.
+                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: {
+                    if onPullUp == nil { StartPageScroll.shared.tops[spaceID] = $0 }
+                }
+        }
+            // The status bar's inset as the scroll view's, not the content's: the refresh spinner sits at
+            // the top of that inset, which had put it behind the Dynamic Island.
+            .safeAreaPadding(.top, insets.top)
+            .scrollIndicators(.hidden)
+            // Pull down for Zen's latest pins and essentials; not on the search sheet, where it closes the sheet.
+            .refreshable(isEnabled: onPullUp == nil && account.isSignedIn) { await account.sync() }
+            // On the search sheet the keyboard stays while scrolling, as in Lens.
+            .scrollDismissesKeyboard(.never)
+            // Any pull up once past the top, not only the first: back at the low height the list stays scrolled.
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: {
+                if $1 > $0, $1 > 40 { onPullUp?() }
+            }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            if isFirstRun { welcome }
+            if loaded, !isPrivate, !account.isSignedIn, !signInCardHidden { signInCard }
+            if let zen = account.zenWorkspaces {
+                let space = zen.spaces.first { $0.id == spaceID }
+                let essentials = zen.essentials(in: space)
+                if !essentials.isEmpty {
+                    section("Essentials") {
+                        PinGrid(urls: essentials.map { ($0.id, $0.url) },
+                                removeTitle: { _ in "Remove from Essentials" }, onOpen: onOpen)
+                    }
+                }
+                if let space { pinned(space) }
+            }
+            if account.zenWorkspaces == nil, !frequent.isEmpty {
+                section("Frequently Visited") {
+                    PinGrid(urls: frequent, onOpen: onOpen)
+                }
+            }
+            if isPrivate {
+                Label("Private Browsing: pages you open here aren't saved.", systemImage: "eyes")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                if let device = latestDevice {
+                    section("From \(NewTabView.shortName(device.clientName))") {
+                        rows(
+                            device.remoteTabs.sorted { $0.lastUsed > $1.lastUsed }.prefix(4).compactMap { tab in
+                                tab.urlHistory.first.flatMap(URL.init(string:)).map { (tab.title, $0) }
+                            }, onSelect: onOpen)
+                    }
+                }
+                if !recent.isEmpty {
+                    section("Recently Visited") {
+                        rows(recent.map { ($0.title, $0.url) }, onSelect: onOpen)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 24)
+        .padding(.bottom, insets.bottom + 80)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// The workspace's pinned tabs as Zen's sidebar lists them: loose ones first, then each folder.
@@ -230,6 +256,15 @@ private extension View {
     }
 }
 
+/// Where the live start page of each workspace has its content, for its previews.
+@MainActor
+@Observable
+final class StartPageScroll {
+    static let shared = StartPageScroll()
+    /// The content's top edge on screen, per workspace.
+    var tops: [String?: CGFloat] = [:]
+}
+
 /// The start page drawn at full-screen size and scaled to fit, top-aligned: what a deck card and the
 /// deck transitions show for a tab without a page, which has no snapshot.
 struct StartPagePreview: View {
@@ -243,6 +278,7 @@ struct StartPagePreview: View {
             StartPage(spaceID: spaceID,
                       insets: EdgeInsets(top: window?.safeAreaInsets.top ?? 0, leading: 0,
                                          bottom: window?.safeAreaInsets.bottom ?? 0, trailing: 0),
+                      isPreview: true,
                       onOpen: { _ in })
                 .frame(width: screen.width, height: geo.size.height / max(scale, 0.01))
                 .scaleEffect(scale, anchor: .topLeading)
