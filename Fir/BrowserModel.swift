@@ -232,6 +232,24 @@ final class BrowserTab: NSObject, Identifiable {
         refreshSnapshot()
     }
 
+    /// One colour edge to edge, or transparent: shrunk to 16x16, no pixel differs from the first.
+    /// A real page differs somewhere; text alone shifts its cells by several levels.
+    nonisolated static func isBlank(_ image: UIImage) -> Bool {
+        guard let cgImage = image.cgImage else { return true }
+        let side = 16
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        guard let context = CGContext(data: &pixels, width: side, height: side, bitsPerComponent: 8,
+                                      bytesPerRow: side * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+        context.interpolationQuality = .medium
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
+        if stride(from: 3, to: pixels.count, by: 4).allSatisfy({ pixels[$0] == 0 }) { return true }
+        let first = pixels.prefix(4)
+        return stride(from: 0, to: pixels.count, by: 4).allSatisfy { i in
+            zip(pixels[i..<i + 4], first).allSatisfy { abs(Int($0) - Int($1)) < 3 }
+        }
+    }
+
     /// Refreshes the deck card's image. WebKit renders it in its own process, so the main thread and
     /// any running animation are never held up.
     func refreshSnapshot() {
@@ -241,7 +259,9 @@ final class BrowserTab: NSObject, Identifiable {
         config.afterScreenUpdates = false
         config.snapshotWidth = NSNumber(value: Double(webView.bounds.width))
         webView.takeSnapshot(with: config) { [weak self] image, _ in
-            guard let self, let image else { return }
+            // On the phone WebKit sometimes hands back only the page's background, which turned the
+            // card black or white; the last good image stays instead.
+            guard let self, let image, !Self.isBlank(image) else { return }
             snapshot = image
             guard !isPrivate else { return }
             let id = id
