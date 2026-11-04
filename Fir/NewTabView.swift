@@ -180,22 +180,28 @@ struct NewTabView: View {
     }
 
     /// Restarting on every keystroke cancels the previous fetch; the pause debounces typing.
+    /// The last answers stay until new ones replace them, as in Safari: cleared on each keystroke, the
+    /// suggestions vanished until the network answered and everything below jumped up and back.
     private func loadSuggestions() async {
-        suggestions = []
-        historyMatches = []
-        autofill = nil
         let text = query.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty, text != browser.selected.url?.absoluteString else { return }
+        guard !text.isEmpty, text != browser.selected.url?.absoluteString else {
+            (suggestions, historyMatches, autofill) = ([], [], nil)
+            return
+        }
+        // A completion the new text no longer starts would be drawn wrong; it goes at once.
+        if let autofill, !autofill.text.lowercased().hasPrefix(text.lowercased()) { self.autofill = nil }
         // The sheet's own privacy, not the tab behind it: a private new tab from a regular page showed history.
         if historyEnabled, !isPrivate {
             let (matches, completion) = await Task.detached {
                 (HistoryStore.shared?.search(text, limit: 4) ?? [], HistoryStore.shared?.autofill(text))
             }.value
-            // A later keystroke already cleared these; a stale answer must not come back.
+            // A later keystroke has started its own lookup; this answer is out of date.
             guard !Task.isCancelled else { return }
             (historyMatches, autofill) = (matches, completion)
+        } else {
+            (historyMatches, autofill) = ([], nil)
         }
-        guard suggestionsEnabled else { return }
+        guard suggestionsEnabled else { suggestions = []; return }
         try? await Task.sleep(for: .milliseconds(150))
         guard !Task.isCancelled else { return }
         let result = await engine.suggestions(for: text)
