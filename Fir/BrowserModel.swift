@@ -108,11 +108,24 @@ final class BrowserTab: NSObject, Identifiable {
         if dataStore.isPersistent { config.webExtensionController = ExtensionManager.shared.controller }
         config.allowsInlineMediaPlayback = true
         config.allowsPictureInPictureMediaPlayback = true
+        config.userContentController.addUserScript(Self.pictureInPictureReturn)
         let webView = WKWebView(frame: .zero, configuration: config)
         ContentBlocker.shared.attach(webView)
         PasswordAutofill.shared.attach(webView)
         return configure(webView)
     }
+
+    /// A video that went picture in picture comes back into the page when the page shows again, as in
+    /// Safari; WebKit leaves that to the app. In every frame, so embedded players come back too.
+    static let pictureInPictureReturn = WKUserScript(source: """
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState !== 'visible') return;
+          for (const video of document.querySelectorAll('video')) {
+            if (video.webkitPresentationMode === 'picture-in-picture') video.webkitSetPresentationMode('inline');
+          }
+          if (document.pictureInPictureElement) document.exitPictureInPicture().catch(() => {});
+        });
+        """, injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient)
 
     private static func configure(_ webView: WKWebView) -> WKWebView {
         webView.allowsBackForwardNavigationGestures = true

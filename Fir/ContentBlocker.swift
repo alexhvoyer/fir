@@ -172,8 +172,9 @@ final class ContentBlocker {
             for webView in webViews.allObjects {
                 webView.configuration.userContentController.removeAllContentRuleLists()
                 webView.configuration.userContentController.removeAllUserScripts()
-                // Removing scripts can't spare one; the password script goes back in.
+                // Removing scripts can't spare one; the password and video scripts go back in.
                 webView.configuration.userContentController.addUserScript(PasswordAutofill.script)
+                webView.configuration.userContentController.addUserScript(BrowserTab.pictureInPictureReturn)
             }
             ruleLists = [:]
             state = .off
@@ -281,6 +282,7 @@ final class ContentBlocker {
             controller.removeAllUserScripts()
             controller.addUserScript(Self.layoutFixes)
             controller.addUserScript(PasswordAutofill.script)
+            controller.addUserScript(BrowserTab.pictureInPictureReturn)
         }
         state = .ready(rules: ruleLists.values.reduce(0) { $0 + $1.rules })
     }
