@@ -54,17 +54,30 @@ final class HistoryStore: @unchecked Sendable {
         }
     }
 
-    /// Places' own URL autofill, as in Firefox: the most frecent visited site starting with `text`,
-    /// written the way people type it ("dtf.ru"), or nil.
-    func autofill(_ text: String) -> String? {
+    /// A completed address: written the way people type it ("dtf.ru"), the page, and its title.
+    struct Completion: Equatable {
+        let text: String
+        let url: URL
+        /// The title of exactly that page, if it was visited; never another page's on the site.
+        let title: String?
+    }
+
+    /// Places' own URL autofill, as in Firefox: the most frecent visited site starting with `text`, or nil.
+    func autofill(_ text: String) -> Completion? {
         guard !text.isEmpty, !text.contains(" "),
-              let url = try? api.openReader().matchUrl(query: text) else { return nil }
-        var shown = url
+              let match = try? api.openReader().matchUrl(query: text), let url = URL(string: match) else { return nil }
+        var shown = match
         for prefix in ["https://", "http://", "www."] where shown.hasPrefix(prefix) {
             shown.removeFirst(prefix.count)
         }
         if shown.hasSuffix("/") { shown.removeLast() }
-        return shown.lowercased().hasPrefix(text.lowercased()) ? shown : nil
+        guard shown.lowercased().hasPrefix(text.lowercased()) else { return nil }
+        // From the visits: the autocomplete result stands the address in for a missing title.
+        let visits = (try? api.openReader().getVisitPageWithBound(
+            bound: Self.now, offset: 0, count: 1000, excludedTypes: 0
+        ).infos) ?? []
+        let title = visits.first { $0.url == match && !($0.title ?? "").isEmpty }?.title
+        return Completion(text: shown, url: url, title: title)
     }
 
     func delete(_ url: URL) {

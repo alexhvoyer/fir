@@ -24,7 +24,7 @@ struct NewTabView: View {
     @State private var suggestions: [String] = []
     @State private var historyMatches: [HistoryStore.Entry] = []
     /// The rest of a visited site's address the query starts, shown after the typed text; Go opens it.
-    @State private var autofill: String?
+    @State private var autofill: HistoryStore.Completion?
     @State private var showSignIn = false
     @FocusState private var focused: Bool
     @State private var expanded = false
@@ -106,6 +106,23 @@ struct NewTabView: View {
 
     private var results: some View {
         List {
+            // The completed address on top, picked out as Go's target, as Safari's Top Hit.
+            if let autofill, !showsStartPage {
+                Button { open(autofill.url) } label: {
+                    HStack(spacing: 12) {
+                        SiteIcon(host: autofill.url.host(), size: 30)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(autofill.title ?? autofill.text).lineLimit(1)
+                            Text(autofill.text).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(.rect)
+                }
+                .foregroundStyle(.primary)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.primary.opacity(0.08).clipShape(.rect(cornerRadius: 18, style: .continuous)))
+            }
             if !suggestions.isEmpty {
                 Section {
                     header("\(engine.name) Suggestions")
@@ -214,9 +231,11 @@ struct NewTabView: View {
             TextField("Search or enter address", text: $query)
                 .focused($focused)
                 .overlay(alignment: .leading) {
-                    if let autofill, autofill.count > query.count {
+                    if let autofill, autofill.text.count >= query.count {
                         (Text(query).foregroundStyle(.clear)
-                            + Text(autofill.dropFirst(query.count)).foregroundStyle(.tint))
+                            + Text(autofill.text.dropFirst(query.count)).foregroundStyle(.tint)
+                            // The site's name after the address, as Safari shows it.
+                            + Text(autofill.title.map { " — \($0)" } ?? "").foregroundStyle(.secondary))
                             .lineLimit(1)
                             .allowsHitTesting(false)
                     }
@@ -225,7 +244,7 @@ struct NewTabView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .submitLabel(.go)
-                .onSubmit { open(BrowserModel.url(from: autofill ?? query, engine: engine)) }
+                .onSubmit { open(autofill?.url ?? BrowserModel.url(from: query, engine: engine)) }
                 // Like Safari, the current address starts selected, so typing replaces it. SwiftUI's
                 // TextSelection didn't apply on first focus; the UIKit field's range does.
                 .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) {
