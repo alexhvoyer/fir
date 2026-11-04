@@ -23,6 +23,8 @@ struct TabSwitcherView: View {
     @State private var dragOrigin: CGFloat?
     @State private var dragAxis: Axis?
     @State private var liftOffset: CGFloat = 0
+    /// Counts tabs opened by pulling their card down; each one taps, a plain tap on the card doesn't.
+    @State private var pullOpens = 0
     /// Another device's open tabs shown instead of a workspace; not a workspace, so not `browser.space`.
     @State private var device: String?
 
@@ -151,6 +153,8 @@ struct TabSwitcherView: View {
                     // Swiping a card up to close: its title goes first so it never runs over the header,
                     // then the card shrinks a little and fades as it leaves.
                     let lift = index == focused ? min(liftOffset, 0) : 0
+                    // Pulled down it follows at a third of the finger and grows a touch, toward the page.
+                    let pull = index == focused ? max(liftOffset, 0) / 3 : 0
                     // Earlier tabs tuck in on the left. Layering follows deck order, like the app switcher:
                     // ordering by distance swapped the front card mid-scroll.
                     TabCard(tab: tab,
@@ -159,8 +163,8 @@ struct TabSwitcherView: View {
                             imageHidden: tab.id == hiddenTab,
                             onFrame: { onCardFrame(tab.id, $0) })
                         .equatable()
-                        .scaleEffect((rel < 0 ? max(0.86, 1 + rel * 0.05) : 1) * (1 + lift / 1800))
-                        .offset(x: rel < 0 ? rel * step * 0.25 : rel * step, y: lift)
+                        .scaleEffect((rel < 0 ? max(0.86, 1 + rel * 0.05) : 1) * (1 + lift / 1800) * (1 + pull / 600))
+                        .offset(x: rel < 0 ? rel * step * 0.25 : rel * step, y: lift + pull)
                         .opacity(max(0, 1 + Double(lift) / 320))
                         .zIndex(Double(index))
                         .onTapGesture {
@@ -172,6 +176,7 @@ struct TabSwitcherView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(.rect)
             .gesture(deckGesture(step: step, height: geo.size.height))
+            .haptic(.impact(weight: .light), trigger: pullOpens)
         }
     }
 
@@ -213,6 +218,8 @@ struct TabSwitcherView: View {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) { progress = target }
                 } else if value.translation.height < -120 || value.predictedEndTranslation.height < -400 {
                     closeFocused(height: height)
+                } else if value.translation.height > 90 || value.predictedEndTranslation.height > 360 {
+                    openFocused()
                 } else {
                     withAnimation(.snappy) { liftOffset = 0 }
                 }
@@ -225,6 +232,19 @@ struct TabSwitcherView: View {
         if value < 0 { return value / 3 }
         if value > last { return last + (value - last) / 3 }
         return value
+    }
+
+    /// Pulling a card down opens it, as swiping one up closes it; it grows from where the pull left it.
+    private func openFocused() {
+        guard browser.spaceTabs.indices.contains(focusedIndex) else { return }
+        pullOpens += 1
+        browser.select(browser.spaceTabs[focusedIndex])
+        onOpen()
+        // Dropped back once the page covers the deck: at once, the page grew from the card's old place.
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            withAnimation(nil) { liftOffset = 0 }
+        }
     }
 
     private func closeFocused(height: CGFloat) {
