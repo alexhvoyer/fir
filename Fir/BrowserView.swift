@@ -39,6 +39,9 @@ struct BrowserView: View {
     @State private var lifting = false
     /// A page is growing out of its card in the deck.
     @State private var opening = false
+    /// Bumped when a transition starts. An older one's completion or delayed step then stands aside:
+    /// a card tapped while the page still shrank opened, and the close's completion hid it again.
+    @State private var transitionID = 0
     /// A released swipe is carrying the neighbour in: its capsule opens while it arrives.
     @State private var arriving = false
     /// Counts bar swipes that switched tabs, for their haptic tick.
@@ -245,6 +248,7 @@ struct BrowserView: View {
     /// Freezes the page into its snapshot and hides the live view; the start of every transition.
     private func beginTransition() {
         guard !transitioning else { return }
+        transitionID += 1
         veil = nil
         browser.selected.stopScrolling()
         coverView = browser.selected.liveSnapshot()
@@ -282,6 +286,7 @@ struct BrowserView: View {
         // Not keyed on `transitioning`: after a bar swipe it stays set while the new tab loads.
         if !lifting {
             lifting = true
+            transitionID += 1
             bringSelectedToEnd()
         }
         beginTransition()
@@ -302,7 +307,10 @@ struct BrowserView: View {
             closePage()
         } else {
             // Retargeting the in-flight interactive spring keeps the finger's velocity.
-            withAnimation(settle) { progress = 0; follow = .zero } completion: { endTransition() }
+            let id = transitionID
+            withAnimation(settle) { progress = 0; follow = .zero } completion: {
+                if id == transitionID { endTransition() }
+            }
         }
     }
 
@@ -315,12 +323,14 @@ struct BrowserView: View {
         follow = followOntoCard(anchor: a)
         pageShown = true
         opening = true
+        transitionID += 1
+        let id = transitionID
         // Let the deck lay out the card first so the page grows out of its real frame.
         Task {
             await Task.yield()
             withAnimation(settle) { progress = 0; follow = .zero } completion: {
                 opening = false
-                reveal(browser.selected)
+                if id == transitionID { reveal(browser.selected) }
             }
         }
     }
@@ -351,6 +361,7 @@ struct BrowserView: View {
     /// Like Safari after a search: the page is already full screen under the search screen as it
     /// slides away, so neither the deck nor a grow-from-card shows in between.
     private func showPageAtOnce() {
+        transitionID += 1
         swipedToNewTab = false
         swipeX = 0
         endTransition()
@@ -361,6 +372,8 @@ struct BrowserView: View {
     private func closePage() {
         let reordered = bringSelectedToEnd()
         beginTransition()
+        transitionID += 1
+        let id = transitionID
         let a = anchor ?? CGPoint(x: screen.midX, y: screen.midY)
         Task {
             // A reordered deck must lay out first, so the page shrinks onto the card's new frame.
@@ -370,6 +383,7 @@ struct BrowserView: View {
                 progress = 1
                 follow = followOntoCard(anchor: a)
             } completion: {
+                guard id == transitionID else { return }
                 pageShown = false
                 endTransition()
             }
@@ -409,6 +423,8 @@ struct BrowserView: View {
     }
 
     private func swipe(_ dx: CGFloat) {
+        // A new swipe, possibly while the last one's page is still being revealed.
+        if swipeX == 0 { transitionID += 1 }
         beginTransition()
         swipeX = dx
         // Resist past the first tab; past the last one waits a new tab.
@@ -425,8 +441,9 @@ struct BrowserView: View {
             search = .newTab
             return
         }
+        let id = transitionID
         guard let neighbour = swipeNeighbour, committed else {
-            withAnimation(settle) { swipeX = 0 } completion: { endTransition() }
+            withAnimation(settle) { swipeX = 0 } completion: { if id == transitionID { endTransition() } }
             return
         }
         let target = swipeX > 0 ? width : -width
@@ -447,7 +464,7 @@ struct BrowserView: View {
             Task {
                 // The neighbour's web view needs a moment to paint after being shown.
                 try? await Task.sleep(for: .milliseconds(150))
-                reveal(neighbour)
+                if id == transitionID { reveal(neighbour) }
             }
         }
     }

@@ -185,6 +185,8 @@ final class BrowserTab: NSObject, Identifiable {
 
     func loadIfNeeded() {
         guard let pendingURL else { return }
+        // Kept until the load commits: a failed or slow one otherwise left the tab with no address at all.
+        requestedURL = pendingURL
         self.pendingURL = nil
         webView.load(URLRequest(url: pendingURL))
     }
