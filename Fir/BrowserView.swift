@@ -239,6 +239,7 @@ struct BrowserView: View {
     private func beginTransition() {
         guard !transitioning else { return }
         veil = nil
+        browser.selected.stopScrolling()
         coverView = browser.selected.liveSnapshot()
         cover = browser.selected.snapshot
         // Normally kept fresh while idle (see BrowserTab); now only if missing or scrolled since.

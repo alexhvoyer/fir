@@ -198,6 +198,17 @@ final class BrowserTab: NSObject, Identifiable {
         }
     }
 
+    /// Like Safari, a page leaving the screen stops its momentum; otherwise it scrolled on under the
+    /// deck and reopened somewhere other than its card. A bounce settles at the edge.
+    func stopScrolling() {
+        let scroll = webView.scrollView
+        guard scroll.isDecelerating else { return }
+        let top = -scroll.adjustedContentInset.top
+        let bottom = max(top, scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom)
+        let y = min(max(scroll.contentOffset.y, top), bottom)
+        scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: y), animated: false)
+    }
+
     /// A transition that starts before the idle snapshot would land the page on a stale card.
     func refreshSnapshotIfPending() {
         guard let pending = idleSnapshot else { return }
