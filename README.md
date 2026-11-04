@@ -1,9 +1,14 @@
-# Fir
+<p align="center">
+  <img src="docs/icon.png" width="128" height="128" alt="Fir app icon: a conifer sprig">
+</p>
 
-A calm WebKit browser for iPhone that syncs with Zen Browser and Firefox through your Mozilla
-account.
+<h1 align="center">Fir</h1>
 
-Fir is an independent app, not affiliated with Zen or Mozilla.
+<p align="center">
+  A calm WebKit browser for iPhone that syncs with Zen Browser and Firefox through your Mozilla account.
+  <br>
+  Fir is an independent app, not affiliated with Zen or Mozilla.
+</p>
 
 ## Features
 
