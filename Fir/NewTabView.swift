@@ -457,7 +457,10 @@ private struct SheetKeyboard: UIViewControllerRepresentable {
             // Under the app lock the keyboard would sit above it and type into the hidden field.
             guard !focused, !LockWindow.isShown else { return }
             focused = true
-            Self.field(in: sheet.view)?.becomeFirstResponder()
+            // One run-loop pass after the sheet starts: in the same pass, sheet and keyboard layout held
+            // the main thread for 110 ms; split, each costs about half. The keyboard still rises with the sheet.
+            let field = Self.field(in: sheet.view)
+            DispatchQueue.main.async { field?.becomeFirstResponder() }
             observer = NotificationCenter.default.addObserver(
                 forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main
             ) { [weak self] _ in
