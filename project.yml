@@ -1,0 +1,90 @@
+name: Fir
+options:
+  bundleIdPrefix: dev.khvoynitsky
+  deploymentTarget:
+    iOS: "26.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: 28MK6UC4T4
+    CODE_SIGN_STYLE: Automatic
+packages:
+  MozillaRustComponents:
+    path: Packages/MozillaRustComponents
+targets:
+  Fir:
+    type: application
+    platform: iOS
+    sources:
+      - Fir
+      - Shared
+    dependencies:
+      - package: MozillaRustComponents
+        product: MozillaRustComponents
+      - target: FirWidget
+    info:
+      path: Fir/Info.plist
+      properties:
+        # Without it iOS caps the app's animations at 60 Hz on ProMotion iPhones; Safari runs at 120.
+        CADisableMinimumFrameDurationOnPhone: true
+        # A browser opens any site; without this iOS refuses plain HTTP pages outright. HTTPS-Only decides instead.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoadsInWebContent: true
+        CFBundleURLTypes:
+          - CFBundleURLName: dev.khvoynitsky.browser
+            CFBundleURLSchemes: [firbrowser]
+          # Required to be offered as the default browser.
+          - CFBundleURLName: Web Link
+            CFBundleURLSchemes: [http, https]
+        # Long-press actions on the home screen icon; QuickAction handles them.
+        UIApplicationShortcutItems:
+          - UIApplicationShortcutItemType: NewTab
+            UIApplicationShortcutItemTitle: New Tab
+            UIApplicationShortcutItemIconSymbolName: plus
+          - UIApplicationShortcutItemType: NewPrivateTab
+            UIApplicationShortcutItemTitle: New Private Tab
+            UIApplicationShortcutItemIconSymbolName: eyes
+        # Downloads live in Documents/Downloads; these show the folder in the Files app.
+        UIFileSharingEnabled: true
+        # Keeps page audio playing with the screen off and lets video continue in picture in picture.
+        UIBackgroundModes: [audio]
+        LSSupportsOpeningDocumentsInPlace: true
+        # The heading typeface (OFL, see Shared/Fonts).
+        UIAppFonts: [BricolageGrotesque.ttf]
+        # Standard algorithms only (NSS in the Rust components) and no France, so App Store Connect
+        # needs no documentation. Distributing in France would require a French declaration first.
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Chosen in Settings > Appearance.
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIcon-Night AppIcon-Spruce"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Fir
+        INFOPLIST_KEY_NSFaceIDUsageDescription: Unlock Fir when the app lock is on.
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+  FirWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - FirWidget
+      - Shared
+    info:
+      path: FirWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Fir
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser.Widget
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"

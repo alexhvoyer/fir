@@ -1,0 +1,9 @@
+Fir.xcodeproj/
+.build/
+DerivedData/
+.swiftpm/
+xcuserdata/
+.DS_Store
+build.log
+Packages/MozillaRustComponents/MozillaRustComponents.xcframework/
+build/
