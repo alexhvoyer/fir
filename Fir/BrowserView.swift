@@ -585,8 +585,10 @@ private struct UndoCloseCapsule: View {
                     restores += 1
                     withAnimation(.smooth(duration: 0.35)) { browser.undoClose() }
                 }
+                .font(.subheadline.weight(.medium))
                 .buttonStyle(.glass)
-                .controlSize(.large)
+                // Regular, not large: large stood taller than the switcher's pill below it.
+                .controlSize(.regular)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .task(id: undo.tab.id) {
                     guard (try? await Task.sleep(for: .seconds(3))) != nil else { return }

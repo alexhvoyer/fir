@@ -265,7 +265,7 @@ struct TabSwitcherView: View {
 
     private var switcherItems: [SpaceSwitcher.Item] {
         let incognito = SpaceSwitcher.Item(id: BrowserModel.privateSpace, title: "Private")
-        let local = SpaceSwitcher.Item(id: Self.localSpace, title: "\(browser.tabs(in: nil).count) Tabs")
+        let local = SpaceSwitcher.Item(id: Self.localSpace, title: browser.tabs(in: nil).count == 1 ? "1 Tab" : "\(browser.tabs(in: nil).count) Tabs")
         let zen = (account.zenWorkspaces?.spaces ?? []).map {
             SpaceSwitcher.Item(id: $0.id, title: [$0.icon, $0.name].compactMap { $0 }.joined(separator: " "))
         }
