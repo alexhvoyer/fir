@@ -241,8 +241,9 @@ struct BrowserView: View {
         veil = nil
         coverView = browser.selected.liveSnapshot()
         cover = browser.selected.snapshot
-        // Normally kept fresh while idle (see BrowserTab); only a tab without any card image needs one now.
+        // Normally kept fresh while idle (see BrowserTab); now only if missing or scrolled since.
         if browser.selected.snapshot == nil { browser.selected.refreshSnapshot() }
+        else { browser.selected.refreshSnapshotIfPending() }
         transitioning = true
     }
 

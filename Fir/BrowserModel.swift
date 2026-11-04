@@ -191,9 +191,19 @@ final class BrowserTab: NSObject, Identifiable {
         idleSnapshot?.cancel()
         idleSnapshot = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(700))
-            guard !Task.isCancelled, let self, webView.window != nil, !webView.isHidden else { return }
+            guard !Task.isCancelled, let self else { return }
+            idleSnapshot = nil
+            guard webView.window != nil, !webView.isHidden else { return }
             refreshSnapshot()
         }
+    }
+
+    /// A transition that starts before the idle snapshot would land the page on a stale card.
+    func refreshSnapshotIfPending() {
+        guard let pending = idleSnapshot else { return }
+        pending.cancel()
+        idleSnapshot = nil
+        refreshSnapshot()
     }
 
     /// Refreshes the deck card's image. WebKit renders it in its own process, so the main thread and
