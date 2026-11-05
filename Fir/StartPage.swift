@@ -1,24 +1,17 @@
 import MozillaAppServices
 import SwiftUI
 
-/// What an empty tab shows, like Safari's start page: the workspace's Zen essentials and pinned tabs,
-/// the newest tabs from Zen and recent history. Also the search screen before anything is typed. A
-/// private tab shows only pins, so its start page reveals no history.
+/// The search sheet before anything is typed, like Safari's start page: the workspace's Zen essentials
+/// and pinned tabs, the newest tabs from Zen and recent history. A private tab shows only pins.
 struct StartPage: View {
     /// The workspace whose Zen pins are shown; `BrowserModel.privateSpace` for a private tab.
     let spaceID: String?
-    let insets: EdgeInsets
-    /// Clear on the search sheet, whose glass shows through.
-    var background = Color(.systemGroupedBackground)
-    /// The search sheet's cue to grow: the content was pulled up past its top.
-    var onPullUp: (() -> Void)? = nil
-    /// A deck card or transition: the same content without a scroll view. A hosted scroll view in a card
-    /// left hidden while its page was open came back black, and stayed so until something re-laid it out.
-    var isPreview = false
+    /// The sheet's cue to grow: the content was pulled up past its top.
+    let onPullUp: () -> Void
     let onOpen: (URL) -> Void
     private var isPrivate: Bool { spaceID == BrowserModel.privateSpace }
     @Environment(AccountService.self) private var account
-    /// The last history read, so another copy of the page (a deck card, a transition) draws it at once.
+    /// The last history read, so the next opening of the sheet draws it at once.
     private static var cache: (topSites: [HistoryStore.Entry], recent: [HistoryStore.Entry])?
     @State private var topSites = Self.cache?.topSites ?? []
     @State private var recent = Self.cache?.recent ?? []
@@ -33,17 +26,7 @@ struct StartPage: View {
     ].compactMap(URL.init(string:))
 
     var body: some View {
-        Group {
-            if isPreview {
-                // Where the live page last had its content, so a card and its page line up.
-                content
-                    .offset(y: StartPageScroll.shared.tops[spaceID] ?? insets.top)
-                    .frame(maxHeight: .infinity, alignment: .top)
-            } else {
-                scrolling
-            }
-        }
-        .background(background)
+        scrolling
         .sheet(isPresented: $showSignIn) { SignInView() }
         .task(id: spaceID) {
             defer { loaded = true }
@@ -62,25 +45,13 @@ struct StartPage: View {
 
 
     private var scrolling: some View {
-        ScrollView {
-            content
-                // Where the content's top is on screen, the page being full screen: what a preview copies.
-                // Read globally; scroll-relative values left out an inset that differs between devices.
-                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: {
-                    if onPullUp == nil { StartPageScroll.shared.tops[spaceID] = $0 }
-                }
-        }
-            // The status bar's inset as the scroll view's, not the content's: the refresh spinner sits at
-            // the top of that inset, which had put it behind the Dynamic Island.
-            .safeAreaPadding(.top, insets.top)
+        ScrollView { content }
             .scrollIndicators(.hidden)
-            // Pull down for Zen's latest pins and essentials; not on the search sheet, where it closes the sheet.
-            .refreshable(isEnabled: onPullUp == nil && account.isSignedIn) { await account.sync() }
-            // On the search sheet the keyboard stays while scrolling, as in Lens.
+            // The keyboard stays while scrolling, as in Lens.
             .scrollDismissesKeyboard(.never)
             // Any pull up once past the top, not only the first: back at the low height the list stays scrolled.
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: {
-                if $1 > $0, $1 > 40 { onPullUp?() }
+                if $1 > $0, $1 > 40 { onPullUp() }
             }
     }
 
@@ -126,7 +97,7 @@ struct StartPage: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 24)
-        .padding(.bottom, insets.bottom + 80)
+        .padding(.bottom, 80)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -250,40 +221,17 @@ struct StartPage: View {
     }
 }
 
-private extension View {
-    @ViewBuilder func refreshable(isEnabled: Bool, action: @escaping @Sendable () async -> Void) -> some View {
-        if isEnabled { refreshable(action: action) } else { self }
-    }
-}
-
-/// Where the live start page of each workspace has its content, for its previews.
-@MainActor
-@Observable
-final class StartPageScroll {
-    static let shared = StartPageScroll()
-    /// The content's top edge on screen, per workspace.
-    var tops: [String?: CGFloat] = [:]
-}
-
-/// The start page drawn at full-screen size and scaled to fit, top-aligned: what a deck card and the
-/// deck transitions show for a tab without a page, which has no snapshot.
-struct StartPagePreview: View {
-    let spaceID: String?
-
+/// What a tab without a page shows, and its deck card: the search sheet has the start page, so this
+/// stays quiet. Sized by width from the top, like a snapshot, so card and page match mid-transition.
+struct EmptyTab: View {
     var body: some View {
+        let mark = Color(.quaternaryLabel)
         GeometryReader { geo in
-            let window = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.keyWindow
-            let screen = window?.bounds.size ?? geo.size
-            let scale = geo.size.width / max(screen.width, 1)
-            StartPage(spaceID: spaceID,
-                      insets: EdgeInsets(top: window?.safeAreaInsets.top ?? 0, leading: 0,
-                                         bottom: window?.safeAreaInsets.bottom ?? 0, trailing: 0),
-                      isPreview: true,
-                      onOpen: { _ in })
-                .frame(width: screen.width, height: geo.size.height / max(scale, 0.01))
-                .scaleEffect(scale, anchor: .topLeading)
-                .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+            let side = geo.size.width * 0.16
+            SprigMark(left: mark, right: mark, stem: mark)
+                .frame(width: side, height: side)
+                .position(x: geo.size.width / 2, y: geo.size.width * 0.95)
         }
-        .allowsHitTesting(false)
+        .background(Color(.systemGroupedBackground))
     }
 }

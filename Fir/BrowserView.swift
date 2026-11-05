@@ -211,14 +211,13 @@ struct BrowserView: View {
                         .offset(x: swipeX + screen.width + Self.swipeGap)
                 } else if swipeX != 0, let neighbour = swipeNeighbour {
                     PageImage(image: neighbour.snapshot, host: neighbour.isPrivate ? nil : neighbour.url?.host(),
-                              blank: neighbour.url == nil,
-                              spaceID: neighbour.spaceID)
+                              blank: neighbour.url == nil)
                         .frame(width: screen.width, height: screen.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
                         .offset(x: swipeX + (swipeX > 0 ? -1 : 1) * (screen.width + Self.swipeGap))
                 }
                 PageImage(image: cover, view: coverView, host: browser.selected.isPrivate ? nil : browser.selected.url?.host(),
-                          blank: browser.selected.url == nil, spaceID: browser.selected.spaceID)
+                          blank: browser.selected.url == nil)
                     .frame(width: screen.width, height: screen.height)
                     .clipShape(PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k))
                     // The card's shadow, growing in as the page shrinks: without it the shadow blinked out
@@ -704,16 +703,15 @@ private struct PageImage: View {
     let image: UIImage?
     var view: UIView? = nil
     let host: String?
-    /// The start page, which has no snapshot: drawn itself, not a blank web page's white.
+    /// A tab without a page, which has no snapshot: drawn itself, not a blank web page's white.
     var blank = false
-    var spaceID: String? = nil
 
     var body: some View {
         Color.white.overlay(alignment: .top) {
             if let image {
                 Image(uiImage: image).resizable().scaledToFit()
             } else if blank {
-                StartPagePreview(spaceID: spaceID)
+                EmptyTab()
             } else if view == nil {
                 SiteIcon(host: host, size: 56).padding(.top, 180)
             }
@@ -890,11 +888,7 @@ private struct PageView: View {
                     .opacity(liveHidden ? 0 : 1)
                     .animation(nil, value: liveHidden)
                 if tab.url == nil {
-                    StartPage(spaceID: tab.spaceID,
-                              insets: landscape
-                                  ? EdgeInsets(top: insets.top + topChromeHeight, leading: 0, bottom: insets.bottom, trailing: 0)
-                                  : EdgeInsets(top: insets.top, leading: 0, bottom: Self.barHeight + insets.bottom, trailing: 0),
-                              onOpen: tab.load)
+                    EmptyTab()
                         .opacity(liveHidden ? 0 : 1)
                         .animation(nil, value: liveHidden)
                 }

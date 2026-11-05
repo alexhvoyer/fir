@@ -72,7 +72,7 @@ struct NewTabView: View {
             results
             .padding(.top, 8)
             .shown(!showsStartPage)
-            StartPage(spaceID: newTabSpace, insets: EdgeInsets(), background: .clear, onPullUp: expand) {
+            StartPage(spaceID: newTabSpace, onPullUp: expand) {
                 open($0)
             }
             .shown(showsStartPage)
