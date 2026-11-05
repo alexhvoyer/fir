@@ -52,7 +52,10 @@ struct FirApp: App {
                     QuickAction.handler = { browser.searchRequested = $0 == .newPrivateTab ? .privateTab : .tab }
                 }
                 #if DEBUG
-                .task { FrameMeter.shared.start() }
+                .task {
+                    // The frame meter's 120 Hz display link would itself show in the CPU reading.
+                    if ProcessInfo.processInfo.environment["FIR_CPU"] != nil { CPUMeter.start() } else { FrameMeter.shared.start() }
+                }
                 #endif
                 .task { await ContentBlocker.shared.start() }
                 .task { await ExtensionManager.shared.start(browser: browser) }
