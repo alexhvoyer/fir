@@ -82,7 +82,8 @@ struct ZenWorkspaces {
             let pointing = byId
                 .filter { id, entry in
                     entry.data["workspaceUuid"] as? String == uuid
-                        && entry.data["folderId"] as? String == nil
+                        // A folder's record names itself as `folderId`.
+                        && (entry.kind == "folder" || entry.data["folderId"] as? String == nil)
                         && entry.data["parentFolderId"] as? String == nil
                         && entry.data["essential"] as? Bool != true
                         && !ordered.contains(id)
@@ -92,7 +93,13 @@ struct ZenWorkspaces {
             for child in ordered + pointing {
                 if byId[child]?.kind == "folder" {
                     let name = byId[child]?.data["name"] as? String ?? "Folder"
-                    folders.append(Folder(id: child, name: name, tabs: tabs(under: child)))
+                    // A tab another device put in the folder names it before the folder's list catches up.
+                    let listed = tabs(under: child)
+                    let joined = byId
+                        .filter { $0.value.kind == "tab" && $0.value.data["folderId"] as? String == child }
+                        .map(\.key).sorted().compactMap(tab)
+                        .filter { joined in !listed.contains { $0.id == joined.id } }
+                    folders.append(Folder(id: child, name: name, tabs: listed + joined))
                 } else {
                     looseTabs += tabs(under: child)
                 }

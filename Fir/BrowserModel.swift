@@ -122,6 +122,13 @@ final class BrowserTab: NSObject, Identifiable {
     /// Its folder is gone from Zen while it is in front: it stays, as an ordinary tab.
     func leaveZenFolder() { fromZenFolder = false }
 
+    /// Put in a Zen folder as the tab record `id`, pinned there as Zen's folder tabs are.
+    func joinZenFolder(as id: String) {
+        zenPinID = id
+        isPinned = true
+        fromZenFolder = true
+    }
+
     /// Private tabs leave nothing on disk: not their session, snapshots or site icons.
     var isPrivate: Bool { spaceID == BrowserModel.privateSpace }
 

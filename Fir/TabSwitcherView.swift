@@ -105,7 +105,11 @@ struct TabSwitcherView: View {
                     if let zen, let current {
                         ZenSpaceHeader(space: current, essentials: zen.essentials(in: current), onOpen: open)
                     }
-                    if live { deck } else { deckPreview(tabs) }
+                    Group {
+                        if live { deck } else { deckPreview(tabs) }
+                    }
+                    // Room for an open folder's name over its card's title.
+                    .padding(.top, current == nil ? 0 : 24)
                 }
             }
         }

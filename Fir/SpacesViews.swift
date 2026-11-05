@@ -375,6 +375,8 @@ struct ZenSpaceHeader: View {
             Text([space.icon, space.name].compactMap { $0 }.joined(separator: " "))
                 .font(.brandHeading(.title2))
                 .lineLimit(1)
+                // Clear of the settings button, whose row the title shares.
+                .padding(.trailing, 64)
             // On its side the deck has no height to spare for the pins.
             if !pins.isEmpty, !landscape {
                 PinGrid(urls: pins.map { ($0.id, $0.url) }, removeTitle: { id in
@@ -383,6 +385,8 @@ struct ZenSpaceHeader: View {
             }
         }
         .padding(.horizontal, 20)
+        // Up beside the settings button, leaving the deck room for a folder's name above its cards.
+        .padding(.top, -40)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(alignment: .top) {
             LinearGradient(colors: [(space.color ?? .clear).opacity(0.35), .clear], startPoint: .top, endPoint: .bottom)

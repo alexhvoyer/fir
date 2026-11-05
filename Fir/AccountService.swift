@@ -211,20 +211,10 @@ final class AccountService {
     /// Adds a page to Zen as its own "Pin Tab" or "Add to Essentials" would: one new tab record in the
     /// "spaces" collection, which Zen creates on its next sync. A pin belongs to `space`; an essential to
     /// the space's container, so it shows in every space using it. Returns the record id.
-    func addToZen(_ url: URL, title: String, in space: ZenWorkspaces.Space, essential: Bool) async -> String? {
+    func addToZen(_ url: URL, title: String, in space: ZenWorkspaces.Space, essential: Bool,
+                  id: String = AccountService.newRecordID(), folderID: String? = nil) async -> String? {
         guard let manager else { return nil }
-        // Zen's own id format: milliseconds, then a bare UUID.
-        let id = "\(Int(Date.now.timeIntervalSince1970 * 1000))-\(UUID().uuidString.lowercased())"
-        let container: Any = space.container == ZenWorkspaces.defaultContainer ? NSNull() : space.container
-        let record: [String: Any] = [
-            "id": id, "kind": "tab",
-            "data": [
-                "tabId": id, "url": url.absoluteString, "title": title, "icon": NSNull(),
-                "containerGuid": container, "essential": essential, "pinned": true,
-                "workspaceUuid": essential ? NSNull() : space.id as Any, "folderId": NSNull(), "staticLabel": NSNull(),
-                "hasStaticIcon": false, "defaultContainer": false,
-            ] as [String: Any],
-        ]
+        let record = Self.tabRecord(id: id, url: url, title: title, in: space, essential: essential, folderID: folderID)
         pendingAdds[id] = (record, essential ? space.container : nil)
         rebuildSpaces()
         do {
@@ -236,6 +226,54 @@ final class AccountService {
             spacesError = "\(error)"
             return nil
         }
+    }
+
+    /// Zen's own id format: milliseconds, then a bare UUID.
+    nonisolated static func newRecordID() -> String {
+        "\(Int(Date.now.timeIntervalSince1970 * 1000))-\(UUID().uuidString.lowercased())"
+    }
+
+    /// A new Zen folder holding one page, sent in one batch: Zen applies folders before tabs, so the tab
+    /// lands inside it. False when the server didn't take both.
+    func createZenFolder(id: String, named name: String, in space: ZenWorkspaces.Space,
+                         tabID: String, url: URL, title: String) async -> Bool {
+        guard let manager else { return false }
+        let folder: [String: Any] = [
+            "id": id, "kind": "folder",
+            "data": [
+                "folderId": id, "name": name, "icon": NSNull(), "workspaceUuid": space.id,
+                "parentFolderId": NSNull(), "live": NSNull(), "children": [tabID],
+            ] as [String: Any],
+        ]
+        let tab = Self.tabRecord(id: tabID, url: url, title: title, in: space, essential: false, folderID: id)
+        pendingAdds[id] = (folder, nil)
+        pendingAdds[tabID] = (tab, nil)
+        rebuildSpaces()
+        do {
+            try await SyncStorageReader(auth: RemoteTabsSync.authInfo(for: manager)).upload([folder, tab], to: "spaces")
+            return true
+        } catch {
+            pendingAdds[id] = nil
+            pendingAdds[tabID] = nil
+            rebuildSpaces()
+            spacesError = "\(error)"
+            return false
+        }
+    }
+
+    /// A pinned tab, an essential, or a folder's tab, as Zen's own sync writes one.
+    private static func tabRecord(id: String, url: URL, title: String, in space: ZenWorkspaces.Space,
+                                  essential: Bool, folderID: String?) -> [String: Any] {
+        let container: Any = space.container == ZenWorkspaces.defaultContainer ? NSNull() : space.container
+        return [
+            "id": id, "kind": "tab",
+            "data": [
+                "tabId": id, "url": url.absoluteString, "title": title, "icon": NSNull(),
+                "containerGuid": container, "essential": essential, "pinned": true,
+                "workspaceUuid": essential ? NSNull() : space.id as Any, "folderId": folderID ?? NSNull() as Any,
+                "staticLabel": NSNull(), "hasStaticIcon": false, "defaultContainer": false,
+            ] as [String: Any],
+        ]
     }
 
     /// Removes a pin or essential this app added; Zen closes the tab when the tombstone reaches it.
