@@ -613,10 +613,11 @@ struct WorkspacesSettingsView: View {
                         }
                         // Rows read as rows, not as accent-coloured buttons.
                         .tint(.primary)
-                        .swipeActions {
+                        // No full swipe and no destructive role: either one animated the row away before the
+                        // confirmation, and it came back once the alert showed.
+                        .swipeActions(allowsFullSwipe: false) {
                             if zen.spaces.count > 1 {
-                                Button("Delete", systemImage: "trash", role: .destructive) { deleting = space }
-                                    // Red, not the row's own tint.
+                                Button("Delete", systemImage: "trash") { deleting = space }
                                     .tint(.red)
                             }
                         }
@@ -630,9 +631,11 @@ struct WorkspacesSettingsView: View {
                     Text("These are your Zen workspaces. Changes here reach Zen on your computers too.")
                 }
             } else {
-                ContentUnavailableView("No Zen Workspaces", systemImage: "square.grid.2x2",
-                                       description: Text("Sign in under Sync and turn on Zen Workspaces to see them here."))
+                Section {
+                    Text("Turn on Zen Workspaces under Sync to see and edit them here.").foregroundStyle(.secondary)
+                }
             }
+            DevicesSection()
         }
         .navigationTitle("Workspaces")
         // Inline like the settings it opens from: a large title, shown first on a fresh path, sat over the list.
@@ -748,6 +751,40 @@ private struct WorkspaceEditor: View {
             } else {
                 failed = true
                 saving = false
+            }
+        }
+    }
+}
+
+/// Other devices' open tabs, each a page of the switcher like a workspace; one switched off is left out.
+private struct DevicesSection: View {
+    @Environment(AccountService.self) private var account
+    @AppStorage(SettingsKey.syncTabs) private var syncTabs = true
+
+    var body: some View {
+        if syncTabs, !account.remoteClients.isEmpty {
+            Section {
+                ForEach(account.remoteClients, id: \.clientId) { client in
+                    Toggle(isOn: Binding(
+                        get: { !account.hiddenDevices.contains(client.clientId) },
+                        set: { account.setTabsShown($0, for: client.clientId) }
+                    )) {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(NewTabView.shortName(client.clientName))
+                                Text("\(client.remoteTabs.count) tabs, synced \(Date(timeIntervalSince1970: Double(client.lastModified) / 1000), format: .relative(presentation: .named))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            Image(systemName: client.deviceType == .mobile ? "smartphone" : "laptopcomputer")
+                        }
+                    }
+                }
+            } header: {
+                Text("Devices")
+            } footer: {
+                Text("Tabs open on your other devices, beside the workspaces in the switcher. Devices not synced in two weeks are hidden anyway.")
             }
         }
     }

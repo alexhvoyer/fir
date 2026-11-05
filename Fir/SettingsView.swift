@@ -27,9 +27,9 @@ struct SettingsView: View {
                 Section {
                     link("Sync", icon: "arrow.triangle.2.circlepath", color: .orange,
                          detail: account.email ?? (account.isSignedIn ? "Signed in" : "Off")) { SyncSettingsView() }
-                    if account.zenWorkspaces != nil {
+                    if account.isSignedIn {
                         link("Workspaces", icon: "square.grid.2x2.fill", color: .mint,
-                             detail: "\(account.zenWorkspaces?.spaces.count ?? 0)") { WorkspacesSettingsView() }
+                             detail: account.zenWorkspaces.map { "\($0.spaces.count)" }) { WorkspacesSettingsView() }
                     }
                     link("Tabs", icon: "square.on.square", color: .orange) {
                         TabsSettingsView { dismiss(); onOpenPage() }
@@ -205,48 +205,6 @@ private struct AppearanceSettingsView: View {
 }
 
 /// Open tabs from other devices: the engine itself, then which devices' tabs show here.
-private struct OpenTabsSettingsView: View {
-    @Environment(AccountService.self) private var account
-    @AppStorage(SettingsKey.syncTabs) private var syncTabs = true
-
-    var body: some View {
-        List {
-            Section {
-                Toggle("Sync Open Tabs", isOn: $syncTabs)
-            } footer: {
-                Text("Tabs open on your other devices, shown in the tab overview and when searching.")
-            }
-            if syncTabs, !account.remoteClients.isEmpty {
-                Section {
-                    ForEach(account.remoteClients, id: \.clientId) { client in
-                        Toggle(isOn: Binding(
-                            get: { !account.hiddenDevices.contains(client.clientId) },
-                            set: { account.setTabsShown($0, for: client.clientId) }
-                        )) {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(NewTabView.shortName(client.clientName))
-                                    Text("\(client.remoteTabs.count) tabs, synced \(Date(timeIntervalSince1970: Double(client.lastModified) / 1000), format: .relative(presentation: .named))")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            } icon: {
-                                Image(systemName: client.deviceType == .mobile ? "smartphone" : "laptopcomputer")
-                            }
-                        }
-                    }
-                } header: {
-                    Text("Devices")
-                } footer: {
-                    Text("Devices not synced in two weeks are hidden anyway.")
-                }
-            }
-        }
-        .navigationTitle("Open Tabs")
-        .onChange(of: syncTabs) { Task { await account.sync() } }
-    }
-}
-
 private struct SyncSettingsView: View {
     @Environment(AccountService.self) private var account
     @AppStorage(SettingsKey.syncTabs) private var syncTabs = true
@@ -274,18 +232,14 @@ private struct SyncSettingsView: View {
                     LabeledContent("Devices", value: "\(account.remoteClients.count)")
                 }
                 Section {
-                    NavigationLink {
-                        OpenTabsSettingsView()
-                    } label: {
-                        LabeledContent("Open Tabs", value: syncTabs ? "On" : "Off")
-                    }
+                    Toggle("Open Tabs", isOn: $syncTabs)
                     Toggle("History", isOn: $syncHistory)
                     Toggle("Zen Workspaces", isOn: $syncWorkspaces)
                     Toggle("Passwords", isOn: $syncPasswords)
                 } header: {
                     Text("Sync on This iPhone")
                 } footer: {
-                    Text("Turning one off stops it on this iPhone only; Zen keeps syncing it.")
+                    Text("Turning one off stops it on this iPhone only; Zen keeps syncing it. Which devices' tabs show is under Workspaces.")
                 }
                 Section {
                     Button("Sync Now") { Task { await account.sync() } }
@@ -307,7 +261,7 @@ private struct SyncSettingsView: View {
             }
         }
         .navigationTitle("Sync")
-        .onChange(of: [syncHistory, syncWorkspaces, syncPasswords]) { Task { await account.sync() } }
+        .onChange(of: [syncTabs, syncHistory, syncWorkspaces, syncPasswords]) { Task { await account.sync() } }
         .sheet(isPresented: $showSignIn) { SignInView() }
     }
 }
