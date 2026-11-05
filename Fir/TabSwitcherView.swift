@@ -461,21 +461,17 @@ private struct TabCard: View {
                             Image(systemName: "pin.fill").font(.caption).foregroundStyle(.secondary)
                         }
                         if let tabMenu {
-                            Menu {
-                                if let space {
-                                    FolderMenuItems(tab: tab, space: space, editor: tabMenu.editor) { tabMenu.newFolder(tab) }
-                                    Divider()
+                            Image(systemName: "chevron.down")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 28, height: 28)
+                                .menuOverlay {
+                                    if let space {
+                                        FolderMenuItems(tab: tab, space: space, editor: tabMenu.editor) { tabMenu.newFolder(tab) }
+                                        Divider()
+                                    }
+                                    Button("Close Tab", systemImage: "xmark", role: .destructive) { tabMenu.close(tab) }
                                 }
-                                Button("Close Tab", systemImage: "xmark", role: .destructive) { tabMenu.close(tab) }
-                            } label: {
-                                Image(systemName: "chevron.down")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 28, height: 28)
-                                    .contentShape(.rect)
-                            }
-                            // Grey like the folder's chevron, not the accent a menu's label takes.
-                            .tint(.secondary)
                         }
                     }
                     // A folder's card names its folder above the title, without moving the card.
@@ -515,7 +511,14 @@ private struct TabCard: View {
 
     /// The folder's name with a chevron that opens what can be done with it.
     private func folderLabel(_ folder: ZenWorkspaces.Folder, detail: String?, font: Font) -> some View {
-        Menu {
+        HStack(spacing: 6) {
+            Image(systemName: "folder.fill").foregroundStyle(.secondary)
+            Text(folder.name).lineLimit(1)
+            if let detail { Text(detail).foregroundStyle(.secondary) }
+            Image(systemName: "chevron.down").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+        }
+        .font(font)
+        .menuOverlay {
             if let folderMenu {
                 if folderMenu.isExpanded(folder) {
                     Button("Collapse", systemImage: "rectangle.compress.vertical") { folderMenu.collapse(folder) }
@@ -526,18 +529,18 @@ private struct TabCard: View {
                     Button("Close Opened Tabs", systemImage: "xmark", role: .destructive) { folderMenu.closeOpened(folder) }
                 }
             }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "folder.fill").foregroundStyle(.secondary)
-                Text(folder.name).lineLimit(1)
-                if let detail { Text(detail).foregroundStyle(.secondary) }
-                Image(systemName: "chevron.down").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            }
-            .font(font)
-            .contentShape(.rect)
         }
-        .foregroundStyle(.primary)
-        .disabled(folderMenu == nil)
+        .allowsHitTesting(folderMenu != nil)
+    }
+}
+
+extension View {
+    /// A menu opened from this view, with the view drawn outside the menu: a menu hides its own label while
+    /// open, and in the deck the label stayed blank for seconds after it closed.
+    func menuOverlay<Items: View>(@ViewBuilder _ items: @escaping () -> Items) -> some View {
+        overlay {
+            Menu(content: items) { Color.clear.contentShape(.rect) }
+        }
     }
 }
 
