@@ -224,12 +224,30 @@ struct StartPage: View {
 /// What a tab without a page shows, and its deck card: the search sheet has the start page, so this
 /// stays quiet. Sized by width from the top, like a snapshot, so card and page match mid-transition.
 struct EmptyTab: View {
+    /// The open tab only: a deck card's tap opens the tab instead.
+    var swaysOnTap = false
+    @State private var taps = 0
+
     var body: some View {
         let mark = Color(.quaternaryLabel)
         GeometryReader { geo in
             let side = geo.size.width * 0.16
             SprigMark(left: mark, right: mark, stem: mark)
                 .frame(width: side, height: side)
+                // A twig flicked at its tip: swings, overshoots back and settles, pivoting on the stem's base.
+                .keyframeAnimator(initialValue: 0.0, trigger: taps) { sprig, angle in
+                    sprig.rotationEffect(.degrees(angle), anchor: .bottomLeading)
+                } keyframes: { _ in
+                    SpringKeyframe(-14, duration: 0.18)
+                    SpringKeyframe(9, duration: 0.28)
+                    SpringKeyframe(-4, duration: 0.28)
+                    SpringKeyframe(0, duration: 0.4)
+                }
+                .padding(24)
+                .contentShape(.rect)
+                .onTapGesture { taps += 1 }
+                .allowsHitTesting(swaysOnTap)
+                .sensoryFeedback(.impact(weight: .light, intensity: 0.6), trigger: taps)
                 .position(x: geo.size.width / 2, y: geo.size.width * 0.95)
         }
         .background(Color(.systemGroupedBackground))

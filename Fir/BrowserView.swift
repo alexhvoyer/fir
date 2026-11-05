@@ -888,7 +888,7 @@ private struct PageView: View {
                     .opacity(liveHidden ? 0 : 1)
                     .animation(nil, value: liveHidden)
                 if tab.url == nil {
-                    EmptyTab()
+                    EmptyTab(swaysOnTap: true)
                         .opacity(liveHidden ? 0 : 1)
                         .animation(nil, value: liveHidden)
                 }
