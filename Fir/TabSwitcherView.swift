@@ -16,6 +16,8 @@ struct TabSwitcherView: View {
     let onSettings: () -> Void
     /// Settings opened on Workspaces, from a long press on the settings button.
     var onEditWorkspaces: () -> Void = {}
+    /// The camera column's width when the buttons go there instead of the bars; 0 for none.
+    var railWidth: CGFloat = 0
     /// A page is growing out of its card: the deck stays put, as in Safari, and centres on the
     /// selected tab only once the page covers it.
     var holdsPosition = false
@@ -50,6 +52,7 @@ struct TabSwitcherView: View {
             }
         }
         .safeAreaInset(edge: .top) { topBar }
+
         .alert("Delete \(deletingFolder?.name ?? "Folder")?", isPresented: Binding(
             get: { deletingFolder != nil }, set: { if !$0 { deletingFolder = nil } }
         ), presenting: deletingFolder) { folder in
@@ -433,19 +436,33 @@ struct TabSwitcherView: View {
     private var topBar: some View {
         HStack {
             Spacer()
-            Button("Settings", systemImage: "gear", action: onSettings)
-                .labelStyle(.iconOnly)
-                .frame(width: 52, height: 52)
-                .glassEffect(.regular.interactive(), in: .circle)
-                .contextMenu {
-                    if account.zenWorkspaces != nil {
-                        Button("Edit Workspaces…", systemImage: "square.grid.2x2", action: onEditWorkspaces)
-                    }
-                }
+            if railWidth == 0 { settingsButton }
         }
-        .font(.title3)
-        .foregroundStyle(.primary)
+        .frame(minHeight: 52)
         .padding(.horizontal, 20)
+    }
+
+    private var settingsButton: some View {
+        Button("Settings", systemImage: "gear", action: onSettings)
+            .labelStyle(.iconOnly)
+            .frame(width: 52, height: 52)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .contextMenu {
+                if account.zenWorkspaces != nil {
+                    Button("Edit Workspaces…", systemImage: "square.grid.2x2", action: onEditWorkspaces)
+                }
+            }
+            .font(.title3)
+            .foregroundStyle(.primary)
+    }
+
+    private var newTabButton: some View {
+        Button("New Tab", systemImage: "plus", action: onNewTab)
+            .labelStyle(.iconOnly)
+            .font(.title3)
+            .frame(width: 48, height: 48)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .foregroundStyle(.primary)
     }
 
     private var bottomBar: some View {
@@ -458,12 +475,18 @@ struct TabSwitcherView: View {
                 } else {
                     Spacer()
                 }
-                Button("New Tab", systemImage: "plus", action: onNewTab)
-                    .labelStyle(.iconOnly)
-                    .font(.title3)
-                    .frame(width: 48, height: 48)
-                    .glassEffect(.regular.interactive(), in: .circle)
-                    .foregroundStyle(.primary)
+                if railWidth == 0 { newTabButton }
+        }
+        // In the camera column the deck is padded clear of, level with the bar; the top is the camera's.
+        .overlay(alignment: .bottomTrailing) {
+            if railWidth > 0 {
+                VStack(spacing: 10) {
+                    settingsButton
+                    newTabButton
+                }
+                .frame(width: 52)
+                .offset(x: 16 + railWidth / 2 + 26)
+            }
         }
         // Same size and place as the page's bar, so going to the deck reads as one bar changing.
         .padding(.horizontal, 16)
@@ -851,7 +874,7 @@ private struct SpacePager<Page: View>: View, Animatable {
 /// Spares the hidden deck a re-render on every touch of a bar lift or tab swipe.
 extension TabSwitcherView: Equatable {
     nonisolated static func == (a: Self, b: Self) -> Bool {
-        a.hiddenTab == b.hiddenTab && a.holdsPosition == b.holdsPosition
+        a.hiddenTab == b.hiddenTab && a.holdsPosition == b.holdsPosition && a.railWidth == b.railWidth
     }
 }
 

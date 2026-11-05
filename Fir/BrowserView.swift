@@ -61,6 +61,12 @@ struct BrowserView: View {
     private let swipeCommit = Animation.spring(response: 0.32, dampingFraction: 0.92)
     static let swipeGap: CGFloat = 10
 
+    /// A camera column down one side only, as on the iPhone Duo's outer screen: Apple lays bars out
+    /// beside it, so the buttons move there. A notched iPhone on its side has both sides inset.
+    static func sideRail(_ insets: EdgeInsets, landscape: Bool) -> Bool {
+        !landscape && insets.trailing >= 40 && insets.leading < 20
+    }
+
     var body: some View {
         // Read outside the ignored safe area: inside it the insets come back as zero. Without the
         // keyboard, which would lift the bar and resize the page while the find bar is open.
@@ -110,6 +116,7 @@ struct BrowserView: View {
                 onNewTab: { search = .newTab },
                 onSettings: { settings = .main },
                 onEditWorkspaces: { settings = .workspaces },
+                railWidth: Self.sideRail(safeInsets, landscape: screen.width > screen.height) ? safeInsets.trailing : 0,
                 holdsPosition: opening
             )
             .equatable()
@@ -952,6 +959,23 @@ private struct PageView: View {
                         bar.padding(.bottom, insets.bottom)
                             .offset(y: collapse * collapseDrop(insets))
                     }
+                    if sideRail {
+                        // As the system lays out bars beside a side camera: the tab buttons go in its column.
+                        VStack(spacing: 10) {
+                            Spacer(minLength: 0)
+                            iconButton("plus") { search = .newTab }
+                                .frame(width: 48, height: 48)
+                                .glassEffect(.regular.interactive(), in: .circle)
+                            tabsButton
+                                .glassEffect(.regular.interactive(), in: .circle)
+                        }
+                        .modifier(FadeInPlace(progress: collapse))
+                        .allowsHitTesting(collapse < 0.5)
+                        .opacity(chromeOpacity)
+                        .frame(width: insets.trailing)
+                        .padding(.bottom, insets.bottom + 8)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
                 }
         }
         .ignoresSafeArea()
@@ -1225,7 +1249,9 @@ private struct PageView: View {
         .animation(.snappy, value: tab.canGoForward)
     }
 
-    private var trailingWidth: CGFloat { landscape ? 106 : 48 }
+    private var trailingWidth: CGFloat { sideRail ? 0 : landscape ? 106 : 48 }
+
+    private var sideRail: Bool { BrowserView.sideRail(safeInsets, landscape: landscape) }
 
     /// Where a tab's capsule sits in the bar, before any swipe offset.
     /// As shown: `vanish` of its width, kept centred.
@@ -1304,8 +1330,10 @@ private struct PageView: View {
                     .frame(width: 48)
                     .glassEffect(.regular.interactive(), in: .circle)
             }
-            tabsButton
-                .glassEffect(.regular.interactive(), in: .circle)
+            if !sideRail {
+                tabsButton
+                    .glassEffect(.regular.interactive(), in: .circle)
+            }
         }
         .modifier(FadeInPlace(progress: p))
         .allowsHitTesting(p < 0.5)
