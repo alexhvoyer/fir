@@ -61,10 +61,10 @@ struct BrowserView: View {
     private let swipeCommit = Animation.spring(response: 0.32, dampingFraction: 0.92)
     static let swipeGap: CGFloat = 10
 
-    /// A camera column down one side only, as on the iPhone Duo's outer screen: Apple lays bars out
+    /// A camera column down one side only, as on both of the iPhone Duo's screens: Apple lays bars out
     /// beside it, so the buttons move there. A notched iPhone on its side has both sides inset.
-    static func sideRail(_ insets: EdgeInsets, landscape: Bool) -> Bool {
-        !landscape && insets.trailing >= 40 && insets.leading < 20
+    static func sideRail(_ insets: EdgeInsets) -> Bool {
+        insets.trailing >= 40 && insets.leading < 20
     }
 
     var body: some View {
@@ -116,7 +116,7 @@ struct BrowserView: View {
                 onNewTab: { search = .newTab },
                 onSettings: { settings = .main },
                 onEditWorkspaces: { settings = .workspaces },
-                railWidth: Self.sideRail(safeInsets, landscape: screen.width > screen.height) ? safeInsets.trailing : 0,
+                railWidth: Self.sideRail(safeInsets) ? safeInsets.trailing : 0,
                 holdsPosition: opening
             )
             .equatable()
@@ -163,7 +163,9 @@ struct BrowserView: View {
             .allowsHitTesting(pageShown)
         }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { screen = $0 }
-        .environment(\.isLandscape, screen.width > screen.height)
+        // Beside a camera column the bars go in the column, so even the Duo's wide inner screen keeps
+        // the upright layout: no top bar or tab strip over the page.
+        .environment(\.isLandscape, screen.width > screen.height && !Self.sideRail(safeInsets))
         // Over the bottom bar, on the page and on the deck.
         .overlay(alignment: .bottom) {
             UndoCloseCapsule()
@@ -1251,7 +1253,7 @@ private struct PageView: View {
 
     private var trailingWidth: CGFloat { sideRail ? 0 : landscape ? 106 : 48 }
 
-    private var sideRail: Bool { BrowserView.sideRail(safeInsets, landscape: landscape) }
+    private var sideRail: Bool { BrowserView.sideRail(safeInsets) }
 
     /// Where a tab's capsule sits in the bar, before any swipe offset.
     /// As shown: `vanish` of its width, kept centred.
