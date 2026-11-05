@@ -46,6 +46,13 @@ struct BrowserView: View {
     @State private var arriving = false
     /// Counts bar swipes that switched tabs, for their haptic tick.
     @State private var swipeCommits = 0
+    @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = false
+
+    /// A tab without a page is on screen, nothing over it: search opens, as there is nothing else to do.
+    /// Not while Undo is offered, which the sheet would cover.
+    private var blankShown: Bool {
+        pageShown && !transitioning && browser.selected.url == nil && browser.undo == nil && onboardingDone
+    }
 
     // Safari's curve: a quick start and a soft settle, full screen in about 0.2 s on a 2026 recording.
     // A fixed-duration ease felt even-paced.
@@ -179,6 +186,10 @@ struct BrowserView: View {
         }
         // A restored tab's snapshot is held over it until it paints; another tab must not show under it.
         .onChange(of: browser.selectedID) { veil = nil }
+        // On arrival only: a dismissed search stays down, leaving the deck and settings reachable.
+        .onChange(of: blankShown, initial: true) {
+            if blankShown, search == nil, !showSettings { search = .newTab }
+        }
     }
 
     /// New-tab search asked for from outside, in Private or else the current tab's workspace; a search
