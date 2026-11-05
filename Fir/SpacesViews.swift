@@ -437,3 +437,92 @@ struct PrivateLockedPage: View {
         }
     }
 }
+
+/// Puts pages in Zen folders and takes them out, in Zen too; shared by the page's menu and the deck's cards.
+@MainActor
+struct ZenFolderEditor {
+    let account: AccountService
+    let browser: BrowserModel
+
+    /// Puts the page in a Zen folder, in Zen too. A pin it already had there moves into the folder.
+    func addToFolder(_ tab: BrowserTab, folder: String, in space: ZenWorkspaces.Space) {
+        guard let url = tab.url else { return }
+        let id = AccountService.newRecordID()
+        let oldPin = tab.zenPinID
+        withAnimation(.snappy) { tab.joinZenFolder(as: id) }
+        browser.save()
+        Task {
+            if await account.addToZen(url, title: tab.title, in: space, essential: false, id: id, folderID: folder) != nil {
+                if let oldPin { await account.removeFromZen(oldPin) }
+            } else {
+                restorePin(tab, to: oldPin)
+            }
+            await account.sync()
+        }
+    }
+
+    /// A new Zen folder with this page in it, in Zen too.
+    func createFolder(named name: String, with tab: BrowserTab, in space: ZenWorkspaces.Space) {
+        guard let url = tab.url else { return }
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        let tabID = AccountService.newRecordID()
+        let oldPin = tab.zenPinID
+        withAnimation(.snappy) { tab.joinZenFolder(as: tabID) }
+        browser.save()
+        Task {
+            let created = await account.createZenFolder(id: AccountService.newRecordID(), named: trimmed.isEmpty ? "Folder" : trimmed,
+                                                        in: space, tabID: tabID, url: url, title: tab.title)
+            if created {
+                if let oldPin { await account.removeFromZen(oldPin) }
+            } else {
+                restorePin(tab, to: oldPin)
+            }
+            await account.sync()
+        }
+    }
+
+    /// Takes the page out of its Zen folder, in Zen too, where the tab closes. It stays open here.
+    func removeFromFolder(_ tab: BrowserTab) {
+        guard let id = tab.zenPinID else { return }
+        withAnimation(.snappy) { restorePin(tab, to: nil) }
+        Task {
+            // Kept in the folder if Zen still has it, so the two don't disagree.
+            if !(await account.removeFromZen(id)) {
+                tab.joinZenFolder(as: id)
+                browser.save()
+            }
+            await account.sync()
+        }
+    }
+
+    /// Back to what the tab was before a folder change: its own pin, or none.
+    private func restorePin(_ tab: BrowserTab, to pin: String?) {
+        tab.leaveZenFolder()
+        tab.zenPinID = pin
+        tab.isPinned = pin != nil
+        browser.save()
+    }
+}
+
+/// "Add to Folder" with the workspace's folders and New Folder, or "Remove from Folder" for a folder's tab.
+struct FolderMenuItems: View {
+    let tab: BrowserTab
+    let space: ZenWorkspaces.Space
+    let editor: ZenFolderEditor
+    let onNewFolder: () -> Void
+
+    var body: some View {
+        if tab.fromZenFolder {
+            Button("Remove from Folder", systemImage: "folder.badge.minus", role: .destructive) {
+                editor.removeFromFolder(tab)
+            }
+        } else if tab.url != nil {
+            Menu("Add to Folder", systemImage: "folder.badge.plus") {
+                ForEach(space.folders) { folder in
+                    Button(folder.name, systemImage: "folder") { editor.addToFolder(tab, folder: folder.id, in: space) }
+                }
+                Button("New Folder…", systemImage: "plus", action: onNewFolder)
+            }
+        }
+    }
+}

@@ -1022,7 +1022,7 @@ private struct PageView: View {
             TextField("Name", text: $folderName)
             Button("Create") {
                 if let tab = folderFor, let space = zenSpace(of: tab) {
-                    createFolder(named: folderName, with: tab, in: space)
+                    folderEditor.createFolder(named: folderName, with: tab, in: space)
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -1559,21 +1559,10 @@ private struct PageView: View {
                            systemImage: current.zenEssentialID == nil ? "star" : "star.slash") { toggleEssential(current) }
                 }
             }
-            if current.url != nil, let space = zenSpace(of: current) {
-                if current.fromZenFolder {
-                    Button("Remove from Folder", systemImage: "folder.badge.minus", role: .destructive) {
-                        removeFromFolder(current)
-                    }
-                } else {
-                    Menu("Add to Folder", systemImage: "folder.badge.plus") {
-                        ForEach(space.folders) { folder in
-                            Button(folder.name, systemImage: "folder") { addToFolder(current, folder: folder.id, in: space) }
-                        }
-                        Button("New Folder…", systemImage: "plus") {
-                            folderName = ""
-                            folderFor = current
-                        }
-                    }
+            if let space = zenSpace(of: current) {
+                FolderMenuItems(tab: current, space: space, editor: folderEditor) {
+                    folderName = ""
+                    folderFor = current
                 }
             }
             Divider()
@@ -1595,6 +1584,8 @@ private struct PageView: View {
         }
         .foregroundStyle(.primary)
     }
+
+    private var folderEditor: ZenFolderEditor { ZenFolderEditor(account: account, browser: browser) }
 
     private func zenSpace(of tab: BrowserTab) -> ZenWorkspaces.Space? {
         guard !tab.isPrivate else { return nil }
@@ -1618,65 +1609,6 @@ private struct PageView: View {
             browser.save()
             await account.sync()
         }
-    }
-
-    /// Puts the page in a Zen folder, in Zen too. A pin it already had there moves into the folder.
-    private func addToFolder(_ tab: BrowserTab, folder: String, in space: ZenWorkspaces.Space) {
-        guard let url = tab.url else { return }
-        let id = AccountService.newRecordID()
-        let oldPin = tab.zenPinID
-        withAnimation(.snappy) { tab.joinZenFolder(as: id) }
-        browser.save()
-        Task {
-            if await account.addToZen(url, title: tab.title, in: space, essential: false, id: id, folderID: folder) != nil {
-                if let oldPin { await account.removeFromZen(oldPin) }
-            } else {
-                restorePin(tab, to: oldPin)
-            }
-            await account.sync()
-        }
-    }
-
-    /// A new Zen folder with this page in it, in Zen too.
-    private func createFolder(named name: String, with tab: BrowserTab, in space: ZenWorkspaces.Space) {
-        guard let url = tab.url else { return }
-        let trimmed = name.trimmingCharacters(in: .whitespaces)
-        let tabID = AccountService.newRecordID()
-        let oldPin = tab.zenPinID
-        withAnimation(.snappy) { tab.joinZenFolder(as: tabID) }
-        browser.save()
-        Task {
-            let created = await account.createZenFolder(id: AccountService.newRecordID(), named: trimmed.isEmpty ? "Folder" : trimmed,
-                                                        in: space, tabID: tabID, url: url, title: tab.title)
-            if created {
-                if let oldPin { await account.removeFromZen(oldPin) }
-            } else {
-                restorePin(tab, to: oldPin)
-            }
-            await account.sync()
-        }
-    }
-
-    /// Takes the page out of its Zen folder, in Zen too, where the tab closes. It stays open here.
-    private func removeFromFolder(_ tab: BrowserTab) {
-        guard let id = tab.zenPinID else { return }
-        withAnimation(.snappy) { restorePin(tab, to: nil) }
-        Task {
-            // Kept in the folder if Zen still has it, so the two don't disagree.
-            if !(await account.removeFromZen(id)) {
-                tab.joinZenFolder(as: id)
-                browser.save()
-            }
-            await account.sync()
-        }
-    }
-
-    /// Back to what the tab was before a folder change: its own pin, or none.
-    private func restorePin(_ tab: BrowserTab, to pin: String?) {
-        tab.leaveZenFolder()
-        tab.zenPinID = pin
-        tab.isPinned = pin != nil
-        browser.save()
     }
 
     /// Adds the page to Zen's Essentials of the workspace's container, or takes it off again.

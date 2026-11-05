@@ -29,6 +29,9 @@ struct TabSwitcherView: View {
     @State private var device: String?
     /// The Zen folder laid out as separate cards; every other folder is a stack. The selected tab's opens.
     @State private var expandedFolder: String?
+    /// The card a new Zen folder is being named for.
+    @State private var folderFor: BrowserTab?
+    @State private var folderName = ""
 
     private static let localSpace = "local"
 
@@ -43,6 +46,17 @@ struct TabSwitcherView: View {
             }
         }
         .safeAreaInset(edge: .top) { topBar }
+        .alert("New Folder", isPresented: Binding(get: { folderFor != nil }, set: { if !$0 { folderFor = nil } })) {
+            TextField("Name", text: $folderName)
+            Button("Create") {
+                if let tab = folderFor, let space = zenSpace(of: tab) {
+                    ZenFolderEditor(account: account, browser: browser).createFolder(named: folderName, with: tab, in: space)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The folder appears in Zen too, with this page in it.")
+        }
         .safeAreaInset(edge: .bottom) { bottomBar }
         .background(.regularMaterial)
         // Dark like Safari's private browsing, so it's never mistaken for regular tabs.
@@ -55,6 +69,15 @@ struct TabSwitcherView: View {
         .onChange(of: browser.space) { centerSelected(animated: false) }
         .onChange(of: browser.spaceTabs.map(\.id)) { old, new in
             centerSelected(animated: !Set(old).isDisjoint(with: new))
+        }
+        // A card joining or leaving a folder's stack moves slots: the deck follows the card it was on.
+        .onChange(of: deckLayout.slot) { old, new in
+            let focused = Int(progress.rounded())
+            guard let id = old.first(where: { $0.value == focused })?.key, let slot = new[id] else {
+                progress = min(progress, CGFloat(max(0, deckLayout.count - 1)))
+                return
+            }
+            withAnimation(.smooth(duration: 0.35)) { progress = CGFloat(slot) }
         }
         // A page shrinks back onto its card, so the deck must show that tab's workspace then.
         .onChange(of: hiddenTab) {
@@ -179,6 +202,8 @@ struct TabSwitcherView: View {
                             imageHidden: tab.id == hiddenTab,
                             heading: layout.heading[tab.id] ?? .tab,
                             folderMenu: folderMenu,
+                            tabMenu: tabMenu,
+                            space: zenSpace(of: tab),
                             onFrame: { onCardFrame(tab.id, $0) })
                         .equatable()
                         .modifier(StackDepth(depth: depth))
@@ -239,6 +264,27 @@ struct TabSwitcherView: View {
                 progress = min(progress, CGFloat(layout.count - 1))
             }
         }
+    }
+
+    private func zenSpace(of tab: BrowserTab) -> ZenWorkspaces.Space? {
+        guard !tab.isPrivate else { return nil }
+        return account.zenWorkspaces?.spaces.first { $0.id == tab.spaceID }
+    }
+
+    private var tabMenu: TabMenu {
+        TabMenu(
+            editor: ZenFolderEditor(account: account, browser: browser),
+            newFolder: { tab in
+                folderName = ""
+                folderFor = tab
+            },
+            close: { tab in
+                withAnimation(.smooth(duration: 0.35)) {
+                    browser.close(tab, inPlace: true)
+                    progress = max(0, min(progress.rounded(), CGFloat(deckLayout.count - 1)))
+                }
+            }
+        )
     }
 
     private var folderMenu: FolderMenu {
@@ -396,6 +442,10 @@ private struct TabCard: View {
     let imageHidden: Bool
     var heading: CardHeading = .tab
     var folderMenu: FolderMenu?
+    /// The chevron by a live card's title; off in previews.
+    var tabMenu: TabMenu?
+    /// The Zen workspace the tab is in, for its folders; nil for this iPhone's tabs and private ones.
+    var space: ZenWorkspaces.Space?
     let onFrame: (CGRect) -> Void
 
     var body: some View {
@@ -409,6 +459,23 @@ private struct TabCard: View {
                         Text(tab.title).font(.headline).lineLimit(1)
                         if tab.isPinned, !tab.fromZenFolder {
                             Image(systemName: "pin.fill").font(.caption).foregroundStyle(.secondary)
+                        }
+                        if let tabMenu {
+                            Menu {
+                                if let space {
+                                    FolderMenuItems(tab: tab, space: space, editor: tabMenu.editor) { tabMenu.newFolder(tab) }
+                                    Divider()
+                                }
+                                Button("Close Tab", systemImage: "xmark", role: .destructive) { tabMenu.close(tab) }
+                            } label: {
+                                Image(systemName: "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 28, height: 28)
+                                    .contentShape(.rect)
+                            }
+                            // Grey like the folder's chevron, not the accent a menu's label takes.
+                            .tint(.secondary)
                         }
                     }
                     // A folder's card names its folder above the title, without moving the card.
@@ -479,6 +546,14 @@ enum CardHeading: Equatable {
     case tab
     case stack(ZenWorkspaces.Folder, count: Int)
     case member(ZenWorkspaces.Folder)
+}
+
+/// What the chevron by a card's title can do: folders, and closing.
+@MainActor
+struct TabMenu {
+    let editor: ZenFolderEditor
+    let newFolder: (BrowserTab) -> Void
+    let close: (BrowserTab) -> Void
 }
 
 /// What the chevron by a folder's name can do; the deck owns the state these touch.
@@ -692,6 +767,7 @@ extension TabCard: Equatable {
     nonisolated static func == (a: Self, b: Self) -> Bool {
         a.tab === b.tab && a.width == b.width && a.height == b.height
             && a.titleOpacity == b.titleOpacity && a.imageHidden == b.imageHidden && a.heading == b.heading
-            && (a.folderMenu == nil) == (b.folderMenu == nil)
+            && (a.folderMenu == nil) == (b.folderMenu == nil) && (a.tabMenu == nil) == (b.tabMenu == nil)
+            && a.space?.id == b.space?.id && a.space?.folders == b.space?.folders
     }
 }
