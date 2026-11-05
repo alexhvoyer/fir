@@ -69,8 +69,9 @@ struct ZenWorkspaces {
         }
 
         let layout = byId["layout"]?.data
-        let order = layout?["spaces"] as? [String]
-            ?? byId.filter { $0.value.kind == "space" }.map(\.key).sorted()
+        // Zen's order, then any workspace it hasn't placed yet, such as one just added on this iPhone.
+        let listed = layout?["spaces"] as? [String] ?? []
+        let order = listed + byId.filter { $0.value.kind == "space" && !listed.contains($0.key) }.map(\.key).sorted()
 
         spaces = order.compactMap { uuid in
             guard let data = byId[uuid]?.data else { return nil }

@@ -6,9 +6,18 @@ struct SettingsView: View {
     var onOpenPage: () -> Void = {}
     @Environment(AccountService.self) private var account
     @Environment(\.dismiss) private var dismiss
+    /// Starts on Workspaces when opened from the deck's settings button; Back leads to the rest.
+    @State private var path: [Page]
+
+    enum Page: Hashable { case workspaces }
+
+    init(onOpenPage: @escaping () -> Void = {}, opensWorkspaces: Bool = false) {
+        self.onOpenPage = onOpenPage
+        _path = State(initialValue: opensWorkspaces ? [.workspaces] : [])
+    }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 Section {
                     link("General", icon: "gearshape", color: .gray) { GeneralSettingsView() }
@@ -18,6 +27,10 @@ struct SettingsView: View {
                 Section {
                     link("Sync", icon: "arrow.triangle.2.circlepath", color: .orange,
                          detail: account.email ?? (account.isSignedIn ? "Signed in" : "Off")) { SyncSettingsView() }
+                    if account.zenWorkspaces != nil {
+                        link("Workspaces", icon: "square.grid.2x2.fill", color: .mint,
+                             detail: "\(account.zenWorkspaces?.spaces.count ?? 0)") { WorkspacesSettingsView() }
+                    }
                     link("Tabs", icon: "square.on.square", color: .orange) {
                         TabsSettingsView { dismiss(); onOpenPage() }
                     }
@@ -41,6 +54,7 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: Page.self) { _ in WorkspacesSettingsView() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark") { dismiss() }

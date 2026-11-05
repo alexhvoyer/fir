@@ -14,6 +14,8 @@ struct TabSwitcherView: View {
     let onOpen: () -> Void
     let onNewTab: () -> Void
     let onSettings: () -> Void
+    /// Settings opened on Workspaces, from a long press on the settings button.
+    var onEditWorkspaces: () -> Void = {}
     /// A page is growing out of its card: the deck stays put, as in Safari, and centres on the
     /// selected tab only once the page covers it.
     var holdsPosition = false
@@ -413,6 +415,11 @@ struct TabSwitcherView: View {
                 .labelStyle(.iconOnly)
                 .frame(width: 52, height: 52)
                 .glassEffect(.regular.interactive(), in: .circle)
+                .contextMenu {
+                    if account.zenWorkspaces != nil {
+                        Button("Edit Workspaces…", systemImage: "square.grid.2x2", action: onEditWorkspaces)
+                    }
+                }
         }
         .font(.title3)
         .foregroundStyle(.primary)

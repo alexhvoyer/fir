@@ -28,7 +28,8 @@ struct BrowserView: View {
     @State private var transitioning = false
     @State private var screen: CGRect = .zero
     @State private var cardFrames: [BrowserTab.ID: CGRect] = [:]
-    @State private var showSettings = false
+    /// The deck's settings sheet, and whether it opens on Workspaces.
+    @State private var settings: SettingsSheet?
     @State private var showDownloads = false
     @State private var search: NewTabView.Mode?
     /// Where sheets grow out of: the bar's menu button and address capsule.
@@ -104,7 +105,8 @@ struct BrowserView: View {
                 onCardFrame: { cardFrames[$0] = $1 },
                 onOpen: openPage,
                 onNewTab: { search = .newTab },
-                onSettings: { showSettings = true },
+                onSettings: { settings = .main },
+                onEditWorkspaces: { settings = .workspaces },
                 holdsPosition: opening
             )
             .equatable()
@@ -158,7 +160,10 @@ struct BrowserView: View {
                 .padding(.bottom, safeInsets.bottom + 72)
         }
         .ignoresSafeArea()
-        .sheet(isPresented: $showSettings) { SettingsView(onOpenPage: showPageAtOnce) }
+        // An item, not a flag: a flag read only in the sheet's closure reached it stale.
+        .sheet(item: $settings) { sheet in
+            SettingsView(onOpenPage: showPageAtOnce, opensWorkspaces: sheet == .workspaces)
+        }
         .haptic(.impact(weight: .light), trigger: search) { old, new in old == nil && new != nil }
         .onChange(of: search) { old, new in
             if old == nil, new != nil { recede() }
@@ -188,7 +193,7 @@ struct BrowserView: View {
         .onChange(of: browser.selectedID) { veil = nil }
         // On arrival only: a dismissed search stays down, leaving the deck and settings reachable.
         .onChange(of: blankShown, initial: true) {
-            if blankShown, search == nil, !showSettings { search = .newTab }
+            if blankShown, search == nil, settings == nil { search = .newTab }
         }
     }
 
@@ -1913,4 +1918,10 @@ private struct LoadingLine: View {
         .animation(.easeOut(duration: 0.3), value: tab.isLoading)
         .allowsHitTesting(false)
     }
+}
+
+/// Which settings the deck's button opened: all of them, or straight on Workspaces.
+enum SettingsSheet: Identifiable {
+    case main, workspaces
+    var id: Self { self }
 }

@@ -591,3 +591,90 @@ struct FolderMenuItems: View {
         }
     }
 }
+
+/// Zen's workspaces, in Zen's order, with a way to add one; it shows up in Zen on every computer.
+struct WorkspacesSettingsView: View {
+    @Environment(AccountService.self) private var account
+    @State private var adding = false
+
+    var body: some View {
+        List {
+            if let zen = account.zenWorkspaces {
+                Section {
+                    ForEach(zen.spaces) { space in
+                        Label {
+                            Text(space.name)
+                        } icon: {
+                            if let icon = space.icon { Text(icon) } else { Image(systemName: "square.grid.2x2") }
+                        }
+                    }
+                } footer: {
+                    Text("These are your Zen workspaces. One you add here appears in Zen on your computers too.")
+                }
+            } else {
+                ContentUnavailableView("No Zen Workspaces", systemImage: "square.grid.2x2",
+                                       description: Text("Sign in under Sync and turn on Zen Workspaces to see them here."))
+            }
+        }
+        .navigationTitle("Workspaces")
+        // Inline like the settings it opens from: a large title, shown first on a fresh path, sat over the list.
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            Button("New Workspace", systemImage: "plus") { adding = true }
+                .disabled(account.zenWorkspaces == nil)
+        }
+        .sheet(isPresented: $adding) { NewWorkspaceView() }
+    }
+}
+
+/// Name and emoji for a new Zen workspace.
+private struct NewWorkspaceView: View {
+    @Environment(AccountService.self) private var account
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var emoji = ""
+    @State private var saving = false
+    @State private var failed = false
+    @FocusState private var nameFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("Name", text: $name)
+                    .focused($nameFocused)
+                TextField("Emoji", text: $emoji)
+                    // One symbol, the last typed: Zen shows a single icon.
+                    .onChange(of: emoji) { if emoji.count > 1 { emoji = String(emoji.suffix(1)) } }
+                if failed {
+                    Text("Couldn't reach Zen's sync server. Try again.").foregroundStyle(.red)
+                }
+            }
+            .navigationTitle("New Workspace")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") { add() }
+                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || saving)
+                }
+            }
+            .onAppear { nameFocused = true }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private func add() {
+        saving = true
+        failed = false
+        Task {
+            let trimmed = name.trimmingCharacters(in: .whitespaces)
+            if await account.createZenSpace(named: trimmed, icon: emoji.isEmpty ? nil : emoji) {
+                dismiss()
+                await account.sync()
+            } else {
+                failed = true
+                saving = false
+            }
+        }
+    }
+}

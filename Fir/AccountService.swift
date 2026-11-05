@@ -233,6 +233,31 @@ final class AccountService {
         "\(Int(Date.now.timeIntervalSince1970 * 1000))-\(UUID().uuidString.lowercased())"
     }
 
+    /// A new Zen workspace, as Zen makes one: its default theme and container, nothing in it yet.
+    func createZenSpace(named name: String, icon: String?) async -> Bool {
+        guard let manager else { return false }
+        let uuid = "{\(UUID().uuidString.lowercased())}"
+        let record: [String: Any] = [
+            "id": uuid, "kind": "space",
+            "data": [
+                "uuid": uuid, "name": name, "icon": icon ?? NSNull(),
+                "theme": ["type": "gradient", "gradientColors": [Any](), "opacity": 0.5, "texture": 0] as [String: Any],
+                "containerGuid": NSNull(), "children": [String](),
+            ] as [String: Any],
+        ]
+        pendingAdds[uuid] = (record, nil)
+        rebuildSpaces()
+        do {
+            try await SyncStorageReader(auth: RemoteTabsSync.authInfo(for: manager)).upload([record], to: "spaces")
+            return true
+        } catch {
+            pendingAdds[uuid] = nil
+            rebuildSpaces()
+            spacesError = "\(error)"
+            return false
+        }
+    }
+
     /// A new Zen folder holding pages, sent in one batch: Zen applies folders before tabs, so the tabs
     /// land inside it. False when the server didn't take them all.
     func createZenFolder(id: String, named name: String, in space: ZenWorkspaces.Space,
