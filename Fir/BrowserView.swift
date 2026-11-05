@@ -70,8 +70,11 @@ struct BrowserView: View {
         .ignoresSafeArea(.keyboard)
         // Outside the keyboard-ignoring area, so it sits on top of the keyboard.
         .overlay(alignment: .bottom) {
-            PasswordFillBar(autofill: .shared, webView: browser.selected.webView)
-                .animation(.snappy, value: PasswordAutofill.shared.offer?.host)
+            // Only over its page: on the deck it covered the switcher.
+            if pageShown, !transitioning {
+                PasswordFillBar(autofill: .shared, webView: browser.selected.webView)
+                    .animation(.snappy, value: PasswordAutofill.shared.offer?.host)
+            }
         }
         .alert(savePromptTitle, isPresented: Binding(
             get: { PasswordAutofill.shared.savePrompt != nil },
@@ -615,9 +618,21 @@ private struct UndoCloseCapsule: View {
                     guard (try? await Task.sleep(for: .seconds(3))) != nil else { return }
                     browser.dropUndo()
                 }
+            } else if let unloaded = browser.unloaded {
+                Label("Unloaded, still in \(unloaded.folder)", systemImage: "moon.zzz")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .glassEffect(.regular, in: .capsule)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .task(id: unloaded.id) {
+                        guard (try? await Task.sleep(for: .seconds(2.5))) != nil else { return }
+                        if browser.unloaded?.id == unloaded.id { browser.unloaded = nil }
+                    }
             }
         }
         .animation(.snappy, value: browser.undo?.tab.id)
+        .animation(.snappy, value: browser.unloaded)
         .haptic(.impact(weight: .light), trigger: browser.undo?.tab.id) { _, new in new != nil }
         .haptic(.success, trigger: restores)
     }
@@ -1582,7 +1597,9 @@ private struct PageView: View {
                     browser.closeAll(in: browser.selected.spaceID)
                 }
             }
-            Button("Close Tab", systemImage: "xmark", role: .destructive) { browser.close(browser.selected) }
+            // A Zen folder's tab only unloads, its card staying in the folder.
+            Button(current.fromZenFolder ? "Unload Tab" : "Close Tab", systemImage: current.fromZenFolder ? "moon.zzz" : "xmark",
+                   role: current.fromZenFolder ? nil : .destructive) { browser.close(browser.selected) }
         } label: {
             Text("\(browser.tabs(in: browser.selected.spaceID).count)")
                 .font(.footnote.weight(.semibold))

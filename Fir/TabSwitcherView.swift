@@ -31,6 +31,8 @@ struct TabSwitcherView: View {
     @State private var device: String?
     /// The Zen folder laid out as separate cards; every other folder is a stack. The selected tab's opens.
     @State private var expandedFolder: String?
+    /// The folder whose deletion awaits a confirmation.
+    @State private var deletingFolder: DeckFolder?
     /// The card a new Zen folder is being named for.
     @State private var folderFor: BrowserTab?
     @State private var folderName = ""
@@ -48,6 +50,22 @@ struct TabSwitcherView: View {
             }
         }
         .safeAreaInset(edge: .top) { topBar }
+        .alert("Delete \(deletingFolder?.name ?? "Folder")?", isPresented: Binding(
+            get: { deletingFolder != nil }, set: { if !$0 { deletingFolder = nil } }
+        ), presenting: deletingFolder) { folder in
+            Button("Delete", role: .destructive) {
+                let editor = ZenFolderEditor(account: account, browser: browser)
+                if let local = folder.local {
+                    editor.deleteLocalFolder(local)
+                } else if let space = browser.space {
+                    editor.deleteZenFolder(folder, in: space)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { folder in
+            Text(folder.local == nil ? "Its tabs close in Zen on your computers too. Ones open here stay, outside the folder."
+                 : "Its tabs close.")
+        }
         .alert("New Folder", isPresented: Binding(get: { folderFor != nil }, set: { if !$0 { folderFor = nil } })) {
             TextField("Name", text: $folderName)
             Button("Create") {
@@ -74,6 +92,9 @@ struct TabSwitcherView: View {
         }
         // A card joining or leaving a folder's stack moves slots: the deck follows the card it was on.
         .onChange(of: deckLayout.slot) { old, new in
+            // Only when a card joined or left a stack. A reorder (the selected tab moving to the end as the
+            // page shrinks) keeps the count, and following the old slot's card then landed on the wrong one.
+            guard Set(old.values).count != Set(new.values).count else { return }
             let focused = Int(progress.rounded())
             guard let id = old.first(where: { $0.value == focused })?.key, let slot = new[id] else {
                 progress = min(progress, CGFloat(max(0, deckLayout.count - 1)))
@@ -311,7 +332,8 @@ struct TabSwitcherView: View {
             ungroup: { folder in
                 guard let local = folder.local else { return }
                 withAnimation(.snappy) { browser.ungroup(local) }
-            }
+            },
+            delete: { deletingFolder = $0 }
         )
     }
 
@@ -479,27 +501,17 @@ private struct TabCard: View {
                         if tab.isPinned, !tab.fromZenFolder {
                             Image(systemName: "pin.fill").font(.caption).foregroundStyle(.secondary)
                         }
-                        if let tabMenu {
-                            Menu {
-                                if let space {
-                                    FolderMenuItems(tab: tab, space: space, editor: tabMenu.editor) { tabMenu.newFolder(tab) }
-                                    Divider()
-                                } else if localFolders != nil {
-                                    LocalFolderMenuItems(tab: tab, browser: tabMenu.editor.browser) { tabMenu.newFolder(tab) }
-                                    Divider()
-                                }
-                                Button("Close Tab", systemImage: "xmark", role: .destructive) { tabMenu.close(tab) }
-                            } label: {
-                                Image(systemName: "chevron.down")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 28, height: 28)
-                                    .contentShape(.rect)
-                            }
-                            // Grey like the folder's chevron, not the accent a menu's label takes.
-                            .tint(.secondary)
+                        if tabMenu != nil {
+                            Image(systemName: "chevron.down")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
                         }
                     }
+                    // The whole title opens the menu, not just the small chevron.
+                    .padding(.vertical, 6)
+                    .contentShape(.rect)
+                    .modifier(TitleMenu(tab: tab, space: space, local: localFolders != nil, menu: tabMenu))
+                    .padding(.vertical, -6)
                     // A folder's card names its folder above the title, without moving the card.
                     .overlay(alignment: .topLeading) {
                         if case .member(let folder) = heading {
@@ -559,10 +571,11 @@ private struct TabCard: View {
                 }
                 if !folderMenu.openedTabs(folder).isEmpty {
                     // A Zen folder's tabs only unload; this iPhone's close for good.
-                    Button(folder.local == nil ? "Close Opened Tabs" : "Close Tabs", systemImage: "xmark", role: .destructive) {
+                    Button(folder.local == nil ? "Unload Opened Tabs" : "Close Tabs", systemImage: "xmark") {
                         folderMenu.closeOpened(folder)
                     }
                 }
+                Button("Delete Folder…", systemImage: "trash", role: .destructive) { folderMenu.delete(folder) }
             }
         } label: {
             HStack(spacing: 6) {
@@ -586,7 +599,44 @@ enum CardHeading: Equatable {
     case member(DeckFolder)
 }
 
-/// What the chevron by a card's title can do: folders, and closing.
+/// A card's title as the button for its menu: folders, unloading and closing.
+private struct TitleMenu: ViewModifier {
+    let tab: BrowserTab
+    let space: ZenWorkspaces.Space?
+    let local: Bool
+    let menu: TabMenu?
+
+    func body(content: Content) -> some View {
+        if let menu {
+            Menu {
+                if let space {
+                    FolderMenuItems(tab: tab, space: space, editor: menu.editor) { menu.newFolder(tab) }
+                    Divider()
+                } else if local {
+                    LocalFolderMenuItems(tab: tab, browser: menu.editor.browser) { menu.newFolder(tab) }
+                    Divider()
+                }
+                if tab.fromZenFolder {
+                    if tab.wasOpened {
+                        Button("Unload Tab", systemImage: "moon.zzz") { menu.close(tab) }
+                    }
+                    // Out of Zen's folder too: the swipe only unloads, this is the way to get rid of it.
+                    Button("Close Tab", systemImage: "xmark", role: .destructive) { menu.editor.closeAndRemoveFromFolder(tab) }
+                } else {
+                    Button("Close Tab", systemImage: "xmark", role: .destructive) { menu.close(tab) }
+                }
+            } label: {
+                content
+            }
+            // The title keeps its own colours instead of the accent a menu's label takes.
+            .buttonStyle(.plain)
+        } else {
+            content
+        }
+    }
+}
+
+/// What a card's title menu can do: folders, and closing.
 @MainActor
 struct TabMenu {
     let editor: ZenFolderEditor
@@ -605,6 +655,8 @@ struct FolderMenu {
     let workspaces: () -> [ZenWorkspaces.Space]
     let move: (DeckFolder, ZenWorkspaces.Space) -> Void
     let ungroup: (DeckFolder) -> Void
+    /// Asks first; the deck shows the confirmation.
+    let delete: (DeckFolder) -> Void
 }
 
 /// Where each card sits: a slot along the deck, shared by a collapsed folder's cards, which stack under

@@ -106,8 +106,9 @@ final class BrowserTab: NSObject, Identifiable {
     }
 
     /// A Zen folder's tab, unloaded until first shown, like a tab restored at launch.
-    init(zenFolderTab zenTab: ZenWorkspaces.Tab, url: URL, spaceID: String) {
-        id = UUID()
+    /// `id` is kept when one replaces its own unloaded tab, so the deck doesn't take it for a new card.
+    init(zenFolderTab zenTab: ZenWorkspaces.Tab, url: URL, spaceID: String, id: UUID = UUID()) {
+        self.id = id
         self.spaceID = spaceID
         pendingURL = url
         restoredTitle = zenTab.title
@@ -746,7 +747,7 @@ final class BrowserModel {
         guard let space = tab.spaceID, let position = tabs.firstIndex(where: { $0.id == tab.id }) else { return }
         let siblings = tabs(in: space)
         let index = siblings.firstIndex { $0.id == tab.id } ?? 0
-        let fresh = BrowserTab(zenFolderTab: zenTab, url: url, spaceID: space)
+        let fresh = BrowserTab(zenFolderTab: zenTab, url: url, spaceID: space, id: tab.id)
         tabs[position] = fresh
         tab.webView.stopLoading()
         tab.webView.removeFromSuperview()
@@ -756,7 +757,16 @@ final class BrowserModel {
         }
         SessionStore.deleteSnapshot(for: tab.id)
         save()
+        unloaded = Unloaded(folder: zenFolder(of: fresh)?.name ?? "its folder")
     }
+
+    /// Says a folder's tab was unloaded, not closed: its card stays in the folder, so "closed" would mislead.
+    struct Unloaded: Equatable {
+        var id = UUID()
+        let folder: String
+    }
+
+    var unloaded: Unloaded?
 
     /// Makes the tab the last card of its workspace's deck, as in Yab: the deck opens on what you just
     /// left, with older tabs stacked to its left.

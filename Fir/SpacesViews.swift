@@ -540,6 +540,35 @@ struct ZenFolderEditor {
         }
     }
 
+    /// Closes a folder's tab for good: out of the folder in Zen too, not just unloaded.
+    func closeAndRemoveFromFolder(_ tab: BrowserTab) {
+        guard let id = tab.zenPinID else { return }
+        restorePin(tab, to: nil)
+        withAnimation(.smooth(duration: 0.35)) { browser.close(tab, inPlace: true) }
+        Task {
+            await account.removeFromZen(id)
+            await account.sync()
+        }
+    }
+
+    /// Deletes a Zen folder with its tabs, in Zen too, where they close. Opened ones stay here as ordinary tabs.
+    func deleteZenFolder(_ folder: DeckFolder, in space: String) {
+        guard let zen = account.zenWorkspaces?.spaces.first(where: { $0.id == space })?.folders
+            .first(where: { $0.id == folder.id }) else { return }
+        Task {
+            await account.removeFromZen([zen.id] + zen.tabs.map(\.id))
+            await account.sync()
+        }
+    }
+
+    /// Deletes a folder of this iPhone's tabs and closes them.
+    func deleteLocalFolder(_ folder: LocalFolder.ID) {
+        withAnimation(.smooth(duration: 0.35)) {
+            for tab in browser.tabs(in: nil) where tab.localFolderID == folder { browser.close(tab, inPlace: true) }
+            browser.ungroup(folder)
+        }
+    }
+
     /// Back to what the tab was before a folder change: its own pin, or none.
     private func restorePin(_ tab: BrowserTab, to pin: String?) {
         tab.leaveZenFolder()

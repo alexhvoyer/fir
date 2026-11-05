@@ -358,16 +358,21 @@ final class AccountService {
     /// Removes a pin or essential this app added; Zen closes the tab when the tombstone reaches it.
     /// False when the deletion didn't reach the server; the item then shows again, as Zen still has it.
     @discardableResult func removeFromZen(_ id: String) async -> Bool {
+        await removeFromZen([id])
+    }
+
+    /// Several of Zen's records gone in one batch, such as a folder and its tabs.
+    @discardableResult func removeFromZen(_ ids: [String]) async -> Bool {
         guard let manager else { return false }
-        let hidden = pendingAdds.removeValue(forKey: id) == nil
-        if hidden { pendingRemovals.insert(id) }
+        let hidden = ids.filter { pendingAdds.removeValue(forKey: $0) == nil }
+        pendingRemovals.formUnion(hidden)
         rebuildSpaces()
         do {
             try await SyncStorageReader(auth: RemoteTabsSync.authInfo(for: manager))
-                .upload([["id": id, "deleted": true]], to: "spaces")
+                .upload(ids.map { ["id": $0, "deleted": true] }, to: "spaces")
             return true
         } catch {
-            if hidden { pendingRemovals.remove(id) }
+            pendingRemovals.subtract(hidden)
             rebuildSpaces()
             spacesError = "\(error)"
             return false
