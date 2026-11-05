@@ -15,6 +15,8 @@ enum SessionStore {
         /// The Zen records this tab's pin and essential created, so they can be removed again.
         var zenPinID: String? = nil
         var zenEssentialID: String? = nil
+        /// Stands for a tab of a Zen folder, kept in step with Zen rather than opened here.
+        var zenFolder: Bool? = nil
     }
 
     struct Session: Codable {

@@ -9,7 +9,7 @@ struct ZenWorkspaces {
         let url: URL?
     }
 
-    struct Folder: Identifiable {
+    struct Folder: Identifiable, Hashable {
         let id: String
         let name: String
         let tabs: [Tab]
@@ -27,6 +27,10 @@ struct ZenWorkspaces {
     }
 
     let spaces: [Space]
+    /// Each workspace's folders in Zen's order, for the deck's stacks; comparable, so a change can be noticed.
+    var foldersBySpace: [String: [Folder]] {
+        Dictionary(uniqueKeysWithValues: spaces.filter { !$0.folders.isEmpty }.map { ($0.id, $0.folders) })
+    }
     /// Zen keeps essentials per container, and a space shows only its own container's.
     private let essentialsByContainer: [String: [Tab]]
 

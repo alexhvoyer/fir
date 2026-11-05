@@ -191,7 +191,8 @@ struct PageSheet: View {
     private var actions: some View {
         HStack(spacing: 10) {
             action("Find", "doc.text.magnifyingglass") { finish(.find) }
-            if tab.url != nil {
+            // A Zen folder's tab is already pinned there; unpinning would take it out of the folder.
+            if tab.url != nil, !tab.fromZenFolder {
                 action(tab.isPinned ? "Unpin" : "Pin", tab.isPinned ? "pin.slash" : "pin") { finish(.pin) }
                 // Zen tells them apart: a pin stays in its space, an essential shows in all of them.
                 if inZenSpace {

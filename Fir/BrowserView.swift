@@ -1536,7 +1536,7 @@ private struct PageView: View {
                 }
             }
             let current = browser.selected
-            if current.url != nil {
+            if current.url != nil, !current.fromZenFolder {
                 Button(current.isPinned ? "Unpin Tab" : "Pin Tab", systemImage: current.isPinned ? "pin.slash" : "pin") {
                     togglePin(current)
                 }

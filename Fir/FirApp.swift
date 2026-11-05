@@ -56,6 +56,10 @@ struct FirApp: App {
                 #endif
                 .task { await ContentBlocker.shared.start() }
                 .task { await ExtensionManager.shared.start(browser: browser) }
+                // Each Zen folder's tabs become tabs of its workspace, kept in step with Zen.
+                .onChange(of: account.zenWorkspaces?.foldersBySpace, initial: true) {
+                    browser.mirror(account.zenWorkspaces)
+                }
                 // Tabs sent from Zen open here, the last one in front.
                 .onChange(of: account.receivedTabs, initial: true) {
                     guard !account.receivedTabs.isEmpty else { return }

@@ -369,7 +369,8 @@ struct ZenSpaceHeader: View {
     @Environment(\.isLandscape) private var landscape
 
     var body: some View {
-        let pins = essentials + space.tabs + space.folders.flatMap(\.tabs)
+        // A folder's tabs are cards in the deck below.
+        let pins = essentials + space.tabs
         VStack(alignment: .leading, spacing: 12) {
             Text([space.icon, space.name].compactMap { $0 }.joined(separator: " "))
                 .font(.brandHeading(.title2))

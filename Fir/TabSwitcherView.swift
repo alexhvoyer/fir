@@ -27,6 +27,8 @@ struct TabSwitcherView: View {
     @State private var pullOpens = 0
     /// Another device's open tabs shown instead of a workspace; not a workspace, so not `browser.space`.
     @State private var device: String?
+    /// The Zen folder laid out as separate cards; every other folder is a stack. The selected tab's opens.
+    @State private var expandedFolder: String?
 
     private static let localSpace = "local"
 
@@ -74,8 +76,8 @@ struct TabSwitcherView: View {
             device = nil
             browser.space = id == Self.localSpace ? nil : id
             // In the same update, so the live deck takes over from its preview without a jump.
-            let tabs = browser.spaceTabs
-            progress = CGFloat(tabs.firstIndex { $0.id == browser.selectedID } ?? max(0, tabs.count - 1))
+            let layout = deckLayout
+            progress = CGFloat(browser.selectedID.flatMap { layout.slot[$0] } ?? max(0, layout.count - 1))
         }
     }
 
@@ -121,16 +123,21 @@ struct TabSwitcherView: View {
             let card = cardSize(in: geo.size)
             let step = card.width * 0.92
             // Centred where the live deck will be: on the selected tab if it's here, else the newest.
-            let focus = tabs.firstIndex { $0.id == browser.selectedID } ?? tabs.count - 1
+            let layout = DeckLayout(tabs, folder: browser.folder, expanded: nil)
+            let focus = tabs.first { $0.id == browser.selectedID }.map { layout.slot[$0.id] ?? 0 } ?? layout.count - 1
             ZStack {
-                ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
-                    let rel = CGFloat(index - focus)
+                ForEach(Array(tabs.enumerated()), id: \.element.id) { _, tab in
+                    let slot = layout.slot[tab.id] ?? 0
+                    let depth = layout.depth[tab.id] ?? 0
+                    let rel = CGFloat(slot - focus)
                     TabCard(tab: tab, width: card.width, height: card.height,
-                            titleOpacity: max(0, 1 - Double(abs(rel)) * 2), imageHidden: false, onFrame: { _ in })
+                            titleOpacity: depth > 0 ? 0 : max(0, 1 - Double(abs(rel)) * 2), imageHidden: false,
+                            heading: layout.heading[tab.id] ?? .tab, onFrame: { _ in })
                         .equatable()
+                        .modifier(StackDepth(depth: depth))
                         .scaleEffect(rel < 0 ? max(0.86, 1 + rel * 0.05) : 1)
                         .offset(x: rel < 0 ? rel * step * 0.25 : rel * step)
-                        .zIndex(Double(index))
+                        .zIndex(Double(slot) - Double(depth) * 0.01)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -145,31 +152,38 @@ struct TabSwitcherView: View {
             let cardHeight = card.height
             // Later cards slide in from the right over a mostly visible focused card, as in Yab.
             let step = cardWidth * 0.92
-            let focused = focusedIndex
+            let layout = deckLayout
+            let focused = focusedSlot
 
             ZStack {
-                ForEach(Array(browser.spaceTabs.enumerated()), id: \.element.id) { index, tab in
-                    let rel = CGFloat(index) - progress
+                // Over (offset, tab) pairs: ForEach straight over the tabs left the deck frozen mid-swipe.
+                ForEach(Array(browser.spaceTabs.enumerated()), id: \.element.id) { _, tab in
+                    let slot = layout.slot[tab.id] ?? 0
+                    let depth = layout.depth[tab.id] ?? 0
+                    let stack = layout.stacks[slot]
+                    let rel = CGFloat(slot) - progress
                     // Swiping a card up to close: its title goes first so it never runs over the header,
-                    // then the card shrinks a little and fades as it leaves.
-                    let lift = index == focused ? min(liftOffset, 0) : 0
+                    // then the card shrinks a little and fades as it leaves. A folder's stack doesn't close.
+                    let lift = slot == focused && stack == nil ? min(liftOffset, 0) : 0
                     // Pulled down it follows at a third of the finger and grows a touch, toward the page.
-                    let pull = index == focused ? max(liftOffset, 0) / 3 : 0
+                    let pull = slot == focused ? max(liftOffset, 0) / 3 : 0
                     // Earlier tabs tuck in on the left. Layering follows deck order, like the app switcher:
                     // ordering by distance swapped the front card mid-scroll.
                     TabCard(tab: tab,
                             width: cardWidth, height: cardHeight,
-                            titleOpacity: max(0, 1 - Double(abs(rel)) * 2) * max(0, 1 + Double(lift) / 40),
+                            titleOpacity: depth > 0 ? 0 : max(0, 1 - Double(abs(rel)) * 2) * max(0, 1 + Double(lift) / 40),
                             imageHidden: tab.id == hiddenTab,
+                            heading: layout.heading[tab.id] ?? .tab,
+                            folderMenu: folderMenu,
                             onFrame: { onCardFrame(tab.id, $0) })
                         .equatable()
+                        .modifier(StackDepth(depth: depth))
                         .scaleEffect((rel < 0 ? max(0.86, 1 + rel * 0.05) : 1) * (1 + lift / 1800) * (1 + pull / 600))
                         .offset(x: rel < 0 ? rel * step * 0.25 : rel * step, y: lift + pull)
                         .opacity(max(0, 1 + Double(lift) / 320))
-                        .zIndex(Double(index))
+                        .zIndex(Double(slot) - Double(depth) * 0.01)
                         .onTapGesture {
-                            browser.select(tab)
-                            onOpen()
+                            if let stack { expand(stack) } else { browser.select(tab); onOpen() }
                         }
                 }
             }
@@ -186,15 +200,57 @@ struct TabSwitcherView: View {
         onOpen()
     }
 
-    /// Animated when the deck is on screen; instant under the page, which needs the final frame.
+    /// Animated when the deck is on screen; instant under the page, which needs the final frame. The
+    /// selected tab's folder lays out its cards, so the page has its own card to shrink onto.
     private func centerSelected(animated: Bool = true) {
+        if let folder = browser.folder(of: browser.selected), browser.selected.spaceID == browser.space {
+            expandedFolder = folder.id
+        }
+        let layout = deckLayout
         withAnimation(hiddenTab == nil && animated ? .spring(response: 0.4, dampingFraction: 0.9) : nil) {
-            progress = CGFloat(browser.spaceTabs.firstIndex { $0.id == browser.selectedID } ?? browser.spaceTabs.count - 1)
+            progress = CGFloat(browser.selectedID.flatMap { layout.slot[$0] } ?? max(0, layout.count - 1))
         }
     }
 
-    private var focusedIndex: Int {
-        min(max(Int(progress.rounded()), 0), browser.spaceTabs.count - 1)
+    private var deckLayout: DeckLayout {
+        DeckLayout(browser.spaceTabs, folder: browser.folder, expanded: expandedFolder)
+    }
+
+    private var focusedSlot: Int {
+        min(max(Int(progress.rounded()), 0), deckLayout.count - 1)
+    }
+
+    /// Fans a folder's stack out into its cards, starting where the stack stood.
+    private func expand(_ folder: ZenWorkspaces.Folder) {
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) { expandedFolder = folder.id }
+    }
+
+    private func collapse(_ folder: ZenWorkspaces.Folder) {
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+            expandedFolder = nil
+            let layout = deckLayout
+            if let first = browser.spaceTabs.first(where: { browser.folder(of: $0)?.id == folder.id }) {
+                progress = CGFloat(layout.slot[first.id] ?? 0)
+            } else {
+                progress = min(progress, CGFloat(layout.count - 1))
+            }
+        }
+    }
+
+    private var folderMenu: FolderMenu {
+        FolderMenu(
+            isExpanded: { $0.id == expandedFolder },
+            expand: expand,
+            collapse: collapse,
+            openedTabs: { folder in browser.spaceTabs.filter { browser.folder(of: $0)?.id == folder.id && $0.wasOpened } },
+            closeOpened: { folder in
+                withAnimation(.smooth(duration: 0.35)) {
+                    for tab in browser.spaceTabs where browser.folder(of: tab)?.id == folder.id && tab.wasOpened {
+                        browser.close(tab, inPlace: true)
+                    }
+                }
+            }
+        )
     }
 
     private func deckGesture(step: CGFloat, height: CGFloat) -> some Gesture {
@@ -214,9 +270,10 @@ struct TabSwitcherView: View {
                 defer { dragAxis = nil; dragOrigin = nil }
                 if dragAxis == .horizontal, let origin = dragOrigin {
                     let predicted = origin - value.predictedEndTranslation.width / step
-                    let target = min(max(predicted.rounded(), 0), CGFloat(browser.spaceTabs.count - 1))
+                    let target = min(max(predicted.rounded(), 0), CGFloat(deckLayout.count - 1))
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) { progress = target }
-                } else if value.translation.height < -120 || value.predictedEndTranslation.height < -400 {
+                } else if deckLayout.stacks[focusedSlot] == nil,
+                          value.translation.height < -120 || value.predictedEndTranslation.height < -400 {
                     closeFocused(height: height)
                 } else if value.translation.height > 90 || value.predictedEndTranslation.height > 360 {
                     openFocused()
@@ -228,7 +285,7 @@ struct TabSwitcherView: View {
 
     /// Resists dragging past the first and last card.
     private func rubberBand(_ value: CGFloat) -> CGFloat {
-        let last = CGFloat(browser.spaceTabs.count - 1)
+        let last = CGFloat(deckLayout.count - 1)
         if value < 0 { return value / 3 }
         if value > last { return last + (value - last) / 3 }
         return value
@@ -236,9 +293,15 @@ struct TabSwitcherView: View {
 
     /// Pulling a card down opens it, as swiping one up closes it; it grows from where the pull left it.
     private func openFocused() {
-        guard browser.spaceTabs.indices.contains(focusedIndex) else { return }
+        let layout = deckLayout
+        guard layout.first.indices.contains(focusedSlot) else { return }
         pullOpens += 1
-        browser.select(browser.spaceTabs[focusedIndex])
+        if let stack = layout.stacks[focusedSlot] {
+            expand(stack)
+            withAnimation(.snappy) { liftOffset = 0 }
+            return
+        }
+        browser.select(layout.first[focusedSlot])
         onOpen()
         // Dropped back once the page covers the deck: at once, the page grew from the card's old place.
         Task {
@@ -248,17 +311,18 @@ struct TabSwitcherView: View {
     }
 
     private func closeFocused(height: CGFloat) {
-        guard browser.spaceTabs.indices.contains(focusedIndex) else { return }
-        let tab = browser.spaceTabs[focusedIndex]
+        let layout = deckLayout
+        guard layout.first.indices.contains(focusedSlot) else { return }
+        let tab = layout.first[focusedSlot]
         withAnimation(.easeIn(duration: 0.2)) {
             liftOffset = -height
         } completion: {
             // One animated update: the card leaves while still off screen (resetting its lift first
             // made it pop back), and every later card slides into the gap.
             withAnimation(.smooth(duration: 0.35)) {
-                browser.close(tab)
+                browser.close(tab, inPlace: true)
                 liftOffset = 0
-                progress = max(0, min(progress.rounded(), CGFloat(browser.spaceTabs.count - 1)))
+                progress = max(0, min(progress.rounded(), CGFloat(deckLayout.count - 1)))
             }
         }
     }
@@ -326,15 +390,29 @@ private struct TabCard: View {
     /// Under the page only the image hides: the title stays, so the shrinking page uncovers it
     /// gradually instead of it popping in once the page has landed.
     let imageHidden: Bool
+    var heading: CardHeading = .tab
+    var folderMenu: FolderMenu?
     let onFrame: (CGRect) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                SiteIcon(host: tab.url?.host(), size: 26, fetch: !tab.isPrivate)
-                Text(tab.title).font(.headline).lineLimit(1)
-                if tab.isPinned {
-                    Image(systemName: "pin.fill").font(.caption).foregroundStyle(.secondary)
+            Group {
+                if case .stack(let folder, let count) = heading {
+                    folderLabel(folder, detail: "\(count)", font: .headline)
+                } else {
+                    HStack(spacing: 8) {
+                        SiteIcon(host: tab.url?.host(), size: 26, fetch: !tab.isPrivate)
+                        Text(tab.title).font(.headline).lineLimit(1)
+                        if tab.isPinned, !tab.fromZenFolder {
+                            Image(systemName: "pin.fill").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    // A folder's card names its folder above the title, without moving the card.
+                    .overlay(alignment: .topLeading) {
+                        if case .member(let folder) = heading {
+                            folderLabel(folder, detail: nil, font: .footnote).offset(y: -24)
+                        }
+                    }
                 }
             }
             .padding(.leading, 6)
@@ -362,6 +440,102 @@ private struct TabCard: View {
             .opacity(imageHidden ? 0 : 1)
         }
         .frame(width: width)
+    }
+
+    /// The folder's name with a chevron that opens what can be done with it.
+    private func folderLabel(_ folder: ZenWorkspaces.Folder, detail: String?, font: Font) -> some View {
+        Menu {
+            if let folderMenu {
+                if folderMenu.isExpanded(folder) {
+                    Button("Collapse", systemImage: "rectangle.compress.vertical") { folderMenu.collapse(folder) }
+                } else {
+                    Button("Expand", systemImage: "rectangle.expand.vertical") { folderMenu.expand(folder) }
+                }
+                if !folderMenu.openedTabs(folder).isEmpty {
+                    Button("Close Opened Tabs", systemImage: "xmark", role: .destructive) { folderMenu.closeOpened(folder) }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "folder.fill").foregroundStyle(.secondary)
+                Text(folder.name).lineLimit(1)
+                if let detail { Text(detail).foregroundStyle(.secondary) }
+                Image(systemName: "chevron.down").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            }
+            .font(font)
+            .contentShape(.rect)
+        }
+        .foregroundStyle(.primary)
+        .disabled(folderMenu == nil)
+    }
+}
+
+/// What a card's title row shows: its page, a folder's whole stack, or a page that belongs to a folder.
+enum CardHeading: Equatable {
+    case tab
+    case stack(ZenWorkspaces.Folder, count: Int)
+    case member(ZenWorkspaces.Folder)
+}
+
+/// What the chevron by a folder's name can do; the deck owns the state these touch.
+struct FolderMenu {
+    let isExpanded: (ZenWorkspaces.Folder) -> Bool
+    let expand: (ZenWorkspaces.Folder) -> Void
+    let collapse: (ZenWorkspaces.Folder) -> Void
+    let openedTabs: (ZenWorkspaces.Folder) -> [BrowserTab]
+    let closeOpened: (ZenWorkspaces.Folder) -> Void
+}
+
+/// Where each card sits: a slot along the deck, shared by a collapsed folder's cards, which stack under
+/// its first one at increasing depth.
+struct DeckLayout {
+    private(set) var slot: [BrowserTab.ID: Int] = [:]
+    private(set) var depth: [BrowserTab.ID: Int] = [:]
+    private(set) var heading: [BrowserTab.ID: CardHeading] = [:]
+    /// The folder whose stack fills a slot.
+    private(set) var stacks: [Int: ZenWorkspaces.Folder] = [:]
+    /// Each slot's front card.
+    private(set) var first: [BrowserTab] = []
+    var count: Int { first.count }
+
+    init(_ tabs: [BrowserTab], folder: (BrowserTab) -> ZenWorkspaces.Folder?, expanded: String?) {
+        var stackSlot: [String: Int] = [:]
+        let sizes = Dictionary(tabs.compactMap { folder($0)?.id }.map { ($0, 1) }, uniquingKeysWith: +)
+        for tab in tabs {
+            guard let owner = folder(tab) else {
+                slot[tab.id] = first.count
+                first.append(tab)
+                continue
+            }
+            if owner.id == expanded {
+                slot[tab.id] = first.count
+                heading[tab.id] = .member(owner)
+                first.append(tab)
+            } else if let shared = stackSlot[owner.id] {
+                slot[tab.id] = shared
+                depth[tab.id] = tabs.filter { slot[$0.id] == shared }.count - 1
+            } else {
+                stackSlot[owner.id] = first.count
+                slot[tab.id] = first.count
+                stacks[first.count] = owner
+                heading[tab.id] = .stack(owner, count: sizes[owner.id] ?? 1)
+                first.append(tab)
+            }
+        }
+    }
+}
+
+/// A card deeper in a folder's stack: nudged left and down a size, so the edges show like a fanned pile.
+private struct StackDepth: ViewModifier {
+    let depth: Int
+
+    func body(content: Content) -> some View {
+        let shown = CGFloat(min(depth, 3))
+        content
+            .scaleEffect(1 - shown * 0.04)
+            .offset(x: -shown * 20)
+            .brightness(-shown * 0.04)
+            .opacity(depth > 3 ? 0 : 1)
     }
 }
 
@@ -513,6 +687,7 @@ extension TabSwitcherView: Equatable {
 extension TabCard: Equatable {
     nonisolated static func == (a: Self, b: Self) -> Bool {
         a.tab === b.tab && a.width == b.width && a.height == b.height
-            && a.titleOpacity == b.titleOpacity && a.imageHidden == b.imageHidden
+            && a.titleOpacity == b.titleOpacity && a.imageHidden == b.imageHidden && a.heading == b.heading
+            && (a.folderMenu == nil) == (b.folderMenu == nil)
     }
 }

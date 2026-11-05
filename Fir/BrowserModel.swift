@@ -57,6 +57,9 @@ final class BrowserTab: NSObject, Identifiable {
     /// The Zen records this tab's pin and "Add to Essentials" uploaded; nil when kept on this iPhone only.
     @ObservationIgnored var zenPinID: String?
     var zenEssentialID: String?
+    /// Stands for a tab of a Zen folder (its record is `zenPinID`): Fir adds and drops it as Zen does,
+    /// and closing it only unloads it, as closing a pinned tab does in Zen.
+    private(set) var fromZenFolder = false
     /// Opens windows the page asks for (target=_blank, window.open) as tabs.
     @ObservationIgnored weak var model: BrowserModel?
 
@@ -92,11 +95,32 @@ final class BrowserTab: NSObject, Identifiable {
         isPinned = saved.pinned ?? false
         zenPinID = saved.zenPinID
         zenEssentialID = saved.zenEssentialID
+        fromZenFolder = saved.zenFolder ?? false
         webView = Self.makeWebView(dataStore: .default())
         super.init()
         snapshot = SessionStore.loadSnapshot(for: saved.id)
         observe()
     }
+
+    /// A Zen folder's tab, unloaded until first shown, like a tab restored at launch.
+    init(zenFolderTab zenTab: ZenWorkspaces.Tab, url: URL, spaceID: String) {
+        id = UUID()
+        self.spaceID = spaceID
+        pendingURL = url
+        restoredTitle = zenTab.title
+        isPinned = true
+        zenPinID = zenTab.id
+        fromZenFolder = true
+        webView = Self.makeWebView(dataStore: .default())
+        super.init()
+        observe()
+    }
+
+    /// Opened at some point, not just standing in for its Zen folder tab.
+    var wasOpened: Bool { pendingURL == nil || snapshot != nil }
+
+    /// Its folder is gone from Zen while it is in front: it stays, as an ordinary tab.
+    func leaveZenFolder() { fromZenFolder = false }
 
     /// Private tabs leave nothing on disk: not their session, snapshots or site icons.
     var isPrivate: Bool { spaceID == BrowserModel.privateSpace }
@@ -572,7 +596,7 @@ final class BrowserModel {
             tabs: tabs.filter { !$0.isPrivate }.map {
                 SessionStore.Tab(id: $0.id, url: $0.url, title: $0.title, spaceID: $0.spaceID, lastViewed: $0.lastViewed,
                                  pinned: $0.isPinned, zenPinID: $0.zenPinID,
-                                 zenEssentialID: $0.zenEssentialID)
+                                 zenEssentialID: $0.zenEssentialID, zenFolder: $0.fromZenFolder ? true : nil)
             },
             selectedID: selectedID
         )
@@ -590,7 +614,65 @@ final class BrowserModel {
     var spaceTabs: [BrowserTab] { tabs(in: space) }
 
     func tabs(in space: String?) -> [BrowserTab] {
-        tabs.filter { $0.spaceID == space }
+        let all = tabs.filter { $0.spaceID == space }
+        guard let space, let folders = zenFolders[space] else { return all }
+        // Folders lead, in Zen's order, as they sit at the top of Zen's sidebar.
+        let rank = Dictionary(folders.flatMap(\.tabs).enumerated().map { ($1.id, $0) }) { first, _ in first }
+        func place(_ tab: BrowserTab) -> Int? { tab.fromZenFolder ? tab.zenPinID.flatMap { rank[$0] } : nil }
+        return all.filter { place($0) != nil }.sorted { place($0)! < place($1)! } + all.filter { place($0) == nil }
+    }
+
+    /// Zen's folders per workspace, as last synced.
+    private(set) var zenFolders: [String: [ZenWorkspaces.Folder]] = [:]
+
+    /// The Zen folder a tab stands in for, if any.
+    func folder(of tab: BrowserTab) -> ZenWorkspaces.Folder? {
+        guard tab.fromZenFolder, let id = tab.zenPinID, let space = tab.spaceID else { return nil }
+        return zenFolders[space]?.first { $0.tabs.contains { $0.id == id } }
+    }
+
+    /// Keeps one tab per Zen folder tab, in the folder's workspace: adds the new, drops those Zen no longer
+    /// has. One that was opened stays, as an ordinary tab, rather than take a page away. Nil (signed out,
+    /// workspaces off) drops them all.
+    func mirror(_ zen: ZenWorkspaces?) {
+        let folders = zen?.foldersBySpace ?? [:]
+        var wanted: [String: (tab: ZenWorkspaces.Tab, url: URL, space: String)] = [:]
+        for (space, list) in folders {
+            for zenTab in list.flatMap(\.tabs) {
+                if let url = zenTab.url { wanted[zenTab.id] = (zenTab, url, space) }
+            }
+        }
+        var changed = false
+        for tab in tabs where tab.fromZenFolder {
+            if let id = tab.zenPinID, wanted[id]?.space == tab.spaceID { continue }
+            changed = true
+            if tab.wasOpened || tab.id == selectedID { tab.leaveZenFolder() } else { discard(tab) }
+        }
+        let have = Set(tabs.filter(\.fromZenFolder).compactMap(\.zenPinID))
+        for (id, entry) in wanted.sorted(by: { $0.key < $1.key }) where !have.contains(id) {
+            tabs.append(BrowserTab(zenFolderTab: entry.tab, url: entry.url, spaceID: entry.space))
+            changed = true
+        }
+        zenFolders = folders
+        if changed { save() }
+    }
+
+    /// Closing a folder's tab unloads it, as in Zen: a fresh unloaded one takes its place. Closed from its
+    /// page the neighbour comes to the front; in the deck the card stays, so the deck doesn't move.
+    private func unload(_ tab: BrowserTab, to zenTab: ZenWorkspaces.Tab, url: URL, inPlace: Bool) {
+        guard let space = tab.spaceID, let position = tabs.firstIndex(where: { $0.id == tab.id }) else { return }
+        let siblings = tabs(in: space)
+        let index = siblings.firstIndex { $0.id == tab.id } ?? 0
+        let fresh = BrowserTab(zenFolderTab: zenTab, url: url, spaceID: space)
+        tabs[position] = fresh
+        tab.webView.stopLoading()
+        tab.webView.removeFromSuperview()
+        if selectedID == tab.id {
+            let others = siblings.filter { $0.id != tab.id }
+            selectedID = inPlace || others.isEmpty ? fresh.id : others[min(index, others.count - 1)].id
+        }
+        SessionStore.deleteSnapshot(for: tab.id)
+        save()
     }
 
     /// Makes the tab the last card of its workspace's deck, as in Yab: the deck opens on what you just
@@ -665,7 +747,12 @@ final class BrowserModel {
 
     /// Selects the neighbour in the same workspace that slides into the closed tab's slot, so the
     /// deck stays put. The deck keeps showing that workspace even when it empties.
-    func close(_ tab: BrowserTab) {
+    func close(_ tab: BrowserTab, inPlace: Bool = false) {
+        if let folder = folder(of: tab), let zenTab = folder.tabs.first(where: { $0.id == tab.zenPinID }),
+           let url = zenTab.url {
+            unload(tab, to: zenTab, url: url, inPlace: inPlace)
+            return
+        }
         remember(tab)
         let siblings = tabs(in: tab.spaceID)
         guard let index = siblings.firstIndex(where: { $0.id == tab.id }),
