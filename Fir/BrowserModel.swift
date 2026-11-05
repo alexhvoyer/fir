@@ -9,8 +9,10 @@ final class BrowserTab: NSObject, Identifiable {
     let id: UUID
     @ObservationIgnored let webView: WKWebView
     private(set) var snapshot: UIImage?
-    /// The Zen workspace this tab was opened in; nil for this iPhone's own tabs.
-    let spaceID: String?
+    /// The Zen workspace this tab is in; nil for this iPhone's own tabs.
+    private(set) var spaceID: String?
+    /// The folder of this iPhone's own tabs it is in.
+    var localFolderID: LocalFolder.ID?
 
     private(set) var pageURL: URL?
     private(set) var pageTitle = ""
@@ -96,6 +98,7 @@ final class BrowserTab: NSObject, Identifiable {
         zenPinID = saved.zenPinID
         zenEssentialID = saved.zenEssentialID
         fromZenFolder = saved.zenFolder ?? false
+        localFolderID = saved.localFolder
         webView = Self.makeWebView(dataStore: .default())
         super.init()
         snapshot = SessionStore.loadSnapshot(for: saved.id)
@@ -118,6 +121,9 @@ final class BrowserTab: NSObject, Identifiable {
 
     /// Opened at some point, not just standing in for its Zen folder tab.
     var wasOpened: Bool { pendingURL == nil || snapshot != nil }
+
+    /// Into a Zen workspace, from this iPhone's own tabs: both use the default data store, so the page stays.
+    func move(to space: String?) { spaceID = space }
 
     /// Its folder is gone from Zen while it is in front: it stays, as an ordinary tab.
     func leaveZenFolder() { fromZenFolder = false }
@@ -587,6 +593,7 @@ final class BrowserModel {
     init() {
         let session = SessionStore.load()
         tabs = session?.tabs.map(BrowserTab.init(restoring:)) ?? []
+        localFolders = session?.localFolders ?? []
         if tabs.isEmpty { tabs = [BrowserTab()] }
         selectedID = tabs.contains { $0.id == session?.selectedID } ? session?.selectedID : tabs.last?.id
         space = selected.spaceID
@@ -599,13 +606,16 @@ final class BrowserModel {
 
     /// Writes off the main thread: on it, the file write cost a frame of the deck transition.
     func save() {
+        pruneLocalFolders()
         let session = SessionStore.Session(
             tabs: tabs.filter { !$0.isPrivate }.map {
                 SessionStore.Tab(id: $0.id, url: $0.url, title: $0.title, spaceID: $0.spaceID, lastViewed: $0.lastViewed,
                                  pinned: $0.isPinned, zenPinID: $0.zenPinID,
-                                 zenEssentialID: $0.zenEssentialID, zenFolder: $0.fromZenFolder ? true : nil)
+                                 zenEssentialID: $0.zenEssentialID, zenFolder: $0.fromZenFolder ? true : nil,
+                                 localFolder: $0.localFolderID)
             },
-            selectedID: selectedID
+            selectedID: selectedID,
+            localFolders: localFolders
         )
         Self.saveQueue.async { SessionStore.save(session) }
     }
@@ -622,20 +632,86 @@ final class BrowserModel {
 
     func tabs(in space: String?) -> [BrowserTab] {
         let all = tabs.filter { $0.spaceID == space }
-        guard let space, let folders = zenFolders[space] else { return all }
-        // Folders lead, in Zen's order, as they sit at the top of Zen's sidebar.
-        let rank = Dictionary(folders.flatMap(\.tabs).enumerated().map { ($1.id, $0) }) { first, _ in first }
-        func place(_ tab: BrowserTab) -> Int? { tab.fromZenFolder ? tab.zenPinID.flatMap { rank[$0] } : nil }
-        return all.filter { place($0) != nil }.sorted { place($0)! < place($1)! } + all.filter { place($0) == nil }
+        // Folders lead, in Zen's order (as at the top of Zen's sidebar) or the order they were made in.
+        let place: (BrowserTab) -> Int?
+        if let space {
+            guard let folders = zenFolders[space] else { return all }
+            let rank = Dictionary(folders.flatMap(\.tabs).enumerated().map { ($1.id, $0) }) { first, _ in first }
+            place = { $0.fromZenFolder ? $0.zenPinID.flatMap { rank[$0] } : nil }
+        } else {
+            guard !localFolders.isEmpty else { return all }
+            let rank = Dictionary(uniqueKeysWithValues: localFolders.enumerated().map { ($1.id, $0) })
+            place = { $0.localFolderID.flatMap { rank[$0] } }
+        }
+        // Stable: within a folder, tabs keep the order they joined in.
+        let placed = all.enumerated().compactMap { offset, tab in place(tab).map { ($0, offset, tab) } }
+            .sorted { ($0.0, $0.1) < ($1.0, $1.1) }.map(\.2)
+        return placed + all.filter { place($0) == nil }
     }
 
     /// Zen's folders per workspace, as last synced.
     private(set) var zenFolders: [String: [ZenWorkspaces.Folder]] = [:]
 
+    /// Folders of this iPhone's own tabs; Zen never sees them until one is moved into a workspace.
+    private(set) var localFolders: [LocalFolder] = []
+
+    /// The folder a tab is in, in Zen or on this iPhone.
+    func folder(of tab: BrowserTab) -> DeckFolder? {
+        if let local = tab.localFolderID, let folder = localFolders.first(where: { $0.id == local }) {
+            return DeckFolder(id: folder.id.uuidString, name: folder.name, local: folder.id)
+        }
+        return zenFolder(of: tab).map { DeckFolder(id: $0.id, name: $0.name, local: nil) }
+    }
+
     /// The Zen folder a tab stands in for, if any.
-    func folder(of tab: BrowserTab) -> ZenWorkspaces.Folder? {
+    private func zenFolder(of tab: BrowserTab) -> ZenWorkspaces.Folder? {
         guard tab.fromZenFolder, let id = tab.zenPinID, let space = tab.spaceID else { return nil }
         return zenFolders[space]?.first { $0.tabs.contains { $0.id == id } }
+    }
+
+    /// A new folder of this iPhone's tabs, holding `tab`.
+    func createLocalFolder(named name: String, with tab: BrowserTab) {
+        let folder = LocalFolder(name: name)
+        localFolders.append(folder)
+        tab.localFolderID = folder.id
+        save()
+    }
+
+    func addToLocalFolder(_ tab: BrowserTab, _ folder: LocalFolder.ID) {
+        tab.localFolderID = folder
+        save()
+    }
+
+    /// Out of its folder; a folder left empty goes too.
+    func removeFromLocalFolder(_ tab: BrowserTab) {
+        tab.localFolderID = nil
+        save()
+    }
+
+    /// The folder goes, its tabs stay as ordinary tabs.
+    func ungroup(_ folder: LocalFolder.ID) {
+        for tab in tabs where tab.localFolderID == folder { tab.localFolderID = nil }
+        localFolders.removeAll { $0.id == folder }
+        save()
+    }
+
+    /// Takes the folder off this iPhone's list as its tabs move into Zen; `restore` puts it back.
+    func detachLocalFolder(_ folder: LocalFolder.ID) -> (LocalFolder, index: Int)? {
+        guard let index = localFolders.firstIndex(where: { $0.id == folder }) else { return nil }
+        return (localFolders.remove(at: index), index)
+    }
+
+    func restoreLocalFolder(_ folder: LocalFolder, at index: Int) {
+        localFolders.insert(folder, at: min(index, localFolders.count))
+        save()
+    }
+
+    /// Folders with no tab left go, and a tab whose folder went (say, closed then undone) leaves it.
+    private func pruneLocalFolders() {
+        let used = Set(tabs.compactMap(\.localFolderID))
+        localFolders.removeAll { !used.contains($0.id) }
+        let kept = Set(localFolders.map(\.id))
+        for tab in tabs where tab.localFolderID.map({ !kept.contains($0) }) == true { tab.localFolderID = nil }
     }
 
     /// Keeps one tab per Zen folder tab, in the folder's workspace: adds the new, drops those Zen no longer
@@ -755,7 +831,7 @@ final class BrowserModel {
     /// Selects the neighbour in the same workspace that slides into the closed tab's slot, so the
     /// deck stays put. The deck keeps showing that workspace even when it empties.
     func close(_ tab: BrowserTab, inPlace: Bool = false) {
-        if let folder = folder(of: tab), let zenTab = folder.tabs.first(where: { $0.id == tab.zenPinID }),
+        if let folder = zenFolder(of: tab), let zenTab = folder.tabs.first(where: { $0.id == tab.zenPinID }),
            let url = zenTab.url {
             unload(tab, to: zenTab, url: url, inPlace: inPlace)
             return
@@ -1170,4 +1246,17 @@ final class LinkPreviewController: UIViewController {
         text.append(NSAttributedString(string: url.host() ?? url.absoluteString))
         return text
     }
+}
+
+/// A folder of this iPhone's own tabs, kept with the session.
+struct LocalFolder: Codable, Identifiable, Hashable {
+    var id = UUID()
+    var name: String
+}
+
+/// A folder as the deck shows it: one of Zen's, or one of this iPhone's (`local`).
+struct DeckFolder: Hashable {
+    let id: String
+    let name: String
+    let local: LocalFolder.ID?
 }

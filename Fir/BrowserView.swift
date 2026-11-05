@@ -1021,13 +1021,13 @@ private struct PageView: View {
         .alert("New Folder", isPresented: Binding(get: { folderFor != nil }, set: { if !$0 { folderFor = nil } })) {
             TextField("Name", text: $folderName)
             Button("Create") {
-                if let tab = folderFor, let space = zenSpace(of: tab) {
-                    folderEditor.createFolder(named: folderName, with: tab, in: space)
+                if let tab = folderFor {
+                    folderEditor.newFolder(named: folderName, with: tab, in: zenSpace(of: tab))
                 }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("The folder appears in Zen too, with this page in it.")
+            Text(ZenFolderEditor.newFolderNote(for: folderFor))
         }
         .alert("Already in Your Language", isPresented: $alreadyTranslated) {
             Button("OK", role: .cancel) {}
@@ -1561,6 +1561,11 @@ private struct PageView: View {
             }
             if let space = zenSpace(of: current) {
                 FolderMenuItems(tab: current, space: space, editor: folderEditor) {
+                    folderName = ""
+                    folderFor = current
+                }
+            } else if current.spaceID == nil, current.url != nil {
+                LocalFolderMenuItems(tab: current, browser: browser) {
                     folderName = ""
                     folderFor = current
                 }

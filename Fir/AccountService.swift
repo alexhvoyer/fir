@@ -233,28 +233,28 @@ final class AccountService {
         "\(Int(Date.now.timeIntervalSince1970 * 1000))-\(UUID().uuidString.lowercased())"
     }
 
-    /// A new Zen folder holding one page, sent in one batch: Zen applies folders before tabs, so the tab
-    /// lands inside it. False when the server didn't take both.
+    /// A new Zen folder holding pages, sent in one batch: Zen applies folders before tabs, so the tabs
+    /// land inside it. False when the server didn't take them all.
     func createZenFolder(id: String, named name: String, in space: ZenWorkspaces.Space,
-                         tabID: String, url: URL, title: String) async -> Bool {
+                         tabs: [(id: String, url: URL, title: String)]) async -> Bool {
         guard let manager else { return false }
         let folder: [String: Any] = [
             "id": id, "kind": "folder",
             "data": [
                 "folderId": id, "name": name, "icon": NSNull(), "workspaceUuid": space.id,
-                "parentFolderId": NSNull(), "live": NSNull(), "children": [tabID],
+                "parentFolderId": NSNull(), "live": NSNull(), "children": tabs.map(\.id),
             ] as [String: Any],
         ]
-        let tab = Self.tabRecord(id: tabID, url: url, title: title, in: space, essential: false, folderID: id)
+        let records = tabs.map { Self.tabRecord(id: $0.id, url: $0.url, title: $0.title, in: space, essential: false, folderID: id) }
         pendingAdds[id] = (folder, nil)
-        pendingAdds[tabID] = (tab, nil)
+        for (tab, record) in zip(tabs, records) { pendingAdds[tab.id] = (record, nil) }
         rebuildSpaces()
         do {
-            try await SyncStorageReader(auth: RemoteTabsSync.authInfo(for: manager)).upload([folder, tab], to: "spaces")
+            try await SyncStorageReader(auth: RemoteTabsSync.authInfo(for: manager)).upload([folder] + records, to: "spaces")
             return true
         } catch {
             pendingAdds[id] = nil
-            pendingAdds[tabID] = nil
+            for tab in tabs { pendingAdds[tab.id] = nil }
             rebuildSpaces()
             spacesError = "\(error)"
             return false

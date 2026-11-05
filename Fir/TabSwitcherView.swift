@@ -49,13 +49,13 @@ struct TabSwitcherView: View {
         .alert("New Folder", isPresented: Binding(get: { folderFor != nil }, set: { if !$0 { folderFor = nil } })) {
             TextField("Name", text: $folderName)
             Button("Create") {
-                if let tab = folderFor, let space = zenSpace(of: tab) {
-                    ZenFolderEditor(account: account, browser: browser).createFolder(named: folderName, with: tab, in: space)
+                if let tab = folderFor {
+                    ZenFolderEditor(account: account, browser: browser).newFolder(named: folderName, with: tab, in: zenSpace(of: tab))
                 }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("The folder appears in Zen too, with this page in it.")
+            Text(ZenFolderEditor.newFolderNote(for: folderFor))
         }
         .safeAreaInset(edge: .bottom) { bottomBar }
         .background(.regularMaterial)
@@ -204,6 +204,7 @@ struct TabSwitcherView: View {
                             folderMenu: folderMenu,
                             tabMenu: tabMenu,
                             space: zenSpace(of: tab),
+                            localFolders: tab.spaceID == nil ? browser.localFolders : nil,
                             onFrame: { onCardFrame(tab.id, $0) })
                         .equatable()
                         .modifier(StackDepth(depth: depth))
@@ -250,11 +251,11 @@ struct TabSwitcherView: View {
     }
 
     /// Fans a folder's stack out into its cards, starting where the stack stood.
-    private func expand(_ folder: ZenWorkspaces.Folder) {
+    private func expand(_ folder: DeckFolder) {
         withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) { expandedFolder = folder.id }
     }
 
-    private func collapse(_ folder: ZenWorkspaces.Folder) {
+    private func collapse(_ folder: DeckFolder) {
         withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
             expandedFolder = nil
             let layout = deckLayout
@@ -299,6 +300,15 @@ struct TabSwitcherView: View {
                         browser.close(tab, inPlace: true)
                     }
                 }
+            },
+            workspaces: { account.zenWorkspaces?.spaces ?? [] },
+            move: { folder, space in
+                guard let local = folder.local else { return }
+                ZenFolderEditor(account: account, browser: browser).moveLocalFolder(local, to: space)
+            },
+            ungroup: { folder in
+                guard let local = folder.local else { return }
+                withAnimation(.snappy) { browser.ungroup(local) }
             }
         )
     }
@@ -446,6 +456,8 @@ private struct TabCard: View {
     var tabMenu: TabMenu?
     /// The Zen workspace the tab is in, for its folders; nil for this iPhone's tabs and private ones.
     var space: ZenWorkspaces.Space?
+    /// This iPhone's folders, for one of its own tabs; nil for a workspace's or a private tab.
+    var localFolders: [LocalFolder]?
     let onFrame: (CGRect) -> Void
 
     var body: some View {
@@ -464,6 +476,9 @@ private struct TabCard: View {
                             Menu {
                                 if let space {
                                     FolderMenuItems(tab: tab, space: space, editor: tabMenu.editor) { tabMenu.newFolder(tab) }
+                                    Divider()
+                                } else if localFolders != nil {
+                                    LocalFolderMenuItems(tab: tab, browser: tabMenu.editor.browser) { tabMenu.newFolder(tab) }
                                     Divider()
                                 }
                                 Button("Close Tab", systemImage: "xmark", role: .destructive) { tabMenu.close(tab) }
@@ -514,7 +529,7 @@ private struct TabCard: View {
     }
 
     /// The folder's name with a chevron that opens what can be done with it.
-    private func folderLabel(_ folder: ZenWorkspaces.Folder, detail: String?, font: Font) -> some View {
+    private func folderLabel(_ folder: DeckFolder, detail: String?, font: Font) -> some View {
         Menu {
             if let folderMenu {
                 if folderMenu.isExpanded(folder) {
@@ -522,8 +537,24 @@ private struct TabCard: View {
                 } else {
                     Button("Expand", systemImage: "rectangle.expand.vertical") { folderMenu.expand(folder) }
                 }
+                if folder.local != nil {
+                    let spaces = folderMenu.workspaces()
+                    if !spaces.isEmpty {
+                        Menu("Move to Workspace", systemImage: "arrow.up.forward.square") {
+                            ForEach(spaces) { space in
+                                Button([space.icon, space.name].compactMap { $0 }.joined(separator: " ")) {
+                                    folderMenu.move(folder, space)
+                                }
+                            }
+                        }
+                    }
+                    Button("Ungroup", systemImage: "folder.badge.minus") { folderMenu.ungroup(folder) }
+                }
                 if !folderMenu.openedTabs(folder).isEmpty {
-                    Button("Close Opened Tabs", systemImage: "xmark", role: .destructive) { folderMenu.closeOpened(folder) }
+                    // A Zen folder's tabs only unload; this iPhone's close for good.
+                    Button(folder.local == nil ? "Close Opened Tabs" : "Close Tabs", systemImage: "xmark", role: .destructive) {
+                        folderMenu.closeOpened(folder)
+                    }
                 }
             }
         } label: {
@@ -544,8 +575,8 @@ private struct TabCard: View {
 /// What a card's title row shows: its page, a folder's whole stack, or a page that belongs to a folder.
 enum CardHeading: Equatable {
     case tab
-    case stack(ZenWorkspaces.Folder, count: Int)
-    case member(ZenWorkspaces.Folder)
+    case stack(DeckFolder, count: Int)
+    case member(DeckFolder)
 }
 
 /// What the chevron by a card's title can do: folders, and closing.
@@ -558,11 +589,15 @@ struct TabMenu {
 
 /// What the chevron by a folder's name can do; the deck owns the state these touch.
 struct FolderMenu {
-    let isExpanded: (ZenWorkspaces.Folder) -> Bool
-    let expand: (ZenWorkspaces.Folder) -> Void
-    let collapse: (ZenWorkspaces.Folder) -> Void
-    let openedTabs: (ZenWorkspaces.Folder) -> [BrowserTab]
-    let closeOpened: (ZenWorkspaces.Folder) -> Void
+    let isExpanded: (DeckFolder) -> Bool
+    let expand: (DeckFolder) -> Void
+    let collapse: (DeckFolder) -> Void
+    let openedTabs: (DeckFolder) -> [BrowserTab]
+    let closeOpened: (DeckFolder) -> Void
+    /// Where a folder of this iPhone's tabs can move to.
+    let workspaces: () -> [ZenWorkspaces.Space]
+    let move: (DeckFolder, ZenWorkspaces.Space) -> Void
+    let ungroup: (DeckFolder) -> Void
 }
 
 /// Where each card sits: a slot along the deck, shared by a collapsed folder's cards, which stack under
@@ -572,12 +607,12 @@ struct DeckLayout {
     private(set) var depth: [BrowserTab.ID: Int] = [:]
     private(set) var heading: [BrowserTab.ID: CardHeading] = [:]
     /// The folder whose stack fills a slot.
-    private(set) var stacks: [Int: ZenWorkspaces.Folder] = [:]
+    private(set) var stacks: [Int: DeckFolder] = [:]
     /// Each slot's front card.
     private(set) var first: [BrowserTab] = []
     var count: Int { first.count }
 
-    init(_ tabs: [BrowserTab], folder: (BrowserTab) -> ZenWorkspaces.Folder?, expanded: String?) {
+    init(_ tabs: [BrowserTab], folder: (BrowserTab) -> DeckFolder?, expanded: String?) {
         var stackSlot: [String: Int] = [:]
         let sizes = Dictionary(tabs.compactMap { folder($0)?.id }.map { ($0, 1) }, uniquingKeysWith: +)
         for tab in tabs {
@@ -768,6 +803,6 @@ extension TabCard: Equatable {
         a.tab === b.tab && a.width == b.width && a.height == b.height
             && a.titleOpacity == b.titleOpacity && a.imageHidden == b.imageHidden && a.heading == b.heading
             && (a.folderMenu == nil) == (b.folderMenu == nil) && (a.tabMenu == nil) == (b.tabMenu == nil)
-            && a.space?.id == b.space?.id && a.space?.folders == b.space?.folders
+            && a.space?.id == b.space?.id && a.space?.folders == b.space?.folders && a.localFolders == b.localFolders
     }
 }

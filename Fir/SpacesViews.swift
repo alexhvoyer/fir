@@ -471,7 +471,7 @@ struct ZenFolderEditor {
         browser.save()
         Task {
             let created = await account.createZenFolder(id: AccountService.newRecordID(), named: trimmed.isEmpty ? "Folder" : trimmed,
-                                                        in: space, tabID: tabID, url: url, title: tab.title)
+                                                        in: space, tabs: [(tabID, url, tab.title)])
             if created {
                 if let oldPin { await account.removeFromZen(oldPin) }
             } else {
@@ -495,12 +495,77 @@ struct ZenFolderEditor {
         }
     }
 
+    /// A folder named in the New Folder alert: in Zen for a workspace's tab, on this iPhone for its own tabs.
+    func newFolder(named name: String, with tab: BrowserTab, in space: ZenWorkspaces.Space?) {
+        if let space {
+            createFolder(named: name, with: tab, in: space)
+        } else if tab.spaceID == nil {
+            let trimmed = name.trimmingCharacters(in: .whitespaces)
+            withAnimation(.snappy) { browser.createLocalFolder(named: trimmed.isEmpty ? "Folder" : trimmed, with: tab) }
+        }
+    }
+
+    /// What the New Folder alert says about where the folder lives.
+    static func newFolderNote(for tab: BrowserTab?) -> String {
+        tab?.spaceID == nil ? "Only on this iPhone. Move it into a Zen workspace later from its menu."
+            : "The folder appears in Zen too, with this page in it."
+    }
+
+    /// A folder of this iPhone's tabs becomes a Zen folder in `space`, its tabs moving with it. Back as it
+    /// was if Zen doesn't take it.
+    func moveLocalFolder(_ folder: LocalFolder.ID, to space: ZenWorkspaces.Space) {
+        let moving = browser.tabs(in: nil).filter { $0.localFolderID == folder && $0.url != nil }
+        guard !moving.isEmpty, let (detached, index) = browser.detachLocalFolder(folder) else { return }
+        let ids = moving.map { _ in AccountService.newRecordID() }
+        withAnimation(.snappy) {
+            for (tab, id) in zip(moving, ids) {
+                tab.localFolderID = nil
+                tab.move(to: space.id)
+                tab.joinZenFolder(as: id)
+            }
+            browser.space = space.id
+        }
+        browser.save()
+        let records = zip(moving, ids).compactMap { tab, id in tab.url.map { (id, $0, tab.title) } }
+        Task {
+            if !(await account.createZenFolder(id: AccountService.newRecordID(), named: detached.name, in: space, tabs: records)) {
+                for tab in moving {
+                    restorePin(tab, to: nil)
+                    tab.move(to: nil)
+                    tab.localFolderID = detached.id
+                }
+                browser.restoreLocalFolder(detached, at: index)
+            }
+            await account.sync()
+        }
+    }
+
     /// Back to what the tab was before a folder change: its own pin, or none.
     private func restorePin(_ tab: BrowserTab, to pin: String?) {
         tab.leaveZenFolder()
         tab.zenPinID = pin
         tab.isPinned = pin != nil
         browser.save()
+    }
+}
+
+/// The same for this iPhone's own tabs, whose folders stay on this iPhone.
+struct LocalFolderMenuItems: View {
+    let tab: BrowserTab
+    let browser: BrowserModel
+    let onNewFolder: () -> Void
+
+    var body: some View {
+        if tab.localFolderID != nil {
+            Button("Remove from Folder", systemImage: "folder.badge.minus") { browser.removeFromLocalFolder(tab) }
+        } else {
+            Menu("Add to Folder", systemImage: "folder.badge.plus") {
+                ForEach(browser.localFolders) { folder in
+                    Button(folder.name, systemImage: "folder") { browser.addToLocalFolder(tab, folder.id) }
+                }
+                Button("New Folder…", systemImage: "plus", action: onNewFolder)
+            }
+        }
     }
 }
 
