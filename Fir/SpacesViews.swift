@@ -637,6 +637,8 @@ struct WorkspacesSettingsView: View {
             }
             DevicesSection()
         }
+        // Rows come and go as Zen's records change, which happens outside any animation.
+        .animation(.default, value: account.zenWorkspaces?.spaces.map(\.id))
         .navigationTitle("Workspaces")
         // Inline like the settings it opens from: a large title, shown first on a fresh path, sat over the list.
         .navigationBarTitleDisplayMode(.inline)
