@@ -233,6 +233,60 @@ final class AccountService {
         "\(Int(Date.now.timeIntervalSince1970 * 1000))-\(UUID().uuidString.lowercased())"
     }
 
+    /// Changes one record of Zen's: read fresh, changed, and written back only if nobody wrote it meanwhile,
+    /// else read again. Shown at once, and undone if it never lands.
+    private func updateZenRecord(_ id: String, _ change: @escaping ([String: Any]) -> [String: Any]) async -> Bool {
+        guard let manager else { return false }
+        let before = spacesRecords
+        if let index = spacesRecords.firstIndex(where: { $0["id"] as? String == id }),
+           let data = spacesRecords[index]["data"] as? [String: Any] {
+            spacesRecords[index]["data"] = change(data)
+            rebuildSpaces()
+        }
+        do {
+            let storage = SyncStorageReader(auth: try await RemoteTabsSync.authInfo(for: manager))
+            for _ in 0..<3 {
+                var (record, modified) = try await storage.record(id, in: "spaces")
+                record["data"] = change(record["data"] as? [String: Any] ?? [:])
+                do {
+                    try await storage.replace(record, in: "spaces", ifUnmodifiedSince: modified)
+                    return true
+                } catch SyncStorageReader.ReaderError.conflict {
+                    continue
+                }
+            }
+            throw SyncStorageReader.ReaderError.conflict
+        } catch {
+            spacesRecords = before
+            rebuildSpaces()
+            spacesError = "\(error)"
+            return false
+        }
+    }
+
+    func renameZenSpace(_ id: String, to name: String, icon: String?) async -> Bool {
+        await updateZenRecord(id) { data in
+            var data = data
+            data["name"] = name
+            data["icon"] = icon ?? NSNull()
+            return data
+        }
+    }
+
+    /// Zen's workspace order; the layout record also holds every container's essentials, which stay as read.
+    func reorderZenSpaces(_ ids: [String]) async -> Bool {
+        await updateZenRecord("layout") { data in
+            var data = data
+            data["spaces"] = ids
+            return data
+        }
+    }
+
+    /// Asks Zen to delete a workspace. Zen confirms on the computer first, and closes its tabs there.
+    func deleteZenSpace(_ id: String) async -> Bool {
+        await removeFromZen(id)
+    }
+
     /// A new Zen workspace, as Zen makes one: its default theme and container, nothing in it yet.
     func createZenSpace(named name: String, icon: String?) async -> Bool {
         guard let manager else { return false }

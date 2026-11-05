@@ -21,6 +21,7 @@ struct SyncStorageReader {
     private struct BSO: Decodable {
         let id: String
         let payload: String
+        var modified: Double? = nil
     }
 
     private struct KeyBundle {
@@ -34,6 +35,8 @@ struct SyncStorageReader {
         case hmacMismatch
         case decryptFailed
         case rejected(String)
+        /// Changed on the server since it was read.
+        case conflict
     }
 
     let auth: SyncAuthInfo
@@ -60,6 +63,33 @@ struct SyncStorageReader {
         let kept = Set(result?["success"] as? [String] ?? [])
         let missing = bsos.compactMap { $0["id"] }.filter { !kept.contains($0) }
         guard missing.isEmpty else { throw ReaderError.rejected(missing.joined(separator: ", ")) }
+    }
+
+    /// One record's cleartext and when the server last changed it, for a write that mustn't clobber a newer one.
+    func record(_ id: String, in collection: String) async throws -> (cleartext: [String: Any], modified: Double) {
+        let token = try await fetchToken()
+        let base = URL(string: token.api_endpoint)!
+        let bundle = try await keyBundle(for: collection, base: base, token: token)
+        let bso: BSO = try await get(base.appending(path: "storage/\(collection)/\(id)"), token: token)
+        return (try decrypt(bso.payload, with: bundle), bso.modified ?? 0)
+    }
+
+    /// Replaces a record only if nobody changed it after `modified`; throws `conflict` otherwise.
+    func replace(_ cleartext: [String: Any], in collection: String, ifUnmodifiedSince modified: Double) async throws {
+        guard let id = cleartext["id"] as? String else { throw ReaderError.rejected("record without id") }
+        let token = try await fetchToken()
+        let base = URL(string: token.api_endpoint)!
+        let bundle = try await keyBundle(for: collection, base: base, token: token)
+        let url = base.appending(path: "storage/\(collection)/\(id)")
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["id": id, "payload": try encrypt(cleartext, with: bundle)])
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(String(format: "%.2f", modified), forHTTPHeaderField: "X-If-Unmodified-Since")
+        request.setValue(hawkHeader(method: "PUT", url: url, token: token), forHTTPHeaderField: "Authorization")
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if (response as? HTTPURLResponse)?.statusCode == 412 { throw ReaderError.conflict }
+        try check(response, collection)
     }
 
     private func keyBundle(for collection: String, base: URL, token: Token) async throws -> KeyBundle {

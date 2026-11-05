@@ -592,24 +592,42 @@ struct FolderMenuItems: View {
     }
 }
 
-/// Zen's workspaces, in Zen's order, with a way to add one; it shows up in Zen on every computer.
+/// Zen's workspaces, in Zen's order: add, rename, reorder and delete, all reaching Zen on every computer.
 struct WorkspacesSettingsView: View {
     @Environment(AccountService.self) private var account
-    @State private var adding = false
+    @State private var editing: WorkspaceEditor.Target?
+    @State private var deleting: ZenWorkspaces.Space?
+    @State private var failed = false
 
     var body: some View {
         List {
             if let zen = account.zenWorkspaces {
                 Section {
                     ForEach(zen.spaces) { space in
-                        Label {
-                            Text(space.name)
-                        } icon: {
-                            if let icon = space.icon { Text(icon) } else { Image(systemName: "square.grid.2x2") }
+                        Button { editing = .rename(space) } label: {
+                            Label {
+                                Text(space.name).foregroundStyle(.primary)
+                            } icon: {
+                                if let icon = space.icon { Text(icon) } else { Image(systemName: "square.grid.2x2") }
+                            }
+                        }
+                        // Rows read as rows, not as accent-coloured buttons.
+                        .tint(.primary)
+                        .swipeActions {
+                            if zen.spaces.count > 1 {
+                                Button("Delete", systemImage: "trash", role: .destructive) { deleting = space }
+                                    // Red, not the row's own tint.
+                                    .tint(.red)
+                            }
                         }
                     }
+                    .onMove { from, to in
+                        var ids = zen.spaces.map(\.id)
+                        ids.move(fromOffsets: from, toOffset: to)
+                        Task { if !(await account.reorderZenSpaces(ids)) { failed = true } }
+                    }
                 } footer: {
-                    Text("These are your Zen workspaces. One you add here appears in Zen on your computers too.")
+                    Text("These are your Zen workspaces. Changes here reach Zen on your computers too.")
                 }
             } else {
                 ContentUnavailableView("No Zen Workspaces", systemImage: "square.grid.2x2",
@@ -620,15 +638,47 @@ struct WorkspacesSettingsView: View {
         // Inline like the settings it opens from: a large title, shown first on a fresh path, sat over the list.
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            Button("New Workspace", systemImage: "plus") { adding = true }
-                .disabled(account.zenWorkspaces == nil)
+            if account.zenWorkspaces != nil {
+                EditButton()
+                Button("New Workspace", systemImage: "plus") { editing = .new }
+            }
         }
-        .sheet(isPresented: $adding) { NewWorkspaceView() }
+        .sheet(item: $editing) { target in
+            WorkspaceEditor(target: target) { deleting = $0 }
+        }
+        .alert("Delete \(deleting?.name ?? "Workspace")?", isPresented: Binding(
+            get: { deleting != nil }, set: { if !$0 { deleting = nil } }
+        ), presenting: deleting) { space in
+            Button("Delete", role: .destructive) {
+                Task { if !(await account.deleteZenSpace(space.id)) { failed = true } }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Zen asks you to confirm on your computer, then closes the workspace's tabs there.")
+        }
+        .alert("Couldn't Reach Zen", isPresented: $failed) {
+            Button("OK") {}
+        } message: {
+            Text("The change didn't reach Zen's sync server, so nothing changed. Try again.")
+        }
     }
 }
 
-/// Name and emoji for a new Zen workspace.
-private struct NewWorkspaceView: View {
+/// Name and emoji for a new Zen workspace, or for one being renamed.
+private struct WorkspaceEditor: View {
+    enum Target: Identifiable {
+        case new
+        case rename(ZenWorkspaces.Space)
+        var id: String {
+            switch self {
+            case .new: "new"
+            case .rename(let space): space.id
+            }
+        }
+    }
+
+    let target: Target
+    let onDelete: (ZenWorkspaces.Space) -> Void
     @Environment(AccountService.self) private var account
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
@@ -637,38 +687,62 @@ private struct NewWorkspaceView: View {
     @State private var failed = false
     @FocusState private var nameFocused: Bool
 
+    private var renaming: ZenWorkspaces.Space? {
+        if case .rename(let space) = target { space } else { nil }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Name", text: $name)
-                    .focused($nameFocused)
-                TextField("Emoji", text: $emoji)
-                    // One symbol, the last typed: Zen shows a single icon.
-                    .onChange(of: emoji) { if emoji.count > 1 { emoji = String(emoji.suffix(1)) } }
+                Section {
+                    TextField("Name", text: $name)
+                        .focused($nameFocused)
+                    TextField("Emoji", text: $emoji)
+                        // One symbol, the last typed: Zen shows a single icon.
+                        .onChange(of: emoji) { if emoji.count > 1 { emoji = String(emoji.suffix(1)) } }
+                }
                 if failed {
                     Text("Couldn't reach Zen's sync server. Try again.").foregroundStyle(.red)
                 }
+                if let space = renaming, (account.zenWorkspaces?.spaces.count ?? 0) > 1 {
+                    Section {
+                        Button("Delete Workspace", role: .destructive) {
+                            dismiss()
+                            onDelete(space)
+                        }
+                    }
+                }
             }
-            .navigationTitle("New Workspace")
+            .navigationTitle(renaming == nil ? "New Workspace" : "Edit Workspace")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { add() }
+                    Button(renaming == nil ? "Add" : "Save") { save() }
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || saving)
                 }
             }
-            .onAppear { nameFocused = true }
+            .onAppear {
+                name = renaming?.name ?? ""
+                emoji = renaming?.icon ?? ""
+                if renaming == nil { nameFocused = true }
+            }
         }
         .presentationDetents([.medium])
     }
 
-    private func add() {
+    private func save() {
         saving = true
         failed = false
         Task {
             let trimmed = name.trimmingCharacters(in: .whitespaces)
-            if await account.createZenSpace(named: trimmed, icon: emoji.isEmpty ? nil : emoji) {
+            let icon = emoji.isEmpty ? nil : emoji
+            let done = if let space = renaming {
+                await account.renameZenSpace(space.id, to: trimmed, icon: icon)
+            } else {
+                await account.createZenSpace(named: trimmed, icon: icon)
+            }
+            if done {
                 dismiss()
                 await account.sync()
             } else {
