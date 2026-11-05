@@ -912,6 +912,8 @@ private struct PageView: View {
         let tab = browser.selected
         let insets = safeInsets
         ZStack(alignment: .bottom) {
+                // Fills the side cutouts the page keeps clear of; the deck showed through them.
+                if insets.leading > 0 || insets.trailing > 0 { Color(.systemGroupedBackground) }
                 // Shown in the gap between sliding pages during a swipe.
                 if swipeX != 0 { Color(.systemGray5) }
                 // Full screen like Safari, with the status bar and the bar declared obscured: fixed
@@ -919,6 +921,10 @@ private struct PageView: View {
                 // scrolls under both. The bottom inset shrinks only while the bar is collapsed.
                 // Swapped for its snapshot in one frame: caught in a drag's animation, the two cross-faded.
                 WebHost(browser: browser, insets: pageInsets(insets))
+                    // Clear of side cutouts, as Safari lays out: the iPhone Duo's camera column and the
+                    // notch side in landscape. Top and bottom stay obscured insets, under which content scrolls.
+                    .padding(.leading, insets.leading)
+                    .padding(.trailing, insets.trailing)
                     .opacity(liveHidden ? 0 : 1)
                     .animation(nil, value: liveHidden)
                 if tab.url == nil {
