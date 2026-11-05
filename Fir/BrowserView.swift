@@ -973,7 +973,7 @@ private struct PageView: View {
                         .allowsHitTesting(collapse < 0.5)
                         .opacity(chromeOpacity)
                         .frame(width: insets.trailing)
-                        .padding(.bottom, insets.bottom + 8)
+                        .padding(.bottom, insets.bottom)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
