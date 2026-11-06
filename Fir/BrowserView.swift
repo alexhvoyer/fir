@@ -280,9 +280,9 @@ struct BrowserView: View {
         browser.selected.stopScrolling()
         coverView = browser.selected.liveSnapshot()
         cover = browser.selected.snapshot
-        // Normally kept fresh while idle (see BrowserTab); now only if missing or scrolled since.
-        if browser.selected.snapshot == nil { browser.selected.refreshSnapshot() }
-        else { browser.selected.refreshSnapshotIfPending() }
+        // Always: a video, a dismissed sheet or an inner scroll changes the page without moving its scroll
+        // view. A page still loading keeps its saved image.
+        if browser.selected.snapshot == nil || browser.selected.hasPainted { browser.selected.refreshSnapshot() }
         transitioning = true
     }
 

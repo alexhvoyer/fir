@@ -251,7 +251,7 @@ final class BrowserTab: NSObject, Identifiable {
 
     @ObservationIgnored private var idleSnapshot: Task<Void, Never>?
 
-    /// Keeps the card image current while the page is idle, so a transition never has to take one:
+    /// Keeps the saved image current after scrolling, for a quit without a transition. Waits for idle:
     /// starting a snapshot costs the main thread about 15 ms, two frames at 120 Hz.
     private func scheduleIdleSnapshot() {
         idleSnapshot?.cancel()
@@ -273,14 +273,6 @@ final class BrowserTab: NSObject, Identifiable {
         let bottom = max(top, scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom)
         let y = min(max(scroll.contentOffset.y, top), bottom)
         scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: y), animated: false)
-    }
-
-    /// A transition that starts before the idle snapshot would land the page on a stale card.
-    func refreshSnapshotIfPending() {
-        guard let pending = idleSnapshot else { return }
-        pending.cancel()
-        idleSnapshot = nil
-        refreshSnapshot()
     }
 
     /// One colour edge to edge, or transparent: shrunk to 16x16, no pixel differs from the first.
@@ -315,6 +307,8 @@ final class BrowserTab: NSObject, Identifiable {
             guard let self, let image, !Self.isBlank(image) else { return }
             snapshot = image
             guard !isPrivate else { return }
+        idleSnapshot?.cancel()
+        idleSnapshot = nil
             let id = id
             Task.detached(priority: .utility) {
                 if let jpeg = image.jpegData(compressionQuality: 0.8) { SessionStore.saveSnapshot(jpeg, for: id) }
