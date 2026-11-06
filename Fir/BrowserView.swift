@@ -1821,6 +1821,7 @@ private struct PageView: View {
             return
         }
         let next = min(max(collapse + (new - old) / Self.collapseDistance, 0), 1)
+        container.backgroundColor = browser.selected.pageBackground ?? .white
         if next != collapse { collapse = next }
         // While the finger is down the bar just follows; settling waits for it to lift.
         if browser.selected.isTouching { settleTask?.cancel() } else { scheduleSettle() }

@@ -23,6 +23,8 @@ final class BrowserTab: NSObject, Identifiable {
     private(set) var estimatedProgress = 0.0
     private(set) var canGoBack = false
     private(set) var canGoForward = false
+    /// What shows around the page while WebKit's swipe moves it, so a hard flick shows no other colour.
+    private(set) var pageBackground: UIColor?
     /// The page looks like an article, so the bar offers Reader, as Safari and Lens do.
     private(set) var isReaderable = false
     /// Set when a page of a site marked "Always Use Reader" finishes; the browser shows its reader.
@@ -193,6 +195,12 @@ final class BrowserTab: NSObject, Identifiable {
             webView.observe(\.isLoading) { [weak self] web, _ in MainActor.assumeIsolated { self?.isLoading = web.isLoading } },
             webView.observe(\.estimatedProgress) { [weak self] web, _ in
                 MainActor.assumeIsolated { self?.estimatedProgress = web.estimatedProgress }
+            },
+            webView.observe(\.underPageBackgroundColor, options: [.initial]) { [weak self] web, _ in
+                MainActor.assumeIsolated {
+                    web.backgroundColor = web.underPageBackgroundColor
+                    self?.pageBackground = web.underPageBackgroundColor
+                }
             },
             webView.observe(\.canGoBack) { [weak self] web, _ in MainActor.assumeIsolated { self?.canGoBack = web.canGoBack } },
             webView.observe(\.canGoForward) { [weak self] web, _ in
@@ -1123,7 +1131,7 @@ final class SwipeAnywhere: NSObject, UIGestureRecognizerDelegate {
         let target = UIImageView(image: image)
         target.contentMode = .scaleAspectFill
         target.clipsToBounds = true
-        target.backgroundColor = .systemBackground
+        target.backgroundColor = webView.underPageBackgroundColor
         target.frame = container.bounds
         page.frame = container.bounds
         let shade = UIView(frame: container.bounds)
