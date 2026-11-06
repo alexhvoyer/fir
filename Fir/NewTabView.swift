@@ -72,9 +72,11 @@ struct NewTabView: View {
             results
             .padding(.top, 8)
             .shown(!showsStartPage)
-            StartPage(spaceID: newTabSpace, onPullUp: expand) {
-                open($0)
-            }
+            StartPage(spaceID: newTabSpace, onPullUp: expand, onOpen: { open($0) }, onOpenPin: { pin in
+                browser.open(pin)
+                onOpen()
+                dismiss()
+            })
             .shown(showsStartPage)
         }
         // While the sheet rises the finger's drag stops scrolling: both at once moved the content twice.

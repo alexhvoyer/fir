@@ -13,8 +13,8 @@ struct PageSheet: View {
     let tab: BrowserTab
     let isTranslated: Bool
     let sendTargets: [Device]
-    /// The tab belongs to a synced Zen workspace, so Zen's pins and Essentials are on offer.
-    var inZenSpace = false
+    /// Zen is connected and the tab isn't private, so Zen's Essentials are on offer.
+    var offersEssentials = false
     /// The chosen action; the caller runs it once the sheet is gone, so find and reader see the page.
     let onAction: (Action) -> Void
 
@@ -195,7 +195,7 @@ struct PageSheet: View {
             if tab.url != nil, !tab.fromZenFolder {
                 action(tab.isPinned ? "Unpin" : "Pin", tab.isPinned ? "pin.slash" : "pin") { finish(.pin) }
                 // Zen tells them apart: a pin stays in its space, an essential shows in all of them.
-                if inZenSpace {
+                if offersEssentials {
                     action(tab.zenEssentialID == nil ? "Essential" : "Remove",
                            tab.zenEssentialID == nil ? "star" : "star.slash") { finish(.essential) }
                 }

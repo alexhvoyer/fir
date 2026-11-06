@@ -210,12 +210,13 @@ final class AccountService {
 
     /// Adds a page to Zen as its own "Pin Tab" or "Add to Essentials" would: one new tab record in the
     /// "spaces" collection, which Zen creates on its next sync. A pin belongs to `space`; an essential to
-    /// the space's container, so it shows in every space using it. Returns the record id.
-    func addToZen(_ url: URL, title: String, in space: ZenWorkspaces.Space, essential: Bool,
+    /// the space's container, or the default one for a tab outside any space, so it shows in every space
+    /// using it. Returns the record id.
+    func addToZen(_ url: URL, title: String, in space: ZenWorkspaces.Space?, essential: Bool,
                   id: String = AccountService.newRecordID(), folderID: String? = nil) async -> String? {
         guard let manager else { return nil }
         let record = Self.tabRecord(id: id, url: url, title: title, in: space, essential: essential, folderID: folderID)
-        pendingAdds[id] = (record, essential ? space.container : nil)
+        pendingAdds[id] = (record, essential ? space?.container ?? ZenWorkspaces.defaultContainer : nil)
         rebuildSpaces()
         do {
             try await SyncStorageReader(auth: RemoteTabsSync.authInfo(for: manager)).upload([record], to: "spaces")
@@ -341,15 +342,16 @@ final class AccountService {
     }
 
     /// A pinned tab, an essential, or a folder's tab, as Zen's own sync writes one.
-    private static func tabRecord(id: String, url: URL, title: String, in space: ZenWorkspaces.Space,
+    private static func tabRecord(id: String, url: URL, title: String, in space: ZenWorkspaces.Space?,
                                   essential: Bool, folderID: String?) -> [String: Any] {
-        let container: Any = space.container == ZenWorkspaces.defaultContainer ? NSNull() : space.container
+        let guid = space?.container ?? ZenWorkspaces.defaultContainer
+        let container: Any = guid == ZenWorkspaces.defaultContainer ? NSNull() : guid
         return [
             "id": id, "kind": "tab",
             "data": [
                 "tabId": id, "url": url.absoluteString, "title": title, "icon": NSNull(),
                 "containerGuid": container, "essential": essential, "pinned": true,
-                "workspaceUuid": essential ? NSNull() : space.id as Any, "folderId": folderID ?? NSNull() as Any,
+                "workspaceUuid": essential ? NSNull() : space?.id as Any, "folderId": folderID ?? NSNull() as Any,
                 "staticLabel": NSNull(), "hasStaticIcon": false, "defaultContainer": false,
             ] as [String: Any],
         ]

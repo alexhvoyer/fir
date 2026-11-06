@@ -19,12 +19,15 @@ enum SessionStore {
         var zenFolder: Bool? = nil
         /// The folder of this iPhone's own tabs it is in.
         var localFolder: UUID? = nil
+        /// The pin of this iPhone's tabs it stands for.
+        var localPin: UUID? = nil
     }
 
     struct Session: Codable {
         let tabs: [Tab]
         let selectedID: UUID?
         var localFolders: [LocalFolder]? = nil
+        var localPins: [LocalPin]? = nil
     }
 
     private static var sessionURL: URL {

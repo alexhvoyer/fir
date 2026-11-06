@@ -540,6 +540,48 @@ struct ZenFolderEditor {
         }
     }
 
+    /// Pins at the front of the deck. In a Zen workspace the tab is pinned in that workspace in Zen too,
+    /// and unpinning unpins it there.
+    func togglePin(_ tab: BrowserTab) {
+        let pin = !tab.isPinned
+        withAnimation(.snappy) { browser.setPinned(pin, tab) }
+        Task {
+            if pin, let url = tab.url, let space = zenSpace(of: tab) {
+                tab.zenPinID = await account.addToZen(url, title: tab.title, in: space, essential: false)
+            } else if !pin, let id = tab.zenPinID {
+                // Kept on failure, so the tab still knows its Zen pin and a later unpin can retry.
+                if await account.removeFromZen(id) { tab.zenPinID = nil }
+            } else {
+                return
+            }
+            browser.save()
+            await account.sync()
+        }
+    }
+
+    /// Essentials are Zen's, so they need its sync. This iPhone's own tabs use the default container's.
+    func offersEssentials(_ tab: BrowserTab) -> Bool {
+        !tab.isPrivate && account.zenWorkspaces != nil && (tab.spaceID == nil || zenSpace(of: tab) != nil)
+    }
+
+    /// Adds the page to Zen's Essentials of the workspace's container, or takes it off again.
+    func toggleEssential(_ tab: BrowserTab) {
+        Task {
+            if let id = tab.zenEssentialID {
+                if await account.removeFromZen(id) { tab.zenEssentialID = nil }
+            } else if let url = tab.url, offersEssentials(tab) {
+                tab.zenEssentialID = await account.addToZen(url, title: tab.title, in: zenSpace(of: tab), essential: true)
+            }
+            browser.save()
+            await account.sync()
+        }
+    }
+
+    private func zenSpace(of tab: BrowserTab) -> ZenWorkspaces.Space? {
+        guard !tab.isPrivate else { return nil }
+        return account.zenWorkspaces?.spaces.first { $0.id == tab.spaceID }
+    }
+
     /// Closes a folder's tab for good: out of the folder in Zen too, not just unloaded.
     func closeAndRemoveFromFolder(_ tab: BrowserTab) {
         guard let id = tab.zenPinID else { return }

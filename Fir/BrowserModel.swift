@@ -13,6 +13,8 @@ final class BrowserTab: NSObject, Identifiable {
     private(set) var spaceID: String?
     /// The folder of this iPhone's own tabs it is in.
     var localFolderID: LocalFolder.ID?
+    /// The pin of this iPhone's tabs it stands for; the pin outlives the tab.
+    var localPinID: LocalPin.ID?
 
     private(set) var pageURL: URL?
     private(set) var pageTitle = ""
@@ -21,10 +23,10 @@ final class BrowserTab: NSObject, Identifiable {
     /// after its content process died. Until then its saved snapshot stands in.
     private(set) var hasPainted = false
     private(set) var estimatedProgress = 0.0
-    private(set) var canGoBack = false
-    private(set) var canGoForward = false
     /// What shows around the page while WebKit's swipe moves it, so a hard flick shows no other colour.
     private(set) var pageBackground: UIColor?
+    private(set) var canGoBack = false
+    private(set) var canGoForward = false
     /// The page looks like an article, so the bar offers Reader, as Safari and Lens do.
     private(set) var isReaderable = false
     /// Set when a page of a site marked "Always Use Reader" finishes; the browser shows its reader.
@@ -101,6 +103,7 @@ final class BrowserTab: NSObject, Identifiable {
         zenEssentialID = saved.zenEssentialID
         fromZenFolder = saved.zenFolder ?? false
         localFolderID = saved.localFolder
+        localPinID = saved.localPin
         webView = Self.makeWebView(dataStore: .default())
         super.init()
         snapshot = SessionStore.loadSnapshot(for: saved.id)
@@ -193,14 +196,14 @@ final class BrowserTab: NSObject, Identifiable {
             },
             webView.observe(\.title) { [weak self] web, _ in MainActor.assumeIsolated { self?.pageTitle = web.title ?? "" } },
             webView.observe(\.isLoading) { [weak self] web, _ in MainActor.assumeIsolated { self?.isLoading = web.isLoading } },
-            webView.observe(\.estimatedProgress) { [weak self] web, _ in
-                MainActor.assumeIsolated { self?.estimatedProgress = web.estimatedProgress }
-            },
             webView.observe(\.underPageBackgroundColor, options: [.initial]) { [weak self] web, _ in
                 MainActor.assumeIsolated {
                     web.backgroundColor = web.underPageBackgroundColor
                     self?.pageBackground = web.underPageBackgroundColor
                 }
+            },
+            webView.observe(\.estimatedProgress) { [weak self] web, _ in
+                MainActor.assumeIsolated { self?.estimatedProgress = web.estimatedProgress }
             },
             webView.observe(\.canGoBack) { [weak self] web, _ in MainActor.assumeIsolated { self?.canGoBack = web.canGoBack } },
             webView.observe(\.canGoForward) { [weak self] web, _ in
@@ -304,6 +307,8 @@ final class BrowserTab: NSObject, Identifiable {
     /// Refreshes the deck card's image. WebKit renders it in its own process, so the main thread and
     /// any running animation are never held up.
     func refreshSnapshot() {
+        idleSnapshot?.cancel()
+        idleSnapshot = nil
         guard webView.bounds.width > 0, url != nil else { return }
         let config = WKSnapshotConfiguration()
         config.rect = webView.bounds
@@ -315,8 +320,6 @@ final class BrowserTab: NSObject, Identifiable {
             guard let self, let image, !Self.isBlank(image) else { return }
             snapshot = image
             guard !isPrivate else { return }
-        idleSnapshot?.cancel()
-        idleSnapshot = nil
             let id = id
             Task.detached(priority: .utility) {
                 if let jpeg = image.jpegData(compressionQuality: 0.8) { SessionStore.saveSnapshot(jpeg, for: id) }
@@ -597,12 +600,17 @@ final class BrowserModel {
         let session = SessionStore.load()
         tabs = session?.tabs.map(BrowserTab.init(restoring:)) ?? []
         localFolders = session?.localFolders ?? []
+        localPins = session?.localPins ?? []
         if tabs.isEmpty { tabs = [BrowserTab()] }
         selectedID = tabs.contains { $0.id == session?.selectedID } ? session?.selectedID : tabs.last?.id
         space = selected.spaceID
         searchRequested = UserDefaults.standard.bool(forKey: SettingsKey.keyboardAtLaunch) ? .tab : nil
         // didSet doesn't run in an initializer.
         for tab in tabs { tab.model = self }
+        // Pinned before pins outlived their tabs.
+        for tab in tabs where tab.isPinned && tab.spaceID == nil && tab.localPinID == nil {
+            if let url = tab.url { tab.localPinID = localPin(for: url, title: tab.title) }
+        }
         // Tabs left unviewed while Fir was closed go at launch, not only on the next return to it.
         sweepIdleTabs()
     }
@@ -615,10 +623,11 @@ final class BrowserModel {
                 SessionStore.Tab(id: $0.id, url: $0.url, title: $0.title, spaceID: $0.spaceID, lastViewed: $0.lastViewed,
                                  pinned: $0.isPinned, zenPinID: $0.zenPinID,
                                  zenEssentialID: $0.zenEssentialID, zenFolder: $0.fromZenFolder ? true : nil,
-                                 localFolder: $0.localFolderID)
+                                 localFolder: $0.localFolderID, localPin: $0.localPinID)
             },
             selectedID: selectedID,
-            localFolders: localFolders
+            localFolders: localFolders,
+            localPins: localPins
         )
         Self.saveQueue.async { SessionStore.save(session) }
     }
@@ -756,6 +765,8 @@ final class BrowserModel {
         if selectedID == tab.id {
             let others = siblings.filter { $0.id != tab.id }
             selectedID = inPlace || others.isEmpty ? fresh.id : others[min(index, others.count - 1)].id
+            // Closed from its page with nothing to go to: it stays in front, so it can't stay blank.
+            if !inPlace, others.isEmpty { fresh.loadIfNeeded() }
         }
         SessionStore.deleteSnapshot(for: tab.id)
         save()
@@ -783,6 +794,41 @@ final class BrowserModel {
     func setPinned(_ pinned: Bool, _ tab: BrowserTab) {
         guard tab.isPinned != pinned else { return }
         tab.isPinned = pinned
+        if pinned, tab.spaceID == nil, let url = tab.url {
+            tab.localPinID = localPin(for: url, title: tab.title)
+        } else if !pinned, let id = tab.localPinID {
+            unpin(id)
+        }
+        save()
+    }
+
+    /// This iPhone's pins, listed on the start page. Closing a tab leaves its pin.
+    private(set) var localPins: [LocalPin] = []
+
+    private func localPin(for url: URL, title: String) -> LocalPin.ID {
+        if let pin = localPins.first(where: { $0.url == url }) { return pin.id }
+        let pin = LocalPin(url: url, title: title)
+        localPins.append(pin)
+        return pin.id
+    }
+
+    func unpin(_ id: LocalPin.ID) {
+        localPins.removeAll { $0.id == id }
+        for tab in tabs where tab.localPinID == id {
+            tab.localPinID = nil
+            tab.isPinned = false
+        }
+        save()
+    }
+
+    /// Back to its tab if one is open, else in a new one that stands for the pin.
+    func open(_ pin: LocalPin) {
+        if let tab = tabs.first(where: { $0.localPinID == pin.id }) { return select(tab) }
+        let tab = BrowserTab(url: pin.url, dataStore: dataStore(for: nil))
+        tab.isPinned = true
+        tab.localPinID = pin.id
+        tabs.append(tab)
+        select(tab)
         save()
     }
 
@@ -790,6 +836,8 @@ final class BrowserModel {
         let leavesPrivate = selected.isPrivate && !tab.isPrivate
         selectedID = tab.id
         space = tab.spaceID
+        // Selected already if it was unloaded in place, so the change of selection won't load it.
+        tab.loadIfNeeded()
         if leavesPrivate { lockPrivate() }
     }
 
@@ -881,6 +929,11 @@ final class BrowserModel {
         guard let undo else { return }
         self.undo = nil
         let tab = undo.tab
+        // Unpinned while it was closed.
+        if let pin = tab.localPinID, !localPins.contains(where: { $0.id == pin }) {
+            tab.localPinID = nil
+            tab.isPinned = false
+        }
         if let placeholder = undo.placeholder, tabs.count == 1, tabs[0].id == placeholder, tabs[0].url == nil {
             tabs = []
         }
@@ -1264,6 +1317,13 @@ final class LinkPreviewController: UIViewController {
 struct LocalFolder: Codable, Identifiable, Hashable {
     var id = UUID()
     var name: String
+}
+
+/// A pinned page of this iPhone's own tabs. Zen's pins live in Zen; these have nowhere else to live.
+struct LocalPin: Codable, Identifiable, Hashable {
+    var id = UUID()
+    let url: URL
+    let title: String
 }
 
 /// A folder as the deck shows it: one of Zen's, or one of this iPhone's (`local`).

@@ -1025,7 +1025,7 @@ private struct PageView: View {
         .sheet(isPresented: $showPageSheet, onDismiss: runPageAction) {
             // The system's zoom transition: the sheet grows out of whatever opened it, and shrinks back.
             PageSheet(tab: tab, isTranslated: translatedTab == tab.id, sendTargets: account.sendTargets,
-                      inZenSpace: zenSpace(of: tab) != nil) {
+                      offersEssentials: folderEditor.offersEssentials(tab)) {
                 pageAction = $0
             }
             .navigationTransition(.zoom(sourceID: pageSheetSource, in: sheetSource))
@@ -1114,9 +1114,9 @@ private struct PageView: View {
         case .find:
             tab.webView.findInteraction?.presentFindNavigator(showingReplace: false)
         case .pin:
-            togglePin(tab)
+            folderEditor.togglePin(tab)
         case .essential:
-            toggleEssential(tab)
+            folderEditor.toggleEssential(tab)
         case .reader:
             Task {
                 reader = await ReaderArticle.extract(from: tab.webView)
@@ -1608,11 +1608,11 @@ private struct PageView: View {
             let current = browser.selected
             if current.url != nil, !current.fromZenFolder {
                 Button(current.isPinned ? "Unpin Tab" : "Pin Tab", systemImage: current.isPinned ? "pin.slash" : "pin") {
-                    togglePin(current)
+                    folderEditor.togglePin(current)
                 }
-                if zenSpace(of: current) != nil {
+                if folderEditor.offersEssentials(current) {
                     Button(current.zenEssentialID == nil ? "Add to Essentials" : "Remove from Essentials",
-                           systemImage: current.zenEssentialID == nil ? "star" : "star.slash") { toggleEssential(current) }
+                           systemImage: current.zenEssentialID == nil ? "star" : "star.slash") { folderEditor.toggleEssential(current) }
                 }
             }
             if let space = zenSpace(of: current) {
@@ -1653,38 +1653,6 @@ private struct PageView: View {
     private func zenSpace(of tab: BrowserTab) -> ZenWorkspaces.Space? {
         guard !tab.isPrivate else { return nil }
         return account.zenWorkspaces?.spaces.first { $0.id == tab.spaceID }
-    }
-
-    /// Pins at the front of the deck. In a Zen workspace the tab is pinned in that workspace in Zen too,
-    /// and unpinning unpins it there.
-    private func togglePin(_ tab: BrowserTab) {
-        let pin = !tab.isPinned
-        withAnimation(.snappy) { browser.setPinned(pin, tab) }
-        Task {
-            if pin, let url = tab.url, let space = zenSpace(of: tab) {
-                tab.zenPinID = await account.addToZen(url, title: tab.title, in: space, essential: false)
-            } else if !pin, let id = tab.zenPinID {
-                // Kept on failure, so the tab still knows its Zen pin and a later unpin can retry.
-                if await account.removeFromZen(id) { tab.zenPinID = nil }
-            } else {
-                return
-            }
-            browser.save()
-            await account.sync()
-        }
-    }
-
-    /// Adds the page to Zen's Essentials of the workspace's container, or takes it off again.
-    private func toggleEssential(_ tab: BrowserTab) {
-        Task {
-            if let id = tab.zenEssentialID {
-                if await account.removeFromZen(id) { tab.zenEssentialID = nil }
-            } else if let url = tab.url, let space = zenSpace(of: tab) {
-                tab.zenEssentialID = await account.addToZen(url, title: tab.title, in: space, essential: true)
-            }
-            browser.save()
-            await account.sync()
-        }
     }
 
     /// Opens search for a tab in the current workspace, or in Private.
@@ -1821,7 +1789,6 @@ private struct PageView: View {
             return
         }
         let next = min(max(collapse + (new - old) / Self.collapseDistance, 0), 1)
-        container.backgroundColor = browser.selected.pageBackground ?? .white
         if next != collapse { collapse = next }
         // While the finger is down the bar just follows; settling waits for it to lift.
         if browser.selected.isTouching { settleTask?.cancel() } else { scheduleSettle() }
@@ -1854,6 +1821,7 @@ private struct WebHost: UIViewRepresentable {
 
     func updateUIView(_ container: UIView, context: Context) {
         let selected = browser.selected.webView
+        container.backgroundColor = browser.selected.pageBackground ?? .white
         let live = Set(browser.tabs.map { ObjectIdentifier($0.webView) })
         for case let webView as WKWebView in container.subviews where !live.contains(ObjectIdentifier(webView)) {
             webView.removeFromSuperview()

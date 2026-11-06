@@ -4,13 +4,15 @@ import SwiftUI
 /// The search sheet before anything is typed, like Safari's start page: the workspace's Zen essentials
 /// and pinned tabs, the newest tabs from Zen and recent history. A private tab shows only pins.
 struct StartPage: View {
-    /// The workspace whose Zen pins are shown; `BrowserModel.privateSpace` for a private tab.
+    /// The workspace whose pins are shown; `BrowserModel.privateSpace` for a private tab.
     let spaceID: String?
     /// The sheet's cue to grow: the content was pulled up past its top.
     let onPullUp: () -> Void
     let onOpen: (URL) -> Void
+    let onOpenPin: (LocalPin) -> Void
     private var isPrivate: Bool { spaceID == BrowserModel.privateSpace }
     @Environment(AccountService.self) private var account
+    @Environment(BrowserModel.self) private var browser
     /// The last history read, so the next opening of the sheet draws it at once.
     private static var cache: (topSites: [HistoryStore.Entry], recent: [HistoryStore.Entry])?
     @State private var topSites = Self.cache?.topSites ?? []
@@ -70,6 +72,7 @@ struct StartPage: View {
                 }
                 if let space { pinned(space) }
             }
+            if spaceID == nil { localPins }
             if account.zenWorkspaces == nil, !frequent.isEmpty {
                 section("Frequently Visited") {
                     PinGrid(urls: frequent, onOpen: onOpen)
@@ -101,11 +104,24 @@ struct StartPage: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// This iPhone's pins, listed as a workspace's are. Opening one goes to its tab if it is still open.
+    @ViewBuilder private var localPins: some View {
+        let pins = browser.localPins
+        if !pins.isEmpty {
+            section("Pinned") {
+                rows(pins.map { ($0.title, $0.url) }, unpin: { browser.unpin(pins[$0].id) }) { url in
+                    if let pin = pins.first(where: { $0.url == url }) { onOpenPin(pin) }
+                }
+            }
+        }
+    }
+
     /// The workspace's pinned tabs as Zen's sidebar lists them: loose ones first, then each folder.
     @ViewBuilder private func pinned(_ space: ZenWorkspaces.Space) -> some View {
         let loose = space.tabs.compactMap { tab in tab.url.map { (tab.title, $0) } }
         if !loose.isEmpty {
-            section("Pinned") { rows(loose, ids: space.tabs.filter { $0.url != nil }.map(\.id), onSelect: onOpen) }
+            let ids = space.tabs.filter { $0.url != nil }.map(\.id)
+            section("Pinned") { rows(loose, unpin: { index in Task { await account.removeFromZen(ids[index]) } }, onSelect: onOpen) }
         }
         ForEach(space.folders) { folder in
             let tabs = folder.tabs.compactMap { tab in tab.url.map { (tab.title, $0) } }
@@ -183,8 +199,8 @@ struct StartPage: View {
         }
     }
 
-    /// `ids`, for Zen's pinned tabs, lets a long press unpin a row in Zen.
-    private func rows(_ items: [(title: String, url: URL)], ids: [String]? = nil,
+    /// `unpin`, for pinned tabs, lets a long press unpin a row.
+    private func rows(_ items: [(title: String, url: URL)], unpin: ((Int) -> Void)? = nil,
                       onSelect: @escaping (URL) -> Void) -> some View {
         VStack(spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
@@ -208,10 +224,8 @@ struct StartPage: View {
                 .foregroundStyle(.primary)
                 .contextMenu {
                     Button("Copy Link", systemImage: "link") { UIPasteboard.general.url = item.url }
-                    if let id = ids?[index] {
-                        Button("Unpin", systemImage: "pin.slash", role: .destructive) {
-                            Task { await account.removeFromZen(id) }
-                        }
+                    if let unpin {
+                        Button("Unpin", systemImage: "pin.slash", role: .destructive) { unpin(index) }
                     }
                 }
             }

@@ -632,6 +632,17 @@ private struct TitleMenu: ViewModifier {
     func body(content: Content) -> some View {
         if let menu {
             Menu {
+                if tab.url != nil, !tab.fromZenFolder {
+                    Button(tab.isPinned ? "Unpin Tab" : "Pin Tab", systemImage: tab.isPinned ? "pin.slash" : "pin") {
+                        menu.editor.togglePin(tab)
+                    }
+                    if menu.editor.offersEssentials(tab) {
+                        Button(tab.zenEssentialID == nil ? "Add to Essentials" : "Remove from Essentials",
+                               systemImage: tab.zenEssentialID == nil ? "star" : "star.slash") {
+                            menu.editor.toggleEssential(tab)
+                        }
+                    }
+                }
                 if let space {
                     FolderMenuItems(tab: tab, space: space, editor: menu.editor) { menu.newFolder(tab) }
                     Divider()
