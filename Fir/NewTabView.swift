@@ -125,6 +125,13 @@ struct NewTabView: View {
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.primary.opacity(0.08).clipShape(.rect(cornerRadius: 18, style: .continuous)))
             }
+            if offersBrowse {
+                Button(action: browseForMe) {
+                    ResultRow(symbol: "sparkles", title: "Browse for Me", detail: query)
+                }
+                .foregroundStyle(.primary)
+                .listRowBackground(Color.clear)
+            }
             if !suggestions.isEmpty {
                 Section {
                     header("\(engine.name) Suggestions")
@@ -360,6 +367,19 @@ struct NewTabView: View {
         default:
             open(match.url)
         }
+    }
+
+    /// A question, not an address, on an iPhone whose model is ready.
+    private var offersBrowse: Bool {
+        !showsStartPage && BrowseForMe.isAvailable
+            && BrowserModel.url(from: query, engine: engine) == engine.url(for: query.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    /// The search opens in a tab as any other does; the answer is read from its results.
+    private func browseForMe() {
+        let question = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        open(engine.url(for: question))
+        browser.browseRequest = BrowseRequest(question: question, tab: browser.selected)
     }
 
     private func open(_ url: URL?) {

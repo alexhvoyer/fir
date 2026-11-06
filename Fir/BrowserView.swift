@@ -859,6 +859,7 @@ private struct PageView: View {
     @State private var showSettings = false
     @State private var reader: ReaderArticle?
     @State private var showPageSheet = false
+    @State private var browsing: BrowseRequest?
     /// What opened the page sheet, the menu button or the address, for it to grow out of.
     @State private var pageSheetSource = "menu"
     /// When a long press opened the sheet; the tap that ends the same touch is ignored.
@@ -1017,10 +1018,19 @@ private struct PageView: View {
         .sheet(isPresented: $showDownloads) { NavigationStack { DownloadsView() } }
         // Presented here, beside the address capsule it grows out of: from the root the zoom found no
         // source and grew from the middle of the screen.
-        .sheet(item: $search) { mode in
+        .sheet(item: $search, onDismiss: {
+            browsing = browser.browseRequest
+            browser.browseRequest = nil
+        }) { mode in
             NewTabView(mode: mode, onOpen: onSearchOpen) { search = nil }
                 .background(SheetLeaving(action: onSearchLeave))
                 .modifier(ZoomFromSource(id: mode == .edit ? "address" : nil, namespace: sheetSource))
+        }
+        .sheet(item: $browsing) { request in
+            BrowseForMeView(request: request) { url in
+                browsing = nil
+                browser.open(url, in: request.tab.spaceID)
+            }
         }
         .sheet(isPresented: $showPageSheet, onDismiss: runPageAction) {
             // The system's zoom transition: the sheet grows out of whatever opened it, and shrinks back.

@@ -577,6 +577,8 @@ final class BrowserModel {
     /// Set from outside the view tree (the widget's link, a quick action on the icon); the root view
     /// opens new-tab search and clears it.
     var searchRequested: SearchRequest?
+    /// Set as the search sheet leaves; its question's sheet can only rise once that one has gone.
+    var browseRequest: BrowseRequest?
     enum SearchRequest { case tab, privateTab }
     /// Counts links opened from other apps; the root view closes search on each so the page shows.
     private(set) var linksOpened = 0

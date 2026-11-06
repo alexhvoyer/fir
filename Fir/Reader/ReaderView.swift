@@ -8,6 +8,8 @@ struct ReaderArticle: Identifiable {
     let byline: String?
     let siteName: String?
     let html: String
+    /// The article's plain text.
+    let text: String
     let url: URL
 
     private static let world = WKContentWorld.world(name: "ZenReader")
@@ -44,12 +46,12 @@ struct ReaderArticle: Identifiable {
             const content = article.content.replace(/<video /g, '<video controls ');
             // A rule's own author: Readability can take one from a post embedded in the article.
             const author = rule && document.querySelector(rule.author)?.textContent.trim();
-            return { title, byline: author || article.byline, siteName: article.siteName, content };
+            return { title, byline: author || article.byline, siteName: article.siteName, content, text: article.textContent };
             """
         guard let result = try? await webView.callAsyncJavaScript(script, contentWorld: world) as? [String: Any],
               let html = result["content"] as? String else { return nil }
         return ReaderArticle(title: result["title"] as? String ?? "", byline: result["byline"] as? String,
-                             siteName: result["siteName"] as? String, html: html, url: url)
+                             siteName: result["siteName"] as? String, html: html, text: result["text"] as? String ?? "", url: url)
     }
 }
 
