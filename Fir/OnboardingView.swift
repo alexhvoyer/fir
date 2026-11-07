@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Pages shown once, on the first launch: what Fir is, Zen sync, the gestures nothing on screen explains,
-/// Intelligence Search where this iPhone can run it, and the few settings worth choosing up front.
+/// Intelligence Search where this iPhone can run it, what new tabs show, and a few settings worth choosing up front.
 struct OnboardingView: View {
     let onFinish: () -> Void
     @Environment(AccountService.self) private var account
@@ -11,9 +11,10 @@ struct OnboardingView: View {
     @AppStorage(SettingsKey.searchSuggestions) private var searchSuggestions = true
     @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearch = true
     @AppStorage(SettingsKey.whatsNew) private var whatsNew = true
+    @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     @State private var blockAds = ContentBlocker.shared.isEnabled
 
-    private static let pageCount = IntelligenceSearch.isSupported ? 5 : 4
+    private static let pageCount = IntelligenceSearch.isSupported ? 6 : 5
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,6 +32,7 @@ struct OnboardingView: View {
                 sync.tag(1)
                 gestures.tag(2)
                 if IntelligenceSearch.isSupported { intelligence.tag(3) }
+                newTabs.tag(Self.pageCount - 2)
                 setup.tag(Self.pageCount - 1)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -134,6 +136,33 @@ struct OnboardingView: View {
         }
     }
 
+    private var newTabs: some View {
+        OnboardingPage(title: "New tabs",
+                       text: "Search right away, or a start page with your pinned and frequent sites and history.") {
+            HStack(spacing: 24) {
+                ForEach(NewTabStyle.allCases) { style in
+                    let selected = newTabStyle == style
+                    Button { newTabStyle = style } label: {
+                        VStack(spacing: 12) {
+                            NewTabPreview(style: style, selected: selected)
+                                .frame(width: 120, height: 240)
+                            Text(style.name).font(.subheadline.weight(.medium))
+                            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                                .font(.title2)
+                                .foregroundStyle(selected ? Palette.teal : .secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
+        } footer: {
+            Text("You can change this later in Settings.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     /// The same settings as in Settings, as system rows: choosing here is choosing there.
     private var setup: some View {
         VStack(spacing: 12) {
@@ -195,6 +224,54 @@ struct FeatureRow: View {
                 Text(title).font(.headline)
                 Text(detail).foregroundStyle(.secondary)
             }
+        }
+    }
+}
+
+/// A phone sketch of each style: the search sheet over a page, or the start page above its bar.
+private struct NewTabPreview: View {
+    let style: NewTabStyle
+    let selected: Bool
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+        ZStack(alignment: .bottom) {
+            if style == .sheet {
+                Color(.systemGray5)
+                VStack(alignment: .leading, spacing: 10) {
+                    Capsule().fill(Color(.systemGray5)).frame(height: 18)
+                    ForEach(0..<3, id: \.self) { _ in row }
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, maxHeight: 110, alignment: .top)
+                .background(Color(.systemBackground),
+                            in: UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18, style: .continuous))
+            } else {
+                Color(.systemBackground)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(Palette.teal.opacity(0.3))
+                                .aspectRatio(1, contentMode: .fit)
+                        }
+                    }
+                    ForEach(0..<4, id: \.self) { _ in row }
+                    Spacer(minLength: 0)
+                    Capsule().fill(Color(.systemGray5)).frame(height: 18)
+                }
+                .padding(12)
+                .padding(.top, 16)
+            }
+        }
+        .clipShape(shape)
+        .overlay(shape.stroke(selected ? Palette.teal : Color(.separator), lineWidth: selected ? 3 : 1))
+    }
+
+    private var row: some View {
+        HStack(spacing: 6) {
+            Circle().fill(Color(.systemGray4)).frame(width: 12, height: 12)
+            Capsule().fill(Color(.systemGray4)).frame(height: 6)
         }
     }
 }

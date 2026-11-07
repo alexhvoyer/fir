@@ -49,6 +49,7 @@ struct BrowserView: View {
     @State private var swipeCommits = 0
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = false
     @State private var onboardingRequested = false
+    @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     @State private var showWhatsNew = WhatsNew.isDue
     /// Stays true until the sheet is fully gone: another one asked for while it leaves would be lost.
     @State private var whatsNewPending = WhatsNew.isDue
@@ -57,6 +58,7 @@ struct BrowserView: View {
     /// Not while Undo is offered, which the sheet would cover.
     private var blankShown: Bool {
         pageShown && !transitioning && browser.selected.url == nil && browser.undo == nil && onboardingDone && !whatsNewPending
+            && newTabStyle == .sheet
     }
 
     // Safari's curve: a quick start and a soft settle, full screen in about 0.2 s on a 2026 recording.
@@ -117,7 +119,7 @@ struct BrowserView: View {
                 hiddenTab: pageShown ? browser.selectedID : nil,
                 onCardFrame: { cardFrames[$0] = $1 },
                 onOpen: openPage,
-                onNewTab: { search = .newTab },
+                onNewTab: startNewTab,
                 onSettings: { settings = .main },
                 onEditWorkspaces: { settings = .workspaces },
                 railWidth: Self.sideRail(safeInsets) ? safeInsets.trailing : 0,
@@ -152,7 +154,8 @@ struct BrowserView: View {
                 onSwipeEnd: endSwipe,
                 onShowTabs: closePage,
                 onSearchOpen: showPageAtOnce,
-                onSearchLeave: unrecede
+                onSearchLeave: unrecede,
+                onNewTab: startNewTab
             )
             .overlay {
                 if browser.selected.isPrivate, browser.privateLocked {
@@ -249,19 +252,19 @@ struct BrowserView: View {
             let swipeRadius = min(abs(swipeX) / 2, 48)
             ZStack(alignment: .topLeading) {
                 if swipeOpensNewTab {
-                    NewTabPlaceholder()
+                    NewTabPlaceholder(spaceID: browser.selected.spaceID)
                         .frame(width: screen.width, height: screen.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
                         .offset(x: swipeX + screen.width + Self.swipeGap)
                 } else if swipeX != 0, let neighbour = swipeNeighbour {
                     PageImage(image: neighbour.snapshot, host: neighbour.isPrivate ? nil : neighbour.url?.host(),
-                              blank: neighbour.url == nil)
+                              blank: neighbour.url == nil, space: neighbour.spaceID)
                         .frame(width: screen.width, height: screen.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
                         .offset(x: swipeX + (swipeX > 0 ? -1 : 1) * (screen.width + Self.swipeGap))
                 }
                 PageImage(image: cover, view: coverView, host: browser.selected.isPrivate ? nil : browser.selected.url?.host(),
-                          blank: browser.selected.url == nil)
+                          blank: browser.selected.url == nil, space: browser.selected.spaceID)
                     .frame(width: screen.width, height: screen.height)
                     .clipShape(PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k))
                     // The card's shadow, growing in as the page shrinks: without it the shadow blinked out
@@ -402,6 +405,16 @@ struct BrowserView: View {
 
     private func unrecede() { ScreenRecess.end() }
 
+    /// The search sheet, or in start-page mode a tab of its own in the deck's workspace, shown at once.
+    private func startNewTab() {
+        guard newTabStyle == .page else {
+            search = .newTab
+            return
+        }
+        browser.open(nil)
+        showPageAtOnce()
+    }
+
     /// Like Safari after a search: the page is already full screen under the search screen as it
     /// slides away, so neither the deck nor a grow-from-card shows in between.
     private func showPageAtOnce() {
@@ -484,6 +497,14 @@ struct BrowserView: View {
         if swipeOpensNewTab, committed {
             FrameMeter.mark("swipe to new tab")
             swipeCommits += 1
+            guard newTabStyle == .sheet else {
+                // The start page slid in on the placeholder; the new tab takes its place.
+                withAnimation(swipeCommit) { swipeX = -width } completion: {
+                    browser.open(nil, in: browser.selected.spaceID)
+                    showPageAtOnce()
+                }
+                return
+            }
             swipedToNewTab = true
             withAnimation(swipeCommit) { swipeX = -width }
             search = .newTab
@@ -745,11 +766,18 @@ private struct ClipBefore: ViewModifier {
 
 /// What a swipe past the last tab brings in.
 private struct NewTabPlaceholder: View {
+    let spaceID: String?
+    @AppStorage(SettingsKey.newTabStyle) private var style = NewTabStyle.sheet
+
     var body: some View {
-        Color(.systemBackground).overlay {
-            Label("New Tab", systemImage: "plus")
-                .font(.title3.weight(.medium))
-                .foregroundStyle(.secondary)
+        if style == .page {
+            BlankTab(spaceID: spaceID)
+        } else {
+            Color(.systemBackground).overlay {
+                Label("New Tab", systemImage: "plus")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }
@@ -761,13 +789,14 @@ private struct PageImage: View {
     let host: String?
     /// A tab without a page, which has no snapshot: drawn itself, not a blank web page's white.
     var blank = false
+    var space: String? = nil
 
     var body: some View {
         Color.white.overlay(alignment: .top) {
             if let image {
                 Image(uiImage: image).resizable().scaledToFit()
             } else if blank {
-                EmptyTab()
+                BlankTab(spaceID: space)
             } else if view == nil {
                 SiteIcon(host: host, size: 56).padding(.top, 180)
             }
@@ -852,6 +881,8 @@ private struct PageView: View {
     let onSearchOpen: () -> Void
     /// The search sheet started to go, before SwiftUI clears its binding.
     let onSearchLeave: () -> Void
+    /// A new tab, as the new-tab style has it.
+    let onNewTab: () -> Void
 
     @Environment(BrowserModel.self) private var browser
     @AppStorage(SettingsKey.collapseOnScroll) private var collapseOnScroll = true
@@ -954,7 +985,9 @@ private struct PageView: View {
                     .opacity(liveHidden ? 0 : 1)
                     .animation(nil, value: liveHidden)
                 if tab.url == nil {
-                    EmptyTab(swaysOnTap: true)
+                    BlankTab(spaceID: tab.spaceID, tab: tab,
+                             insets: EdgeInsets(top: pageInsets(insets).top, leading: insets.leading,
+                                                bottom: 0, trailing: insets.trailing))
                         .opacity(liveHidden ? 0 : 1)
                         .animation(nil, value: liveHidden)
                 }
@@ -982,7 +1015,7 @@ private struct PageView: View {
                         // As the system lays out bars beside a side camera: the tab buttons go in its column.
                         VStack(spacing: 10) {
                             Spacer(minLength: 0)
-                            iconButton("plus") { search = .newTab }
+                            iconButton("plus", action: onNewTab)
                                 .frame(width: 48, height: 48)
                                 .glassEffect(.regular.interactive(), in: .circle)
                             tabsButton
@@ -1354,7 +1387,7 @@ private struct PageView: View {
     private func trailingButtons(p: CGFloat) -> some View {
         HStack(spacing: 10) {
             if landscape {
-                iconButton("plus") { search = .newTab }
+                iconButton("plus", action: onNewTab)
                     .frame(width: 48)
                     .glassEffect(.regular.interactive(), in: .circle)
             }
@@ -1691,7 +1724,7 @@ private struct PageView: View {
             // A regular new tab from a private page goes to this iPhone's tabs.
             browser.space = nil
         }
-        search = .newTab
+        onNewTab()
     }
 
     /// Landscape: the workspace's tabs side by side, the selected one scrolled into view.

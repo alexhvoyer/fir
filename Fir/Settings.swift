@@ -95,6 +95,20 @@ enum Accent: String, CaseIterable, Identifiable {
 }
 
 /// UserDefaults keys shared by @AppStorage call sites.
+/// What a new tab shows: search in a sheet over the deck, or a tab of its own with the start page.
+enum NewTabStyle: String, CaseIterable, Identifiable {
+    case sheet, page
+
+    var id: Self { self }
+
+    var name: String {
+        switch self {
+        case .sheet: "Search Sheet"
+        case .page: "Start Page"
+        }
+    }
+}
+
 enum SettingsKey {
     static let searchEngine = "searchEngine"
     static let appearance = "appearance"
@@ -109,6 +123,7 @@ enum SettingsKey {
     static let haptics = "haptics"
     static let keyboardAtLaunch = "keyboardAtLaunch"
     static let swipeAnywhere = "swipeAnywhere"
+    static let newTabStyle = "newTabStyle"
     static let intelligenceSearch = "intelligenceSearch"
     static let archiveTabsAfter = "archiveTabsAfter"
     static let clearTabsAfter = "clearTabsAfter"

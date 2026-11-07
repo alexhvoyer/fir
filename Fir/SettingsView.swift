@@ -95,6 +95,7 @@ private struct GeneralSettingsView: View {
     @AppStorage(SettingsKey.keyboardAtLaunch) private var keyboardAtLaunch = false
     @AppStorage(SettingsKey.swipeAnywhere) private var swipeAnywhere = false
     @AppStorage(SettingsKey.whatsNew) private var whatsNew = true
+    @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     @State private var isDefault: Bool?
 
     var body: some View {
@@ -106,6 +107,13 @@ private struct GeneralSettingsView: View {
                 }
             } footer: {
                 Text("iOS offers an app as the default browser only if Apple granted it the default-browser entitlement, which the developer requests for the app's bundle ID. This build doesn't have it yet.")
+            }
+            Section {
+                Picker("New Tab", selection: $newTabStyle) {
+                    ForEach(NewTabStyle.allCases) { Text($0.name).tag($0) }
+                }
+            } footer: {
+                Text("Search Sheet opens search at once. Start Page shows your pinned and frequent sites and history, with search a tap on the address bar away.")
             }
             Section {
                 Toggle("Collapse Toolbar on Scroll", isOn: $collapseOnScroll)

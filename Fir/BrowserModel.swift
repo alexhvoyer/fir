@@ -823,14 +823,19 @@ final class BrowserModel {
         save()
     }
 
-    /// Back to its tab if one is open, else in a new one that stands for the pin.
-    func open(_ pin: LocalPin) {
-        if let tab = tabs.first(where: { $0.localPinID == pin.id }) { return select(tab) }
-        let tab = BrowserTab(url: pin.url, dataStore: dataStore(for: nil))
-        tab.isPinned = true
-        tab.localPinID = pin.id
-        tabs.append(tab)
-        select(tab)
+    /// Back to its tab if one is open, else in a new one that stands for the pin. A blank tab it was
+    /// opened from goes, since the pin has a tab of its own.
+    func open(_ pin: LocalPin, replacing blank: BrowserTab? = nil) {
+        if let tab = tabs.first(where: { $0.localPinID == pin.id }) {
+            select(tab)
+        } else {
+            let tab = BrowserTab(url: pin.url, dataStore: dataStore(for: nil))
+            tab.isPinned = true
+            tab.localPinID = pin.id
+            tabs.append(tab)
+            select(tab)
+        }
+        if let blank, blank.url == nil, blank.localPinID == nil { discard(blank) }
         save()
     }
 

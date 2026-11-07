@@ -21,6 +21,7 @@ struct NewTabView: View {
     @AppStorage(SettingsKey.searchSuggestions) private var suggestionsEnabled = true
     @AppStorage(SettingsKey.historySuggestions) private var historyEnabled = true
     @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearchEnabled = true
+    @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     @State private var query = ""
     @State private var suggestions: [String] = []
     @State private var historyMatches: [HistoryStore.Entry] = []
@@ -74,11 +75,12 @@ struct NewTabView: View {
             .padding(.top, 8)
             .shown(!showsStartPage)
             StartPage(spaceID: newTabSpace, onPullUp: expand, onOpen: { open($0) }, onOpenPin: { pin in
-                browser.open(pin)
+                browser.open(pin, replacing: mode == .edit ? browser.selected : nil)
                 onOpen()
                 dismiss()
             })
-            .shown(showsStartPage)
+            // Over the start page itself, the sheet would repeat it.
+            .shown(showsStartPage && !(newTabStyle == .page && browser.selected.url == nil))
         }
         // While the sheet rises the finger's drag stops scrolling: both at once moved the content twice.
         .scrollDisabled(rising)

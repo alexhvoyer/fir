@@ -550,7 +550,7 @@ private struct TabCard: View {
                     Image(uiImage: image).resizable().scaledToFill()
                         .frame(width: width, height: height, alignment: .top)
                 } else if tab.url == nil {
-                    EmptyTab()
+                    BlankTab(spaceID: tab.spaceID)
                 } else {
                     Color(.secondarySystemBackground)
                         .overlay(SiteIcon(host: tab.url?.host(), size: 56, fetch: !tab.isPrivate))

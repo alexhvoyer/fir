@@ -10,6 +10,8 @@ struct StartPage: View {
     let onPullUp: () -> Void
     let onOpen: (URL) -> Void
     let onOpenPin: (LocalPin) -> Void
+    /// A whole page has room for frequent sites beside Zen's pins.
+    var fillsPage = false
     private var isPrivate: Bool { spaceID == BrowserModel.privateSpace }
     @Environment(AccountService.self) private var account
     @Environment(BrowserModel.self) private var browser
@@ -73,7 +75,7 @@ struct StartPage: View {
                 if let space { pinned(space) }
             }
             if spaceID == nil { localPins }
-            if account.zenWorkspaces == nil, !frequent.isEmpty {
+            if account.zenWorkspaces == nil || fillsPage, !frequent.isEmpty {
                 section("Frequently Visited") {
                     PinGrid(urls: frequent, onOpen: onOpen)
                 }
@@ -232,6 +234,40 @@ struct StartPage: View {
         }
         .background(
             Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 20, style: .continuous))
+    }
+}
+
+/// What a tab without a page shows: the sprig, with search in its sheet, or the start page itself.
+/// Cards and transitions get the start page laid out at screen size and scaled, so they match the page.
+struct BlankTab: View {
+    let spaceID: String?
+    /// The open tab, given only where it can be used; cards and transitions just show it.
+    var tab: BrowserTab? = nil
+    /// The page's chrome and cutouts, as the web page gets them; cards use the window's safe area.
+    var insets: EdgeInsets? = nil
+    @AppStorage(SettingsKey.newTabStyle) private var style = NewTabStyle.sheet
+    @Environment(BrowserModel.self) private var browser
+
+    var body: some View {
+        if style == .page {
+            GeometryReader { geo in
+                let window = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.keyWindow
+                let full = window?.bounds.size ?? geo.size
+                let scale = min(1, geo.size.width / full.width)
+                let safe = window?.safeAreaInsets ?? .zero
+                StartPage(spaceID: spaceID, onPullUp: {}, onOpen: { tab?.load($0) },
+                          onOpenPin: { browser.open($0, replacing: tab) }, fillsPage: true)
+                    .safeAreaPadding(insets ?? EdgeInsets(top: safe.top, leading: safe.left, bottom: 0, trailing: safe.right))
+                    .frame(width: geo.size.width / scale, height: geo.size.height / scale)
+                    .scaleEffect(scale, anchor: .topLeading)
+                    .allowsHitTesting(tab != nil)
+            }
+            .ignoresSafeArea()
+            // As in the search sheet: its cards are drawn for a grouped background.
+            .background(Color(.systemGroupedBackground))
+        } else {
+            EmptyTab(swaysOnTap: tab != nil)
+        }
     }
 }
 
