@@ -35,8 +35,10 @@ final class BrowserTab: NSObject, Identifiable {
     private(set) var scrollY: CGFloat = 0
     /// A finger is on the page; the bar settles only once it lifts and the scroll stops.
     private(set) var isTouching = false
-    /// How far a blank tab's start page is scrolled, so its card and transitions show the same place.
+    /// Where a blank tab's start page last came to rest, for its card and transitions.
     var startPageOffset: CGFloat = 0
+    /// Where it is now, mid-glide too; not observed, as it changes every frame of a scroll.
+    @ObservationIgnored var liveStartPageOffset: CGFloat = 0
 
     /// A restored tab keeps its address here until first shown, so launch doesn't load every page.
     private var pendingURL: URL?

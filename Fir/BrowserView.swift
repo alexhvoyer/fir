@@ -16,6 +16,8 @@ struct BrowserView: View {
     @State private var follow: CGSize = .zero
     /// Global point the page scales about: where the finger grabbed it, or the screen's centre.
     @State private var anchor: CGPoint?
+    /// The card a new tab grows from, held for the whole transition: its own card is placed only later.
+    @State private var heldCard: CGRect?
     /// Horizontal travel of a bar swipe between tabs.
     @State private var swipeX: CGFloat = 0
     /// The snapshot standing in for the live page during a transition; nil shows the live page.
@@ -298,6 +300,8 @@ struct BrowserView: View {
         transitionID += 1
         veil = nil
         browser.selected.stopScrolling()
+        // A start page caught mid-glide: the copy shows where it is now, and the page stops there.
+        if browser.selected.url == nil { browser.selected.startPageOffset = browser.selected.liveStartPageOffset }
         coverView = browser.selected.liveSnapshot()
         cover = browser.selected.snapshot
         // Always: a video, a dismissed sheet or an inner scroll changes the page without moving its scroll
@@ -312,12 +316,13 @@ struct BrowserView: View {
         coverView = nil
         anchor = nil
         follow = .zero
+        heldCard = nil
     }
 
     // MARK: - Deck transitions
 
     private var currentCard: CGRect {
-        cardFrames[browser.selectedID ?? UUID()] ?? Self.fallbackCard(in: screen)
+        heldCard ?? cardFrames[browser.selectedID ?? UUID()] ?? Self.fallbackCard(in: screen)
     }
 
     /// The translation that, with the page scaled about `anchor`, lands it exactly on its card.
@@ -407,14 +412,17 @@ struct BrowserView: View {
     private func unrecede() { ScreenRecess.end() }
 
     /// The search sheet, or in start-page mode a tab of its own in the deck's workspace. From the deck
-    /// it grows out of its new card, like any tab; from a page it shows at once.
+    /// it grows out of the front card's place, where its card goes; from a page it shows at once.
     private func startNewTab() {
         guard newTabStyle == .page else {
             search = .newTab
             return
         }
+        let front = currentCard
         browser.open(nil)
-        if pageShown { showPageAtOnce() } else { openPage() }
+        guard !pageShown else { return showPageAtOnce() }
+        heldCard = front
+        openPage()
     }
 
     /// Like Safari after a search: the page is already full screen under the search screen as it
@@ -990,7 +998,8 @@ private struct PageView: View {
                 if tab.url == nil {
                     BlankTab(spaceID: tab.spaceID, tab: tab,
                              insets: EdgeInsets(top: pageInsets(insets).top, leading: insets.leading,
-                                                bottom: 0, trailing: insets.trailing))
+                                                bottom: 0, trailing: insets.trailing),
+                             isCovered: liveHidden)
                         // Each blank tab its own page, so one's scroll position isn't another's.
                         .id(tab.id)
                         .opacity(liveHidden ? 0 : 1)

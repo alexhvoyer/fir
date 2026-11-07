@@ -12,11 +12,15 @@ struct StartPage: View {
     let onOpenPin: (LocalPin) -> Void
     /// A whole page has room for frequent sites beside Zen's pins.
     let fillsPage: Bool
-    /// Where a copy is drawn scrolled to; the live page reports where it comes to rest.
+    /// Where a copy is drawn scrolled to. The live page reports each move, and whether it has come to rest.
     let offset: CGFloat
-    let onScrolled: ((CGFloat) -> Void)?
+    let onScrolled: ((CGFloat, _ resting: Bool) -> Void)?
     /// A card's or transition's copy: drawn at `offset`, not scrollable.
     let isCopy: Bool
+    /// The live page under a transition: a glide stops where it is, so the copy over it matches.
+    let isCovered: Bool
+    @State private var position = ScrollPosition()
+    @State private var scrolled = ScrolledBy()
     private var isPrivate: Bool { spaceID == BrowserModel.privateSpace }
     @Environment(AccountService.self) private var account
     @Environment(BrowserModel.self) private var browser
@@ -30,7 +34,7 @@ struct StartPage: View {
 
     init(spaceID: String?, onPullUp: @escaping () -> Void, onOpen: @escaping (URL) -> Void,
          onOpenPin: @escaping (LocalPin) -> Void, fillsPage: Bool = false, offset: CGFloat = 0,
-         onScrolled: ((CGFloat) -> Void)? = nil, isCopy: Bool = false) {
+         onScrolled: ((CGFloat, Bool) -> Void)? = nil, isCopy: Bool = false, isCovered: Bool = false) {
         self.spaceID = spaceID
         self.onPullUp = onPullUp
         self.onOpen = onOpen
@@ -39,6 +43,7 @@ struct StartPage: View {
         self.offset = offset
         self.onScrolled = onScrolled
         self.isCopy = isCopy
+        self.isCovered = isCovered
     }
 
     /// Shown until there is history or Zen pins, as Safari starts with a few popular sites.
@@ -69,13 +74,12 @@ struct StartPage: View {
     @ViewBuilder private var scrolling: some View {
         if isCopy {
             // Shifted, not scrolled: a ScrollView dropped a position set before its first layout.
-            // Laid out at full height from the top, as the ScrollView does.
+            // Unclipped, so it shows under the status bar as the page does; the card clips it.
             Color.clear.overlay(alignment: .top) {
                 content
                     .fixedSize(horizontal: false, vertical: true)
                     .offset(y: -offset)
             }
-            .clipped()
         } else {
             ScrollView { content }
                 .scrollIndicators(.hidden)
@@ -84,13 +88,17 @@ struct StartPage: View {
                 // Any pull up once past the top, not only the first: back at the low height the list stays scrolled.
                 .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: {
                     if $1 > $0, $1 > 40 { onPullUp() }
+                    scrolled.y = $1
+                    onScrolled?($1, false)
                 }
                 // A new page starts at the top; its cards must not show another place.
-                .onAppear { onScrolled?(0) }
+                .onAppear { onScrolled?(0, true) }
                 .onScrollPhaseChange { _, phase, context in
-                    guard phase == .idle, let onScrolled else { return }
-                    onScrolled(context.geometry.contentOffset.y + context.geometry.contentInsets.top)
+                    guard phase == .idle else { return }
+                    onScrolled?(context.geometry.contentOffset.y + context.geometry.contentInsets.top, true)
                 }
+                .scrollPosition($position)
+                .onChange(of: isCovered) { if isCovered { position.scrollTo(y: scrolled.y) } }
         }
     }
 
@@ -282,6 +290,7 @@ struct BlankTab: View {
     var insets: EdgeInsets? = nil
     /// A copy's scroll position: the tab's, so it shows the same place.
     var offset: CGFloat = 0
+    var isCovered = false
     @AppStorage(SettingsKey.newTabStyle) private var style = NewTabStyle.sheet
     @Environment(BrowserModel.self) private var browser
 
@@ -294,8 +303,11 @@ struct BlankTab: View {
                 let safe = window?.safeAreaInsets ?? .zero
                 StartPage(spaceID: spaceID, onPullUp: {}, onOpen: { tab?.load($0) },
                           onOpenPin: { browser.open($0, replacing: tab) }, fillsPage: true,
-                          offset: offset, onScrolled: tab.map { tab in { tab.startPageOffset = $0 } },
-                          isCopy: tab == nil)
+                          offset: offset, onScrolled: tab.map { tab in { y, resting in
+                              tab.liveStartPageOffset = y
+                              if resting { tab.startPageOffset = y }
+                          } },
+                          isCopy: tab == nil, isCovered: isCovered)
                     .safeAreaPadding(insets ?? EdgeInsets(top: safe.top, leading: safe.left, bottom: 0, trailing: safe.right))
                     .frame(width: geo.size.width / scale, height: geo.size.height / scale)
                     .scaleEffect(scale, anchor: .topLeading)
@@ -340,4 +352,9 @@ struct EmptyTab: View {
         }
         .background(Color(.systemGroupedBackground))
     }
+}
+
+/// The live scroll offset, kept off SwiftUI's books: a state change on every scrolled point redrew the page.
+private final class ScrolledBy {
+    var y: CGFloat = 0
 }
