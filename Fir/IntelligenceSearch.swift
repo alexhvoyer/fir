@@ -4,7 +4,7 @@ import SwiftUI
 import WebKit
 
 /// A question whose search results are open in `tab`, for the on-device model to read and answer from.
-struct BrowseRequest: Identifiable {
+struct IntelligenceSearchRequest: Identifiable {
     let id = UUID()
     let question: String
     let tab: BrowserTab
@@ -12,7 +12,7 @@ struct BrowseRequest: Identifiable {
 
 /// What the model writes, section by section, so the sheet can lay it out as it arrives.
 @Generable
-struct BrowseAnswer {
+struct IntelligenceAnswer {
     @Guide(description: "A short headline stating the answer, in sentence case, not repeating the question")
     let headline: String
     @Guide(description: "One or two sentences with the direct answer, citing notes like [1]")
@@ -34,7 +34,7 @@ struct BrowseAnswer {
 /// Reads the first results of a search in the user's own tab and writes one answer, on this iPhone.
 /// Page text is untrusted: the model has no tools, and only numbered citations become links.
 @MainActor @Observable
-final class BrowseForMe {
+final class IntelligenceSearch {
     /// A page being read, and what the model took from it, shown while the answer is still to come.
     struct Step: Identifiable {
         let id = UUID()
@@ -55,7 +55,7 @@ final class BrowseForMe {
 
     private(set) var phase = Phase.searching
     private(set) var steps: [Step] = []
-    private(set) var answer: BrowseAnswer.PartiallyGenerated?
+    private(set) var answer: IntelligenceAnswer.PartiallyGenerated?
 
     var sources: [Step] { steps.filter(\.isRead) }
 
@@ -67,12 +67,19 @@ final class BrowseForMe {
     private static let minimumPageLength = 500
     private static let answerLimit = 500
 
+    /// The model is ready now: Apple Intelligence is on and its model has downloaded.
     static var isAvailable: Bool {
         if case .available = SystemLanguageModel.default.availability { return true }
         return false
     }
 
-    func run(_ request: BrowseRequest) async {
+    /// This iPhone can run the model at all, whether or not Apple Intelligence is on yet.
+    static var isSupported: Bool {
+        if case .unavailable(.deviceNotEligible) = SystemLanguageModel.default.availability { return false }
+        return true
+    }
+
+    func run(_ request: IntelligenceSearchRequest) async {
         let links = await Self.waitForLinks(in: request.tab.webView)
         guard !Task.isCancelled else { return }
         guard !links.isEmpty else {
@@ -155,7 +162,7 @@ final class BrowseForMe {
             """)
         let prompt = "Question: \(question)\n\nNotes:\n\(notes)"
         do {
-            let stream = session.streamResponse(to: prompt, generating: BrowseAnswer.self,
+            let stream = session.streamResponse(to: prompt, generating: IntelligenceAnswer.self,
                                                 options: GenerationOptions(maximumResponseTokens: Self.answerLimit))
             for try await partial in stream { answer = partial.content }
             phase = .done
@@ -298,10 +305,10 @@ private final class HiddenPageLoader: NSObject, WKNavigationDelegate {
 
 /// While pages are read, each shows what the model takes from it; then the answer, laid out as it arrives.
 /// Closing the sheet stops the work.
-struct BrowseForMeView: View {
-    let request: BrowseRequest
+struct IntelligenceSearchView: View {
+    let request: IntelligenceSearchRequest
     let onOpen: (URL) -> Void
-    @State private var browse = BrowseForMe()
+    @State private var search = IntelligenceSearch()
     @State private var detent = PresentationDetent.medium
     @Environment(\.dismiss) private var dismiss
 
@@ -312,9 +319,9 @@ struct BrowseForMeView: View {
                     Text(verbatim: request.question)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
-                    if case .failed(let message) = browse.phase, browse.answer == nil {
+                    if case .failed(let message) = search.phase, search.answer == nil {
                         Label(message, systemImage: "exclamationmark.triangle")
-                    } else if let answer = browse.answer {
+                    } else if let answer = search.answer {
                         content(answer)
                         sources
                     } else {
@@ -325,7 +332,7 @@ struct BrowseForMeView: View {
                 .padding(.bottom, 24)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .navigationTitle("Browse for Me")
+            .navigationTitle("Intelligence Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -338,9 +345,9 @@ struct BrowseForMeView: View {
             onOpen(url)
             return .handled
         })
-        .task { await browse.run(request) }
-        .onChange(of: browse.answer == nil) { withAnimation(.smooth) { detent = .large } }
-        .haptic(.success, trigger: browse.phase) { _, new in new == .done }
+        .task { await search.run(request) }
+        .onChange(of: search.answer == nil) { withAnimation(.smooth) { detent = .large } }
+        .haptic(.success, trigger: search.phase) { _, new in new == .done }
     }
 
     // MARK: Reading
@@ -353,24 +360,24 @@ struct BrowseForMeView: View {
                 Image(systemName: "sparkles").symbolEffect(.breathe)
             }
             .font(.headline)
-            ForEach(browse.steps) { step in
+            ForEach(search.steps) { step in
                 stepRow(step).transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .animation(.smooth, value: browse.steps.map(\.id))
-        .animation(.smooth, value: browse.steps.map(\.note))
-        .animation(.smooth, value: browse.phase)
+        .animation(.smooth, value: search.steps.map(\.id))
+        .animation(.smooth, value: search.steps.map(\.note))
+        .animation(.smooth, value: search.phase)
     }
 
     private var status: String {
-        switch browse.phase {
+        switch search.phase {
         case .searching: "Looking at the results"
         case .writing: "Writing the answer"
-        default: "Reading \(min(browse.sources.count + 1, 3)) of 3"
+        default: "Reading \(min(search.sources.count + 1, 3)) of 3"
         }
     }
 
-    private func stepRow(_ step: BrowseForMe.Step) -> some View {
+    private func stepRow(_ step: IntelligenceSearch.Step) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
                 SiteIcon(host: step.url.host(), size: 26, fetch: !request.tab.isPrivate)
@@ -397,7 +404,7 @@ struct BrowseForMeView: View {
 
     // MARK: Answer
 
-    private func content(_ answer: BrowseAnswer.PartiallyGenerated) -> some View {
+    private func content(_ answer: IntelligenceAnswer.PartiallyGenerated) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             images
             // The model sometimes just repeats the question, which is already on screen.
@@ -422,7 +429,7 @@ struct BrowseForMeView: View {
                 }
                 .transition(.opacity)
             }
-            if browse.phase == .done {
+            if search.phase == .done {
                 Text("Written on this iPhone from the pages below. It can get things wrong.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -444,8 +451,8 @@ struct BrowseForMeView: View {
         while let match = rest.firstMatch(of: /\[(\d+)\]/) {
             result += AttributedString(String(rest[..<match.range.lowerBound]))
             var citation = AttributedString(String(match.output.0))
-            if let number = Int(match.output.1), browse.sources.indices.contains(number - 1) {
-                citation.link = browse.sources[number - 1].url
+            if let number = Int(match.output.1), search.sources.indices.contains(number - 1) {
+                citation.link = search.sources[number - 1].url
                 citation.font = .footnote
             }
             result += citation
@@ -457,7 +464,7 @@ struct BrowseForMeView: View {
     /// The pages' own pictures, as Arc opens its answers. Each is a way into its page.
     @ViewBuilder private var images: some View {
         var seen = Set<URL>()
-        let pictures = browse.sources.filter { $0.image.map { seen.insert($0).inserted } ?? false }
+        let pictures = search.sources.filter { $0.image.map { seen.insert($0).inserted } ?? false }
         if !pictures.isEmpty {
             ScrollView(.horizontal) {
                 HStack(spacing: 10) {
@@ -483,11 +490,11 @@ struct BrowseForMeView: View {
     }
 
     @ViewBuilder private var sources: some View {
-        if browse.phase == .done {
+        if search.phase == .done {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Sources").font(.headline)
                 VStack(spacing: 0) {
-                    ForEach(Array(browse.sources.enumerated()), id: \.element.id) { index, source in
+                    ForEach(Array(search.sources.enumerated()), id: \.element.id) { index, source in
                         if index > 0 { Divider().padding(.leading, 56) }
                         Button { onOpen(source.url) } label: { sourceRow(index + 1, source) }
                             .foregroundStyle(.primary)
@@ -499,7 +506,7 @@ struct BrowseForMeView: View {
         }
     }
 
-    private func sourceRow(_ number: Int, _ source: BrowseForMe.Step) -> some View {
+    private func sourceRow(_ number: Int, _ source: IntelligenceSearch.Step) -> some View {
         HStack(spacing: 12) {
             SiteIcon(host: source.url.host(), size: 30, fetch: !request.tab.isPrivate)
             VStack(alignment: .leading, spacing: 2) {

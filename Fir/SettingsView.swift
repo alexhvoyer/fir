@@ -4,6 +4,8 @@ import WebKit
 struct SettingsView: View {
     /// Shows a page opened from settings (history) once the sheet is gone.
     var onOpenPage: () -> Void = {}
+    /// Asks for onboarding once this sheet has gone: nothing else can be presented over it from the root.
+    var onShowOnboarding: () -> Void = {}
     @Environment(AccountService.self) private var account
     @Environment(\.dismiss) private var dismiss
     /// Starts on Workspaces when opened from the deck's settings button; Back leads to the rest.
@@ -11,8 +13,9 @@ struct SettingsView: View {
 
     enum Page: Hashable { case workspaces }
 
-    init(onOpenPage: @escaping () -> Void = {}, opensWorkspaces: Bool = false) {
+    init(onOpenPage: @escaping () -> Void = {}, onShowOnboarding: @escaping () -> Void = {}, opensWorkspaces: Bool = false) {
         self.onOpenPage = onOpenPage
+        self.onShowOnboarding = onShowOnboarding
         _path = State(initialValue: opensWorkspaces ? [.workspaces] : [])
     }
 
@@ -46,6 +49,10 @@ struct SettingsView: View {
                 }
                 Section {
                     LabeledContent("Version", value: Bundle.main.shortVersion)
+                    Button("Show Onboarding") {
+                        onShowOnboarding()
+                        dismiss()
+                    }
                     Text("Fir is an independent app, not affiliated with Zen or Mozilla. Sync uses Mozilla application-services (MPL-2.0).")
                         .font(.footnote).foregroundStyle(.secondary)
                 } header: {
@@ -125,6 +132,7 @@ private struct SearchSettingsView: View {
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
     @AppStorage(SettingsKey.searchSuggestions) private var searchSuggestions = true
     @AppStorage(SettingsKey.historySuggestions) private var historySuggestions = true
+    @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearch = true
 
     var body: some View {
         List {
@@ -140,6 +148,15 @@ private struct SearchSettingsView: View {
                 Toggle("Pages from History", isOn: $historySuggestions)
             } footer: {
                 Text("Suggestions send what you type to the search engine. History matches stay on this device.")
+            }
+            if IntelligenceSearch.isSupported {
+                Section {
+                    Toggle("Intelligence Search", isOn: $intelligenceSearch)
+                } footer: {
+                    Text(IntelligenceSearch.isAvailable
+                         ? "Offers to read a search's first results and write one answer with its sources, on this iPhone. Answers can get things wrong."
+                         : "Turn on Apple Intelligence in iOS Settings to use it.")
+                }
             }
         }
         .navigationTitle("Search")

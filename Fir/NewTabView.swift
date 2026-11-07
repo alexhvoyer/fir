@@ -20,6 +20,7 @@ struct NewTabView: View {
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
     @AppStorage(SettingsKey.searchSuggestions) private var suggestionsEnabled = true
     @AppStorage(SettingsKey.historySuggestions) private var historyEnabled = true
+    @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearchEnabled = true
     @State private var query = ""
     @State private var suggestions: [String] = []
     @State private var historyMatches: [HistoryStore.Entry] = []
@@ -125,9 +126,9 @@ struct NewTabView: View {
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.primary.opacity(0.08).clipShape(.rect(cornerRadius: 18, style: .continuous)))
             }
-            if offersBrowse {
-                Button(action: browseForMe) {
-                    ResultRow(symbol: "sparkles", title: "Browse for Me", detail: query)
+            if offersIntelligenceSearch {
+                Button(action: startIntelligenceSearch) {
+                    ResultRow(symbol: "sparkles", title: "Intelligence Search", detail: query)
                 }
                 .foregroundStyle(.primary)
                 .listRowBackground(Color.clear)
@@ -370,16 +371,16 @@ struct NewTabView: View {
     }
 
     /// A question, not an address, on an iPhone whose model is ready.
-    private var offersBrowse: Bool {
-        !showsStartPage && BrowseForMe.isAvailable
+    private var offersIntelligenceSearch: Bool {
+        intelligenceSearchEnabled && !showsStartPage && IntelligenceSearch.isAvailable
             && BrowserModel.url(from: query, engine: engine) == engine.url(for: query.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     /// The search opens in a tab as any other does; the answer is read from its results.
-    private func browseForMe() {
+    private func startIntelligenceSearch() {
         let question = query.trimmingCharacters(in: .whitespacesAndNewlines)
         open(engine.url(for: question))
-        browser.browseRequest = BrowseRequest(question: question, tab: browser.selected)
+        browser.intelligenceRequest = IntelligenceSearchRequest(question: question, tab: browser.selected)
     }
 
     private func open(_ url: URL?) {

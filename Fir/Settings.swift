@@ -109,6 +109,7 @@ enum SettingsKey {
     static let haptics = "haptics"
     static let keyboardAtLaunch = "keyboardAtLaunch"
     static let swipeAnywhere = "swipeAnywhere"
+    static let intelligenceSearch = "intelligenceSearch"
     static let archiveTabsAfter = "archiveTabsAfter"
     static let clearTabsAfter = "clearTabsAfter"
     static let onboardingDone = "onboardingDone"

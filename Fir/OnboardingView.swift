@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Four pages shown once, on the first launch: what Fir is, Zen sync, the gestures nothing on
-/// screen explains, and the few settings worth choosing up front.
+/// Pages shown once, on the first launch: what Fir is, Zen sync, the gestures nothing on screen explains,
+/// Intelligence Search where this iPhone can run it, and the few settings worth choosing up front.
 struct OnboardingView: View {
     let onFinish: () -> Void
     @Environment(AccountService.self) private var account
@@ -9,9 +9,10 @@ struct OnboardingView: View {
     @State private var showSignIn = false
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
     @AppStorage(SettingsKey.searchSuggestions) private var searchSuggestions = true
+    @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearch = true
     @State private var blockAds = ContentBlocker.shared.isEnabled
 
-    private static let pageCount = 4
+    private static let pageCount = IntelligenceSearch.isSupported ? 5 : 4
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,7 +29,8 @@ struct OnboardingView: View {
                 welcome.tag(0)
                 sync.tag(1)
                 gestures.tag(2)
-                setup.tag(3)
+                if IntelligenceSearch.isSupported { intelligence.tag(3) }
+                setup.tag(Self.pageCount - 1)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
 
@@ -112,6 +114,25 @@ struct OnboardingView: View {
         }
     }
 
+    private var intelligence: some View {
+        OnboardingPage(title: "Intelligence Search",
+                       text: "Ask a question and Fir reads the first results for you, then writes one answer with its sources. The answer is written on this iPhone.") {
+            IntelligenceSearchDemo()
+        } footer: {
+            Toggle("Intelligence Search", isOn: $intelligenceSearch)
+                .font(.headline)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Palette.field, in: .capsule)
+            if !IntelligenceSearch.isAvailable {
+                Text("Turn on Apple Intelligence in iOS Settings to use it.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+
     /// The same settings as in Settings, as system rows: choosing here is choosing there.
     private var setup: some View {
         VStack(spacing: 12) {
@@ -153,6 +174,61 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline)
                 Text(detail).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+/// A made-up search playing on a loop: pages read one by one, then the answer. Nothing is loaded.
+private struct IntelligenceSearchDemo: View {
+    private static let sites = ["cooking.example", "kitchen.example", "recipes.example"]
+    /// How many sites are showing; past their count, the answer takes over.
+    @State private var stage = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("how to poach an egg", systemImage: "sparkles")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+            if stage <= Self.sites.count {
+                ForEach(Array(Self.sites.prefix(stage).enumerated()), id: \.offset) { index, site in
+                    HStack(spacing: 10) {
+                        SiteIcon(host: site, size: 24, fetch: false)
+                        Text(verbatim: site).font(.subheadline).lineLimit(1)
+                        Spacer(minLength: 0)
+                        if index < stage - 1 {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.teal)
+                        } else {
+                            ProgressView()
+                        }
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Simmer it for about three minutes").font(.headline)
+                    Text("🍳 Add a splash of vinegar [1]").font(.subheadline)
+                    Text("🥄 Slide it in from a small bowl [2]").font(.subheadline)
+                    Text("⏱ Lift it out with a slotted spoon [3]").font(.subheadline)
+                }
+                .transition(.opacity)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Fixed, so the page's text doesn't move as the demo plays.
+        .frame(height: 170)
+        .background(Palette.field, in: .rect(cornerRadius: 24, style: .continuous))
+        .task {
+            while !Task.isCancelled {
+                for next in 0...(Self.sites.count + 1) {
+                    withAnimation(reduceMotion ? nil : .smooth) { stage = next }
+                    let pause: Duration = next > Self.sites.count ? .seconds(3.5) : .seconds(1)
+                    try? await Task.sleep(for: pause)
+                    guard !Task.isCancelled else { return }
+                }
             }
         }
     }

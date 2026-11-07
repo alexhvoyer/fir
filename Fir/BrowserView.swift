@@ -48,6 +48,7 @@ struct BrowserView: View {
     /// Counts bar swipes that switched tabs, for their haptic tick.
     @State private var swipeCommits = 0
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = false
+    @State private var onboardingRequested = false
 
     /// A tab without a page is on screen, nothing over it: search opens, as there is nothing else to do.
     /// Not while Undo is offered, which the sheet would cover.
@@ -173,8 +174,14 @@ struct BrowserView: View {
         }
         .ignoresSafeArea()
         // An item, not a flag: a flag read only in the sheet's closure reached it stale.
-        .sheet(item: $settings) { sheet in
-            SettingsView(onOpenPage: showPageAtOnce, opensWorkspaces: sheet == .workspaces)
+        .sheet(item: $settings, onDismiss: {
+            if onboardingRequested {
+                onboardingRequested = false
+                onboardingDone = false
+            }
+        }) { sheet in
+            SettingsView(onOpenPage: showPageAtOnce, onShowOnboarding: { onboardingRequested = true },
+                         opensWorkspaces: sheet == .workspaces)
         }
         .haptic(.impact(weight: .light), trigger: search) { old, new in old == nil && new != nil }
         .onChange(of: search) { old, new in
@@ -859,7 +866,7 @@ private struct PageView: View {
     @State private var showSettings = false
     @State private var reader: ReaderArticle?
     @State private var showPageSheet = false
-    @State private var browsing: BrowseRequest?
+    @State private var intelligenceSearch: IntelligenceSearchRequest?
     /// What opened the page sheet, the menu button or the address, for it to grow out of.
     @State private var pageSheetSource = "menu"
     /// When a long press opened the sheet; the tap that ends the same touch is ignored.
@@ -1019,16 +1026,16 @@ private struct PageView: View {
         // Presented here, beside the address capsule it grows out of: from the root the zoom found no
         // source and grew from the middle of the screen.
         .sheet(item: $search, onDismiss: {
-            browsing = browser.browseRequest
-            browser.browseRequest = nil
+            intelligenceSearch = browser.intelligenceRequest
+            browser.intelligenceRequest = nil
         }) { mode in
             NewTabView(mode: mode, onOpen: onSearchOpen) { search = nil }
                 .background(SheetLeaving(action: onSearchLeave))
                 .modifier(ZoomFromSource(id: mode == .edit ? "address" : nil, namespace: sheetSource))
         }
-        .sheet(item: $browsing) { request in
-            BrowseForMeView(request: request) { url in
-                browsing = nil
+        .sheet(item: $intelligenceSearch) { request in
+            IntelligenceSearchView(request: request) { url in
+                intelligenceSearch = nil
                 browser.open(url, in: request.tab.spaceID)
             }
         }
