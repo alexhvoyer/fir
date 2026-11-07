@@ -258,13 +258,14 @@ struct BrowserView: View {
                         .offset(x: swipeX + screen.width + Self.swipeGap)
                 } else if swipeX != 0, let neighbour = swipeNeighbour {
                     PageImage(image: neighbour.snapshot, host: neighbour.isPrivate ? nil : neighbour.url?.host(),
-                              blank: neighbour.url == nil, space: neighbour.spaceID)
+                              blank: neighbour.url == nil, space: neighbour.spaceID, offset: neighbour.startPageOffset)
                         .frame(width: screen.width, height: screen.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
                         .offset(x: swipeX + (swipeX > 0 ? -1 : 1) * (screen.width + Self.swipeGap))
                 }
                 PageImage(image: cover, view: coverView, host: browser.selected.isPrivate ? nil : browser.selected.url?.host(),
-                          blank: browser.selected.url == nil, space: browser.selected.spaceID)
+                          blank: browser.selected.url == nil, space: browser.selected.spaceID,
+                          offset: browser.selected.startPageOffset)
                     .frame(width: screen.width, height: screen.height)
                     .clipShape(PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k))
                     // The card's shadow, growing in as the page shrinks: without it the shadow blinked out
@@ -405,14 +406,15 @@ struct BrowserView: View {
 
     private func unrecede() { ScreenRecess.end() }
 
-    /// The search sheet, or in start-page mode a tab of its own in the deck's workspace, shown at once.
+    /// The search sheet, or in start-page mode a tab of its own in the deck's workspace. From the deck
+    /// it grows out of its new card, like any tab; from a page it shows at once.
     private func startNewTab() {
         guard newTabStyle == .page else {
             search = .newTab
             return
         }
         browser.open(nil)
-        showPageAtOnce()
+        if pageShown { showPageAtOnce() } else { openPage() }
     }
 
     /// Like Safari after a search: the page is already full screen under the search screen as it
@@ -790,13 +792,14 @@ private struct PageImage: View {
     /// A tab without a page, which has no snapshot: drawn itself, not a blank web page's white.
     var blank = false
     var space: String? = nil
+    var offset: CGFloat = 0
 
     var body: some View {
         Color.white.overlay(alignment: .top) {
             if let image {
                 Image(uiImage: image).resizable().scaledToFit()
             } else if blank {
-                BlankTab(spaceID: space)
+                BlankTab(spaceID: space, offset: offset)
             } else if view == nil {
                 SiteIcon(host: host, size: 56).padding(.top, 180)
             }
@@ -988,6 +991,8 @@ private struct PageView: View {
                     BlankTab(spaceID: tab.spaceID, tab: tab,
                              insets: EdgeInsets(top: pageInsets(insets).top, leading: insets.leading,
                                                 bottom: 0, trailing: insets.trailing))
+                        // Each blank tab its own page, so one's scroll position isn't another's.
+                        .id(tab.id)
                         .opacity(liveHidden ? 0 : 1)
                         .animation(nil, value: liveHidden)
                 }

@@ -11,7 +11,12 @@ struct StartPage: View {
     let onOpen: (URL) -> Void
     let onOpenPin: (LocalPin) -> Void
     /// A whole page has room for frequent sites beside Zen's pins.
-    var fillsPage = false
+    let fillsPage: Bool
+    /// Where a copy is drawn scrolled to; the live page reports where it comes to rest.
+    let offset: CGFloat
+    let onScrolled: ((CGFloat) -> Void)?
+    /// A card's or transition's copy: drawn at `offset`, not scrollable.
+    let isCopy: Bool
     private var isPrivate: Bool { spaceID == BrowserModel.privateSpace }
     @Environment(AccountService.self) private var account
     @Environment(BrowserModel.self) private var browser
@@ -22,6 +27,19 @@ struct StartPage: View {
     @State private var loaded = Self.cache != nil
     @State private var showSignIn = false
     @AppStorage(SettingsKey.signInCardHidden) private var signInCardHidden = false
+
+    init(spaceID: String?, onPullUp: @escaping () -> Void, onOpen: @escaping (URL) -> Void,
+         onOpenPin: @escaping (LocalPin) -> Void, fillsPage: Bool = false, offset: CGFloat = 0,
+         onScrolled: ((CGFloat) -> Void)? = nil, isCopy: Bool = false) {
+        self.spaceID = spaceID
+        self.onPullUp = onPullUp
+        self.onOpen = onOpen
+        self.onOpenPin = onOpenPin
+        self.fillsPage = fillsPage
+        self.offset = offset
+        self.onScrolled = onScrolled
+        self.isCopy = isCopy
+    }
 
     /// Shown until there is history or Zen pins, as Safari starts with a few popular sites.
     private static let starterSites = [
@@ -48,15 +66,32 @@ struct StartPage: View {
     }
 
 
-    private var scrolling: some View {
-        ScrollView { content }
-            .scrollIndicators(.hidden)
-            // The keyboard stays while scrolling, as in Lens.
-            .scrollDismissesKeyboard(.never)
-            // Any pull up once past the top, not only the first: back at the low height the list stays scrolled.
-            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: {
-                if $1 > $0, $1 > 40 { onPullUp() }
+    @ViewBuilder private var scrolling: some View {
+        if isCopy {
+            // Shifted, not scrolled: a ScrollView dropped a position set before its first layout.
+            // Laid out at full height from the top, as the ScrollView does.
+            Color.clear.overlay(alignment: .top) {
+                content
+                    .fixedSize(horizontal: false, vertical: true)
+                    .offset(y: -offset)
             }
+            .clipped()
+        } else {
+            ScrollView { content }
+                .scrollIndicators(.hidden)
+                // The keyboard stays while scrolling, as in Lens.
+                .scrollDismissesKeyboard(.never)
+                // Any pull up once past the top, not only the first: back at the low height the list stays scrolled.
+                .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: {
+                    if $1 > $0, $1 > 40 { onPullUp() }
+                }
+                // A new page starts at the top; its cards must not show another place.
+                .onAppear { onScrolled?(0) }
+                .onScrollPhaseChange { _, phase, context in
+                    guard phase == .idle, let onScrolled else { return }
+                    onScrolled(context.geometry.contentOffset.y + context.geometry.contentInsets.top)
+                }
+        }
     }
 
     private var content: some View {
@@ -245,6 +280,8 @@ struct BlankTab: View {
     var tab: BrowserTab? = nil
     /// The page's chrome and cutouts, as the web page gets them; cards use the window's safe area.
     var insets: EdgeInsets? = nil
+    /// A copy's scroll position: the tab's, so it shows the same place.
+    var offset: CGFloat = 0
     @AppStorage(SettingsKey.newTabStyle) private var style = NewTabStyle.sheet
     @Environment(BrowserModel.self) private var browser
 
@@ -256,7 +293,9 @@ struct BlankTab: View {
                 let scale = min(1, geo.size.width / full.width)
                 let safe = window?.safeAreaInsets ?? .zero
                 StartPage(spaceID: spaceID, onPullUp: {}, onOpen: { tab?.load($0) },
-                          onOpenPin: { browser.open($0, replacing: tab) }, fillsPage: true)
+                          onOpenPin: { browser.open($0, replacing: tab) }, fillsPage: true,
+                          offset: offset, onScrolled: tab.map { tab in { tab.startPageOffset = $0 } },
+                          isCopy: tab == nil)
                     .safeAreaPadding(insets ?? EdgeInsets(top: safe.top, leading: safe.left, bottom: 0, trailing: safe.right))
                     .frame(width: geo.size.width / scale, height: geo.size.height / scale)
                     .scaleEffect(scale, anchor: .topLeading)

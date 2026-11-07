@@ -550,7 +550,9 @@ private struct TabCard: View {
                     Image(uiImage: image).resizable().scaledToFill()
                         .frame(width: width, height: height, alignment: .top)
                 } else if tab.url == nil {
-                    BlankTab(spaceID: tab.spaceID)
+                    BlankTab(spaceID: tab.spaceID, offset: tab.startPageOffset)
+                        // A new offset alone didn't redraw the card's copy.
+                        .id(tab.startPageOffset)
                 } else {
                     Color(.secondarySystemBackground)
                         .overlay(SiteIcon(host: tab.url?.host(), size: 56, fetch: !tab.isPrivate))
