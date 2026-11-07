@@ -10,6 +10,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     /// Starts on Workspaces when opened from the deck's settings button; Back leads to the rest.
     @State private var path: [Page]
+    @State private var showWhatsNew = false
 
     enum Page: Hashable { case workspaces }
 
@@ -49,6 +50,7 @@ struct SettingsView: View {
                 }
                 Section {
                     LabeledContent("Version", value: Bundle.main.shortVersion)
+                    Button("What's New") { showWhatsNew = true }
                     Button("Show Onboarding") {
                         onShowOnboarding()
                         dismiss()
@@ -62,6 +64,7 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: Page.self) { _ in WorkspacesSettingsView() }
+            .sheet(isPresented: $showWhatsNew) { WhatsNewView() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark") { dismiss() }
@@ -91,6 +94,7 @@ private struct GeneralSettingsView: View {
     @AppStorage(SettingsKey.haptics) private var haptics = true
     @AppStorage(SettingsKey.keyboardAtLaunch) private var keyboardAtLaunch = false
     @AppStorage(SettingsKey.swipeAnywhere) private var swipeAnywhere = false
+    @AppStorage(SettingsKey.whatsNew) private var whatsNew = true
     @State private var isDefault: Bool?
 
     var body: some View {
@@ -118,6 +122,13 @@ private struct GeneralSettingsView: View {
                 Toggle("Open Search at Launch", isOn: $keyboardAtLaunch)
             } footer: {
                 Text("Fir opens ready to type. The page you were reading stays behind the search.")
+            }
+            Section {
+                Toggle("What's New After Updates", isOn: $whatsNew)
+                    // Turning it back on waits for the next list, not one skipped while off.
+                    .onChange(of: whatsNew) { WhatsNew.markSeen() }
+            } footer: {
+                Text("Fir shows a short list of changes after a major update. It stays in Settings under About.")
             }
         }
         .navigationTitle("General")

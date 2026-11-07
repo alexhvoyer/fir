@@ -113,6 +113,8 @@ enum SettingsKey {
     static let archiveTabsAfter = "archiveTabsAfter"
     static let clearTabsAfter = "clearTabsAfter"
     static let onboardingDone = "onboardingDone"
+    static let whatsNew = "whatsNew"
+    static let whatsNewSeen = "whatsNewSeen"
     static let syncTabs = "syncTabs"
     static let syncHistory = "syncHistory"
     static let syncWorkspaces = "syncWorkspaces"

@@ -49,11 +49,14 @@ struct BrowserView: View {
     @State private var swipeCommits = 0
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = false
     @State private var onboardingRequested = false
+    @State private var showWhatsNew = WhatsNew.isDue
+    /// Stays true until the sheet is fully gone: another one asked for while it leaves would be lost.
+    @State private var whatsNewPending = WhatsNew.isDue
 
     /// A tab without a page is on screen, nothing over it: search opens, as there is nothing else to do.
     /// Not while Undo is offered, which the sheet would cover.
     private var blankShown: Bool {
-        pageShown && !transitioning && browser.selected.url == nil && browser.undo == nil && onboardingDone
+        pageShown && !transitioning && browser.selected.url == nil && browser.undo == nil && onboardingDone && !whatsNewPending
     }
 
     // Safari's curve: a quick start and a soft settle, full screen in about 0.2 s on a 2026 recording.
@@ -183,6 +186,9 @@ struct BrowserView: View {
             SettingsView(onOpenPage: showPageAtOnce, onShowOnboarding: { onboardingRequested = true },
                          opensWorkspaces: sheet == .workspaces)
         }
+        .sheet(isPresented: $showWhatsNew, onDismiss: { whatsNewPending = false }) {
+            WhatsNewView().onAppear(perform: WhatsNew.markSeen)
+        }
         .haptic(.impact(weight: .light), trigger: search) { old, new in old == nil && new != nil }
         .onChange(of: search) { old, new in
             if old == nil, new != nil { recede() }
@@ -198,11 +204,8 @@ struct BrowserView: View {
             // The tab shown at launch is restored and still loading.
             if !browser.selected.hasPainted, let image = browser.selected.snapshot { reveal(browser.selected, from: image) }
         }
-        .onChange(of: browser.searchRequested, initial: true) {
-            guard let request = browser.searchRequested else { return }
-            browser.searchRequested = nil
-            openSearch(request)
-        }
+        .onChange(of: browser.searchRequested, initial: true) { takeSearchRequest() }
+        .onChange(of: whatsNewPending) { takeSearchRequest() }
         // From the deck too: the new tab's page shows, not just its card.
         .onChange(of: browser.linksOpened) {
             search = nil
@@ -214,6 +217,12 @@ struct BrowserView: View {
         .onChange(of: blankShown, initial: true) {
             if blankShown, search == nil, settings == nil { search = .newTab }
         }
+    }
+
+    private func takeSearchRequest() {
+        guard !whatsNewPending, let request = browser.searchRequested else { return }
+        browser.searchRequested = nil
+        openSearch(request)
     }
 
     /// New-tab search asked for from outside, in Private or else the current tab's workspace; a search

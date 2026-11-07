@@ -10,6 +10,7 @@ struct OnboardingView: View {
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
     @AppStorage(SettingsKey.searchSuggestions) private var searchSuggestions = true
     @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearch = true
+    @AppStorage(SettingsKey.whatsNew) private var whatsNew = true
     @State private var blockAds = ContentBlocker.shared.isEnabled
 
     private static let pageCount = IntelligenceSearch.isSupported ? 5 : 4
@@ -104,10 +105,10 @@ struct OnboardingView: View {
             EmptyView()
         } footer: {
             VStack(alignment: .leading, spacing: 18) {
-                tip("arrow.left.and.right", "Swipe the address bar", "to move between tabs")
-                tip("arrow.up", "Swipe up from the bar", "to see all tabs")
-                tip("plus.square.on.square", "Swipe left on the last tab", "for a new one")
-                tip("hand.tap", "Long-press the tabs button", "for a new or private tab")
+                FeatureRow("arrow.left.and.right", "Swipe the address bar", "to move between tabs")
+                FeatureRow("arrow.up", "Swipe up from the bar", "to see all tabs")
+                FeatureRow("plus.square.on.square", "Swipe left on the last tab", "for a new one")
+                FeatureRow("hand.tap", "Long-press the tabs button", "for a new or private tab")
             }
             .padding(.horizontal, 8)
             .padding(.top, 8)
@@ -157,14 +158,33 @@ struct OnboardingView: View {
                 } footer: {
                     Text("Private tabs leave nothing behind. You can also lock Fir with Face ID in Settings.")
                 }
+                Section {
+                    Toggle("What's New After Updates", isOn: $whatsNew)
+                } footer: {
+                    Text("A short list of changes after a major update.")
+                }
             }
             .scrollContentBackground(.hidden)
-            .scrollDisabled(true)
+            .scrollBounceBehavior(.basedOnSize)
         }
         .padding(.top, 40)
     }
 
-    private func tip(_ symbol: String, _ title: String, _ detail: String) -> some View {
+}
+
+/// An icon in a glass circle beside a title and a line of detail.
+struct FeatureRow: View {
+    let symbol: String
+    let title: String
+    let detail: String
+
+    init(_ symbol: String, _ title: String, _ detail: String) {
+        self.symbol = symbol
+        self.title = title
+        self.detail = detail
+    }
+
+    var body: some View {
         HStack(spacing: 16) {
             Image(systemName: symbol)
                 .font(.title3.weight(.semibold))

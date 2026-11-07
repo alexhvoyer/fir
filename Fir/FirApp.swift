@@ -38,7 +38,10 @@ struct FirApp: App {
                 }
                 .onChange(of: lockCovers, initial: true) { LockWindow.show(lockCovers, lock: lock, tint: accent.color) }
                 .fullScreenCover(isPresented: Binding(get: { !onboardingDone }, set: { onboardingDone = !$0 })) {
-                    OnboardingView { onboardingDone = true }
+                    OnboardingView {
+                        WhatsNew.markSeen()
+                        onboardingDone = true
+                    }
                         .environment(account)
                         .tint(accent.color)
                 }
