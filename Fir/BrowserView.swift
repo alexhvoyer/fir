@@ -1850,7 +1850,7 @@ private struct PageView: View {
     }
 
     /// Scroll distance over which the bar goes from full to pill. A slow scroll collapses it gradually,
-    /// a quick one at once, as in Safari.
+    /// a quick one at once but animated, as in Safari.
     private static let collapseDistance: CGFloat = 60
     private static let settleSpring = Animation.spring(response: 0.32, dampingFraction: 0.9)
 
@@ -1862,7 +1862,12 @@ private struct PageView: View {
             return
         }
         let next = min(max(collapse + (new - old) / Self.collapseDistance, 0), 1)
-        if next != collapse { collapse = next }
+        // A flick covers the whole distance in a frame or two: animate such a jump instead of snapping.
+        if abs(next - collapse) > 0.15 {
+            withAnimation(Self.settleSpring) { collapse = next }
+        } else if next != collapse {
+            collapse = next
+        }
         // While the finger is down the bar just follows; settling waits for it to lift.
         if browser.selected.isTouching { settleTask?.cancel() } else { scheduleSettle() }
     }

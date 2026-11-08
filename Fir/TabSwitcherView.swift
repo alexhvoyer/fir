@@ -91,6 +91,8 @@ struct TabSwitcherView: View {
         // Another workspace's deck arrives already in place; a closed card's neighbours slide over.
         .onChange(of: browser.space) { centerSelected(animated: false) }
         .onChange(of: browser.spaceTabs.map(\.id)) { old, new in
+            // A new tab growing out of the front card: the deck stays put under it, as for an old one.
+            guard !holdsPosition else { return }
             centerSelected(animated: !Set(old).isDisjoint(with: new))
         }
         // A card joining or leaving a folder's stack moves slots: the deck follows the card it was on.
