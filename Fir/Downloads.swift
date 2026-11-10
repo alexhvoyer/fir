@@ -1,3 +1,4 @@
+import ActivityKit
 import QuickLook
 import SwiftUI
 import WebKit
@@ -15,6 +16,8 @@ final class DownloadManager: NSObject {
         var file: URL?
         var progress = 0.0
         var state = State.running
+        /// False for a private tab's file: its name must not appear on the Lock Screen.
+        var showsActivity = true
         enum State { case running, finished, failed }
     }
 
@@ -22,6 +25,14 @@ final class DownloadManager: NSObject {
     private(set) var active: [Item] = []
     @ObservationIgnored private var items: [ObjectIdentifier: UUID] = [:]
     @ObservationIgnored private var progressObservations: [ObjectIdentifier: NSKeyValueObservation] = [:]
+    @ObservationIgnored private var activity: Activity<DownloadAttributes>?
+    @ObservationIgnored private var activityUpdated = Date.distantPast
+
+    private override init() {
+        super.init()
+        // One left by a launch that ended mid-download would otherwise stay up for hours.
+        Task { for leftover in Activity<DownloadAttributes>.activities { await leftover.end(nil, dismissalPolicy: .immediate) } }
+    }
 
     static var folder: URL {
         let dir = URL.documentsDirectory.appending(path: "Downloads", directoryHint: .isDirectory)
@@ -41,9 +52,11 @@ final class DownloadManager: NSObject {
 
     func track(_ download: WKDownload) {
         let key = ObjectIdentifier(download)
-        let item = Item(name: download.originalRequest?.url?.lastPathComponent ?? "Download")
+        var item = Item(name: download.originalRequest?.url?.lastPathComponent ?? "Download")
+        item.showsActivity = download.webView?.configuration.websiteDataStore.isPersistent == true
         items[key] = item.id
         active.insert(item, at: 0)
+        refreshActivity()
         download.delegate = self
         progressObservations[key] = download.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
             // Whole percents: the fraction moves on every received chunk, and each write redrew the bar.
@@ -61,7 +74,34 @@ final class DownloadManager: NSObject {
         guard let id = items[key], let index = active.firstIndex(where: { $0.id == id }) else { return }
         var item = active[index]
         change(&item)
-        if item != active[index] { active[index] = item }
+        if item != active[index] {
+            active[index] = item
+            refreshActivity()
+        }
+    }
+
+    /// One activity for all downloads. Updates at most once a second: the system throttles faster ones.
+    private func refreshActivity() {
+        let shown = active.filter(\.showsActivity)
+        let running = shown.filter { $0.state == .running }
+        if let newest = running.first {
+            let progress = running.map(\.progress).reduce(0, +) / Double(running.count)
+            let state = DownloadAttributes.ContentState(name: newest.name, progress: progress, count: running.count, phase: .running)
+            let content = ActivityContent(state: state, staleDate: nil)
+            if let activity {
+                guard Date.now.timeIntervalSince(activityUpdated) >= 1 else { return }
+                activityUpdated = .now
+                Task { await activity.update(content) }
+            } else if ActivityAuthorizationInfo().areActivitiesEnabled {
+                activity = try? Activity.request(attributes: DownloadAttributes(), content: content)
+                activityUpdated = .now
+            }
+        } else if let activity, let last = shown.first {
+            self.activity = nil
+            let state = DownloadAttributes.ContentState(name: last.name, progress: 1, count: 0,
+                                                        phase: last.state == .failed ? .failed : .finished)
+            Task { await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .after(.now + 4)) }
+        }
     }
 
     private func finish(_ download: WKDownload, _ state: Item.State) {

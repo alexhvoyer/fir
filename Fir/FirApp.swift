@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreSpotlight
 import SwiftUI
 import MozillaAppServices
 
@@ -14,6 +15,13 @@ struct FirApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     private var lockCovers: Bool { lock.isLocked || (AppLock.isEnabled && scenePhase != .active) }
+
+    /// Never a private tab's page, or anything while Fir is locked.
+    private var handoffURL: URL? {
+        guard !lockCovers, !browser.selected.isPrivate, let url = browser.selected.pageURL,
+              ["http", "https"].contains(url.scheme?.lowercased()) else { return nil }
+        return url
+    }
 
     init() {
         // Rust components (NSS, HTTP) must be initialized before any FxA or sync call.
@@ -53,6 +61,12 @@ struct FirApp: App {
                 .task { await account.start() }
                 .onAppear {
                     QuickAction.handler = { browser.searchRequested = $0 == .newPrivateTab ? .privateTab : .tab }
+                    SystemSearch.handler = { browser.openLink($0) }
+                    NewTabRequest.handler = { browser.searchRequested = $0 ? .privateTab : .tab }
+                }
+                // "Search in app" from Spotlight, with what was typed there.
+                .onContinueUserActivity(CSQueryContinuationActionType) { activity in
+                    if let query = activity.userInfo?[CSSearchQueryString] as? String { SystemSearch.perform(query) }
                 }
                 #if DEBUG
                 .task {
@@ -73,6 +87,10 @@ struct FirApp: App {
                     account.receivedTabs = []
                     for url in urls.dropLast() { browser.openInBackground(url, in: browser.selected.spaceID) }
                     if let last = urls.last { browser.openLink(last) }
+                }
+                // The page in front continues on the Mac, as in Safari.
+                .userActivity(NSUserActivityTypeBrowsingWeb, element: handoffURL) { url, activity in
+                    activity.webpageURL = url
                 }
                 // The search widget opens firbrowser://search; web links come from other apps.
                 .onOpenURL { url in

@@ -6,6 +6,9 @@ import WidgetKit
 struct FirWidgets: WidgetBundle {
     var body: some Widget {
         SearchWidget()
+        NewTabControl()
+        NewPrivateTabControl()
+        DownloadLiveActivity()
     }
 }
 

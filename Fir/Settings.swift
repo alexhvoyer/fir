@@ -120,6 +120,8 @@ enum SettingsKey {
     static let lockApp = "lockApp"
     static let lockPrivateTabs = "lockPrivateTabs"
     static let httpsOnly = "httpsOnly"
+    static let globalPrivacyControl = "globalPrivacyControl"
+    static let hardenPrivateTabs = "hardenPrivateTabs"
     static let haptics = "haptics"
     static let keyboardAtLaunch = "keyboardAtLaunch"
     static let swipeAnywhere = "swipeAnywhere"

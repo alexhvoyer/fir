@@ -35,6 +35,10 @@ targets:
           # Required to be offered as the default browser.
           - CFBundleURLName: Web Link
             CFBundleURLSchemes: [http, https]
+        # Download progress on the Lock Screen and in the Dynamic Island.
+        NSSupportsLiveActivities: true
+        # Lets Spotlight hand a typed query over to the app; SystemSearch runs it.
+        CoreSpotlightContinuation: true
         # Long-press actions on the home screen icon; QuickAction handles them.
         UIApplicationShortcutItems:
           - UIApplicationShortcutItemType: NewTab

@@ -6,6 +6,8 @@ struct PrivacySettingsView: View {
     @State private var lockApp = AppLock.isEnabled
     @AppStorage(SettingsKey.httpsOnly) private var httpsOnly = true
     @AppStorage(SettingsKey.lockPrivateTabs) private var lockPrivateTabs = false
+    @AppStorage(SettingsKey.globalPrivacyControl) private var globalPrivacyControl = true
+    @AppStorage(SettingsKey.hardenPrivateTabs) private var hardenPrivateTabs = false
     @State private var confirmClear = false
     @State private var cleared = false
     private let blocker = ContentBlocker.shared
@@ -32,6 +34,20 @@ struct PrivacySettingsView: View {
                 Toggle("HTTPS-Only Mode", isOn: $httpsOnly)
             } footer: {
                 Text("Always connects securely, and asks before opening a site that doesn't support it.")
+            }
+            if #available(iOS 27.0, *) {
+                Section {
+                    Toggle("Global Privacy Control", isOn: $globalPrivacyControl)
+                } footer: {
+                    Text("Tells websites not to sell or share your data. Where the law requires it, they must comply.")
+                }
+            }
+            if #available(iOS 26.4, *) {
+                Section {
+                    Toggle("Harden Private Tabs", isOn: $hardenPrivateTabs)
+                } footer: {
+                    Text("Adds protection against malicious websites. Heavy sites run slower in private tabs. Applies from the next page load.")
+                }
             }
             Section {
                 Toggle("Lock Private Tabs", isOn: $lockPrivateTabs)

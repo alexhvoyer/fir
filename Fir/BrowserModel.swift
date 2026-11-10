@@ -429,6 +429,12 @@ extension BrowserTab: WKNavigationDelegate {
         if navigationAction.targetFrame?.isMainFrame != false, let url = navigationAction.request.url {
             let site = SiteSettings.shared.entry(for: url)
             preferences.preferredContentMode = site.desktop ? .desktop : .mobile
+            if #available(iOS 27.0, *) {
+                preferences.globalPrivacyControlEnabled = UserDefaults.standard.bool(forKey: SettingsKey.globalPrivacyControl, default: true)
+            }
+            if #available(iOS 26.4, *), isPrivate, UserDefaults.standard.bool(forKey: SettingsKey.hardenPrivateTabs) {
+                preferences.securityRestrictionMode = .maximizeCompatibility
+            }
             ContentBlocker.shared.setBlocking(site.blockAds, for: webView)
         }
         if navigationAction.targetFrame?.isMainFrame != false, let url = navigationAction.request.url,
