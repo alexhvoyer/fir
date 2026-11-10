@@ -370,10 +370,15 @@ struct TabSwitcherView: View {
                     let predicted = origin - value.predictedEndTranslation.width / step
                     let target = min(max(predicted.rounded(), 0), CGFloat(deckLayout.count - 1))
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) { progress = target }
-                } else if deckLayout.stacks[focusedSlot] == nil,
-                          value.translation.height < -120 || value.predictedEndTranslation.height < -400 {
+                    return
+                }
+                let dy = value.translation.height
+                let predicted = value.predictedEndTranslation.height
+                // Predicted includes the drag so far: opposite signs mean a flick back the other way.
+                let sameWay = dy * predicted > 0
+                if deckLayout.stacks[focusedSlot] == nil, sameWay, dy < -120 || predicted < -400 {
                     closeFocused(height: height)
-                } else if value.translation.height > 90 || value.predictedEndTranslation.height > 360 {
+                } else if sameWay, dy > 90 || predicted > 360 {
                     openFocused()
                 } else {
                     withAnimation(.snappy) { liftOffset = 0 }

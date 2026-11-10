@@ -445,7 +445,8 @@ struct BrowserView: View {
     /// Ends a transition onto a tab. One that hasn't loaded yet (restored at launch, or reloading after
     /// iOS reclaimed it) stays under its snapshot, which fades once the page is drawn: no white flash.
     private func reveal(_ tab: BrowserTab, from image: UIImage? = nil) {
-        guard !tab.hasPainted, let image = image ?? cover ?? tab.snapshot else { endTransition(); return }
+        // A failed page never paints, and the veil would sit over its error screen.
+        guard !tab.hasPainted, tab.loadFailure == nil, let image = image ?? cover ?? tab.snapshot else { endTransition(); return }
         veil = image
         endTransition()
         Task {
@@ -680,6 +681,25 @@ private enum ScreenRecess {
         }
     }
 
+    /// During a swipe down: the page follows the sheet, and goes back if the swipe is called off.
+    static func end(alongside coordinator: any UIViewControllerTransitionCoordinator) {
+        guard let cover, let snapshot = cover.subviews.first else { return }
+        let transform = snapshot.transform
+        let radius = snapshot.layer.cornerRadius
+        coordinator.animateAlongsideTransition(in: cover, animation: { _ in
+            snapshot.transform = .identity
+            snapshot.layer.cornerRadius = 0
+        }) { context in
+            if context.isCancelled {
+                snapshot.transform = transform
+                snapshot.layer.cornerRadius = radius
+            } else {
+                cover.removeFromSuperview()
+                if self.cover === cover { self.cover = nil }
+            }
+        }
+    }
+
     static func end() {
         guard let cover, let snapshot = cover.subviews.first else { return }
         self.cover = nil
@@ -692,7 +712,7 @@ private enum ScreenRecess {
     }
 }
 
-/// Calls `action` when the sheet it sits in starts to go: at once, or on release for a swipe that isn't
+/// Calls `action` when the sheet it sits in starts to go, or moves the page with a swipe that may be
 /// called off. SwiftUI clears the sheet's binding only once the sheet has gone.
 private struct SheetLeaving: UIViewControllerRepresentable {
     let action: () -> Void
@@ -713,9 +733,7 @@ private struct SheetLeaving: UIViewControllerRepresentable {
         override func viewWillDisappear(_ animated: Bool) {
             super.viewWillDisappear(animated)
             guard let coordinator = transitionCoordinator, coordinator.isInteractive else { return action() }
-            coordinator.notifyWhenInteractionChanges { [weak self] context in
-                if !context.isCancelled { self?.action() }
-            }
+            ScreenRecess.end(alongside: coordinator)
         }
     }
 }
