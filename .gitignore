@@ -7,3 +7,5 @@ xcuserdata/
 build.log
 Packages/MozillaRustComponents/MozillaRustComponents.xcframework/
 build/
+.claude/local.env
+.claude/settings.local.json

@@ -5,12 +5,19 @@ set -eu
 cd "$(dirname "$0")/.."
 
 # Every upload needs a build number above the last one; the date and time always are.
+# An App Store Connect key, for when Xcode's account sign-in has lapsed.
+if [ -f .claude/local.env ]; then . ./.claude/local.env; fi
+set --
+if [ -n "${ASC_KEY_ID:-}" ]; then
+    set -- -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+fi
+
 build="$(date +%Y%m%d).$(date +%H%M)"
 xcodegen generate
 rm -rf build/Fir.xcarchive build/export
 xcodebuild archive -project Fir.xcodeproj -scheme Fir -configuration Release \
     -destination generic/platform=iOS -archivePath build/Fir.xcarchive \
-    -allowProvisioningUpdates CURRENT_PROJECT_VERSION="$build"
+    -allowProvisioningUpdates "$@" CURRENT_PROJECT_VERSION="$build"
 xcodebuild -exportArchive -archivePath build/Fir.xcarchive -exportPath build/export \
-    -exportOptionsPlist scripts/ExportOptions.plist -allowProvisioningUpdates
+    -exportOptionsPlist scripts/ExportOptions.plist -allowProvisioningUpdates "$@"
 echo "Uploaded build $build. It shows in App Store Connect > TestFlight after processing."
