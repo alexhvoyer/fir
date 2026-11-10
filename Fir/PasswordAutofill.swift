@@ -31,6 +31,7 @@ final class PasswordAutofill: NSObject {
     private(set) var offer: FillOffer?
     var savePrompt: SavePrompt?
     @ObservationIgnored private var hideTask: Task<Void, Never>?
+    @ObservationIgnored private var focusCount = 0
     /// The last submit already handled per origin, so a form posting twice asks once.
     @ObservationIgnored private var handled: [String: String] = [:]
 
@@ -70,6 +71,13 @@ final class PasswordAutofill: NSObject {
         }.value
     }
 
+    /// A new document has none of the fields the offer was for, and a page leaving sends no blur.
+    func pageChanged(in webView: WKWebView) {
+        guard offer?.webView === webView else { return }
+        focusCount += 1
+        offer = nil
+    }
+
     // MARK: - Messages
 
     private static func documentOrigin(_ security: WKSecurityOrigin) -> String {
@@ -87,12 +95,17 @@ final class PasswordAutofill: NSObject {
         switch body["type"] as? String {
         case "focus":
             hideTask?.cancel()
+            focusCount += 1
+            let focus = focusCount
             Task {
                 let logins = await Task.detached { PasswordStore.shared?.logins(for: origin) ?? [] }.value
+                // The field lost focus during the read.
+                guard focus == focusCount else { return }
                 offer = logins.isEmpty ? nil : FillOffer(webView: webView, frame: frame, origin: Self.documentOrigin(security),
                                                          host: security.host, logins: logins)
             }
         case "blur":
+            focusCount += 1
             // A moment's grace: focus moving to the next field of the same form shouldn't flicker the bar.
             hideTask?.cancel()
             hideTask = Task {

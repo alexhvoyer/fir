@@ -37,6 +37,7 @@ final class AccountService {
     private var pendingRemovals: Set<String> = []
     private(set) var spacesError: String?
     private(set) var isSyncing = false
+    private var syncQueued = false
     private(set) var lastSynced: Date?
     private(set) var lastError: String?
     // Stored, not derived from manager.hasAccount(): Observation can't see state inside the Rust account.
@@ -123,7 +124,8 @@ final class AccountService {
         }
         isSignedIn = true
         refreshProfile()
-        await sync()
+        // Not awaited: the sheet closes after this, and a first sync can take a long while.
+        Task { await sync() }
     }
 
     func signOut() async {
@@ -141,14 +143,29 @@ final class AccountService {
         zenWorkspaces = nil
         sendTargets = []
         receivedTabs = []
+        lastError = nil
+        spacesError = nil
+        lastSynced = nil
         SyncCache.clear()
         await tabsSync?.wipeLocalData()
     }
 
+    /// A request during a sync runs once more after it: edits rely on the sync that follows them.
     func sync() async {
-        guard let manager, let tabsSync, isSignedIn, !isSyncing else { return }
+        guard let manager, let tabsSync, isSignedIn else { return }
+        guard !isSyncing else {
+            syncQueued = true
+            return
+        }
         isSyncing = true
         defer { isSyncing = false }
+        repeat {
+            syncQueued = false
+            await syncOnce(manager, tabsSync)
+        } while syncQueued && isSignedIn
+    }
+
+    private func syncOnce(_ manager: FxAccountManager, _ tabsSync: RemoteTabsSync) async {
         let defaults = UserDefaults.standard
         var engines: [String] = []
         if defaults.bool(forKey: SettingsKey.syncTabs, default: true) { engines.append("tabs") }
@@ -205,10 +222,11 @@ final class AccountService {
     private func fetchDeviceCommands(_ manager: FxAccountManager) async {
         guard let constellation = manager.deviceConstellation() else { return }
         constellation.refreshState()
+        let generation = generation
         let result = await withCheckedContinuation { continuation in
             constellation.pollForCommands { continuation.resume(returning: $0) }
         }
-        guard case .success(let commands) = result else { return }
+        guard generation == self.generation, case .success(let commands) = result else { return }
         for case .tabReceived(_, let payload) in commands {
             if let url = payload.entries.last.flatMap({ URL(string: $0.url) }) { receivedTabs.append(url) }
         }
@@ -245,6 +263,7 @@ final class AccountService {
     private func updateZenRecord(_ id: String, _ change: @escaping ([String: Any]) -> [String: Any]) async -> Bool {
         guard let manager else { return false }
         let before = spacesRecords
+        let generation = generation
         if let index = spacesRecords.firstIndex(where: { $0["id"] as? String == id }),
            let data = spacesRecords[index]["data"] as? [String: Any] {
             spacesRecords[index]["data"] = change(data)
@@ -264,6 +283,8 @@ final class AccountService {
             }
             throw SyncStorageReader.ReaderError.conflict
         } catch {
+            // Signed out meanwhile: restoring these would bring the old account's workspaces back.
+            guard generation == self.generation else { return false }
             spacesRecords = before
             rebuildSpaces()
             spacesError = "\(error)"

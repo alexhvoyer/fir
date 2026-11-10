@@ -46,12 +46,14 @@ struct ReaderArticle: Identifiable {
             const content = article.content.replace(/<video /g, '<video controls ');
             // A rule's own author: Readability can take one from a post embedded in the article.
             const author = rule && document.querySelector(rule.author)?.textContent.trim();
-            return { title, byline: author || article.byline, siteName: article.siteName, content, text: article.textContent };
+            return { title, byline: author || article.byline, siteName: article.siteName, content, text: article.textContent, address: location.href };
             """
         guard let result = try? await webView.callAsyncJavaScript(script, contentWorld: world) as? [String: Any],
               let html = result["content"] as? String else { return nil }
+        // From the same script as the text, so the two can't belong to different pages.
         return ReaderArticle(title: result["title"] as? String ?? "", byline: result["byline"] as? String,
-                             siteName: result["siteName"] as? String, html: html, text: result["text"] as? String ?? "", url: url)
+                             siteName: result["siteName"] as? String, html: html, text: result["text"] as? String ?? "",
+                             url: (result["address"] as? String).flatMap(URL.init(string:)) ?? url)
     }
 }
 
@@ -68,7 +70,7 @@ struct ReaderView: View {
     @State private var buttonsHidden = false
 
     var body: some View {
-        ReaderWebView(html: page, baseURL: article.url, onOpen: { url in
+        ReaderWebView(html: page, textSize: Int(textSize), baseURL: article.url, onOpen: { url in
             dismiss()
             onOpen(url)
         }, onScroll: { down in
@@ -114,7 +116,7 @@ struct ReaderView: View {
             <style>
               :root { color-scheme: \(dark ? "dark" : "light"); }
               body { margin: 0; padding: 64px 22px 80px; background: \(dark ? "#1F1F1F" : "#F2F0E3");
-                     color: \(dark ? "#E6E3D6" : "#2A2A28"); font: \(Int(textSize))px/1.6 -apple-system, sans-serif;
+                     color: \(dark ? "#E6E3D6" : "#2A2A28"); font: \(ReaderWebView.textSizeSlot)px/1.6 -apple-system, sans-serif;
                      -webkit-text-size-adjust: none; overflow-wrap: break-word; }
               h1 { font-size: 1.6em; line-height: 1.2; margin: 0.4em 0 0.3em; }
               .meta { color: \(dark ? "#9C9A90" : "#76736A"); font-size: 0.82em; margin-bottom: 1.6em; }
@@ -141,7 +143,11 @@ struct ReaderView: View {
 
 /// Shows the article with scripts off: Readability strips them, this makes sure none run.
 private struct ReaderWebView: UIViewRepresentable {
+    /// Stands for the text size in `html`, so changing the size isn't a new page to load.
+    static let textSizeSlot = "TEXT_SIZE_SLOT"
+
     let html: String
+    let textSize: Int
     let baseURL: URL
     let onOpen: (URL) -> Void
     /// True while scrolling down past the top, false on scrolling up or back at the top.
@@ -164,15 +170,36 @@ private struct ReaderWebView: UIViewRepresentable {
     func updateUIView(_ webView: WKWebView, context: Context) {
         context.coordinator.onOpen = onOpen
         context.coordinator.onScroll = onScroll
-        guard context.coordinator.shown != html else { return }
-        context.coordinator.shown = html
-        webView.loadHTMLString(html, baseURL: baseURL)
+        let coordinator = context.coordinator
+        if coordinator.shown == html {
+            if coordinator.textSize != textSize { Self.resize(webView, to: textSize, coordinator) }
+        } else {
+            coordinator.shown = html
+            webView.loadHTMLString(html.replacingOccurrences(of: Self.textSizeSlot, with: "\(textSize)"), baseURL: baseURL)
+        }
+        coordinator.textSize = textSize
+    }
+
+    /// Keeps the reader at the same place in the article, which grows or shrinks with the text.
+    private static func resize(_ webView: WKWebView, to textSize: Int, _ coordinator: Coordinator) {
+        let scroll = webView.scrollView
+        let place = scroll.contentOffset.y / max(scroll.contentSize.height, 1)
+        webView.evaluateJavaScript("document.body.style.fontSize = '\(textSize)px'", completionHandler: nil)
+        coordinator.isResizing = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(100))
+            scroll.contentOffset.y = place * scroll.contentSize.height
+            coordinator.isResizing = false
+        }
     }
 
     final class Coordinator: NSObject, WKNavigationDelegate, UIScrollViewDelegate {
         var onOpen: (URL) -> Void
         var onScroll: (Bool) -> Void
         var shown: String?
+        var textSize = 0
+        /// Moving back to the same place isn't reading on, and must not hide the size buttons.
+        var isResizing = false
         private var lastY: CGFloat = 0
 
         init(onOpen: @escaping (URL) -> Void, onScroll: @escaping (Bool) -> Void) {
@@ -184,7 +211,7 @@ private struct ReaderWebView: UIViewRepresentable {
             let y = scrollView.contentOffset.y + scrollView.adjustedContentInset.top
             defer { lastY = y }
             // Small moves are ignored, so a resting finger doesn't flicker the buttons.
-            guard abs(y - lastY) > 2 else { return }
+            guard abs(y - lastY) > 2, !isResizing else { return }
             onScroll(y > 40 && y > lastY)
         }
 

@@ -46,16 +46,39 @@ final class ExtensionManager: NSObject {
         let (temp, _) = try await URLSession.shared.download(from: download)
         defer { try? FileManager.default.removeItem(at: temp) }
         let id = UUID().uuidString
+        let folder = file(id)
         do {
-            // Unpacked, because the manifest may need fixing before WebKit reads it.
-            try ZipExtractor.extract(temp, to: file(id))
-            try Self.adaptManifest(in: file(id))
+            // Unpacked, because the manifest may need fixing before WebKit reads it. Off the main thread:
+            // a large add-on froze the screen.
+            try await Task.detached(priority: .userInitiated) {
+                try ZipExtractor.extract(temp, to: folder)
+                try Self.adaptManifest(in: folder)
+            }.value
+            guard await Self.confirm(try await WKWebExtension(resourceBaseURL: folder), from: download) else {
+                try? FileManager.default.removeItem(at: folder)
+                return
+            }
             try await add(id: id, enabled: true)
         } catch {
-            try? FileManager.default.removeItem(at: file(id))
+            try? FileManager.default.removeItem(at: folder)
             throw error
         }
         saveIndex()
+    }
+
+    /// Permissions are granted whole at install, so the sites it gets are named first. Only
+    /// addons.mozilla.org vouches for what it serves; any other host is called out.
+    private static func confirm(_ webExtension: WKWebExtension, from source: URL) async -> Bool {
+        let patterns = webExtension.allRequestedMatchPatterns
+        let hosts = patterns.compactMap(\.host).filter { !$0.isEmpty }.sorted()
+        let reach = patterns.contains(where: \.matchesAllHosts) || hosts.contains("*") ? "every website"
+            : hosts.isEmpty ? "no websites" : hosts.prefix(5).joined(separator: ", ") + (hosts.count > 5 ? " and \(hosts.count - 5) more" : "")
+        let warning = source.host() == "addons.mozilla.org" ? "" : "\n\nIt doesn't come from addons.mozilla.org, so Mozilla hasn't checked it."
+        let tabs = webExtension.requestedPermissions.contains(.tabs) ? " It will also see the addresses of your open tabs." : ""
+        // The add-on's own text: one short line, so it can't push the rest out of view.
+        let name = String((webExtension.displayName ?? "This add-on").prefix { !$0.isNewline }.prefix(40))
+        return await PageDialog.present("\"\(name)\" will be able to read and change \(reach).\(tabs)\(warning)",
+                                        host: "Install Add-on?", cancel: "Cancel", confirm: "Install") != nil
     }
 
     func setEnabled(_ enabled: Bool, for id: String) {
@@ -72,6 +95,25 @@ final class ExtensionManager: NSObject {
         installed.remove(at: index)
         try? FileManager.default.removeItem(at: file(id))
         saveIndex()
+    }
+
+    // WebKit knows only the tabs it was told about at load; add-ons rely on these for their tab events.
+
+    func tabsChanged(from old: [BrowserTab], to new: [BrowserTab]) {
+        guard !installed.isEmpty else { return }
+        let before = Set(old.map(\.id)), after = Set(new.map(\.id))
+        for tab in new where !before.contains(tab.id) && !tab.isPrivate { controller.didOpenTab(tab) }
+        for tab in old where !after.contains(tab.id) && !tab.isPrivate { controller.didCloseTab(tab, windowIsClosing: false) }
+    }
+
+    func tabActivated(_ tab: BrowserTab, previous: BrowserTab?) {
+        guard !installed.isEmpty, !tab.isPrivate else { return }
+        controller.didActivateTab(tab, previousActiveTab: previous?.isPrivate == false ? previous : nil)
+    }
+
+    func tabChanged(_ tab: BrowserTab, _ properties: WKWebExtension.TabChangedProperties) {
+        guard !installed.isEmpty, !tab.isPrivate, browser?.tabs.contains(where: { $0 === tab }) == true else { return }
+        controller.didChangeTabProperties(properties, for: tab)
     }
 
     /// The toolbar action, as a menu entry: shows the extension's popup if it has one.
@@ -105,7 +147,7 @@ final class ExtensionManager: NSObject {
 
     /// iOS runs background pages only non-persistent. A Manifest V2 background is persistent unless
     /// it says otherwise, and WebKit rejects that outright.
-    private static func adaptManifest(in folder: URL) throws {
+    nonisolated private static func adaptManifest(in folder: URL) throws {
         let url = folder.appending(path: "manifest.json")
         guard var manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any],
               manifest["manifest_version"] as? Int == 2,
@@ -121,7 +163,7 @@ final class ExtensionManager: NSObject {
     }
 
     private static func packageURL(for input: String) async throws -> URL {
-        if let url = URL(string: input), url.scheme != nil, ["xpi", "zip"].contains(url.pathExtension.lowercased()) {
+        if let url = URL(string: input), url.scheme?.lowercased() == "https", ["xpi", "zip"].contains(url.pathExtension.lowercased()) {
             return url
         }
         // A listing URL ends in /addon/<slug>/; anything else is taken as the slug itself.

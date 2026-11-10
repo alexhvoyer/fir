@@ -13,6 +13,8 @@ struct ZenWorkspaces {
         let id: String
         let name: String
         let tabs: [Tab]
+        /// Every record under it, splits and subfolders too, so deleting the folder leaves none behind.
+        let recordIDs: [String]
     }
 
     struct Space: Identifiable {
@@ -68,6 +70,12 @@ struct ZenWorkspaces {
             }
         }
 
+        func descendants(of id: String, depth: Int = 0) -> [String] {
+            guard depth < 8, let entry = byId[id] else { return [] }
+            let children = entry.data[entry.kind == "split" ? "tabs" : "children"] as? [String] ?? []
+            return children.filter { byId[$0] != nil }.flatMap { [$0] + descendants(of: $0, depth: depth + 1) }
+        }
+
         let layout = byId["layout"]?.data
         // Zen's order, then any workspace it hasn't placed yet, such as one just added on this iPhone.
         let listed = layout?["spaces"] as? [String] ?? []
@@ -100,7 +108,7 @@ struct ZenWorkspaces {
                         .filter { $0.value.kind == "tab" && $0.value.data["folderId"] as? String == child }
                         .map(\.key).sorted().compactMap(tab)
                         .filter { joined in !listed.contains { $0.id == joined.id } }
-                    folders.append(Folder(id: child, name: name, tabs: listed + joined))
+                    folders.append(Folder(id: child, name: name, tabs: listed + joined, recordIDs: descendants(of: child)))
                 } else {
                     looseTabs += tabs(under: child)
                 }

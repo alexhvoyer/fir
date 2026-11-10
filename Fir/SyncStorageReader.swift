@@ -117,7 +117,18 @@ struct SyncStorageReader {
         } catch ReaderError.badStatus(_, 404) {
             return []
         }
-        return try bsos.map { try decrypt($0.payload, with: bundle) }
+        // One bad record from another client mustn't hide the rest; all failing means the key is wrong.
+        var failure: (any Error)?
+        let records = bsos.compactMap { bso -> [String: Any]? in
+            do {
+                return try decrypt(bso.payload, with: bundle)
+            } catch {
+                failure = error
+                return nil
+            }
+        }
+        if records.isEmpty, let failure { throw failure }
+        return records
     }
 
     private func fetchToken() async throws -> Token {

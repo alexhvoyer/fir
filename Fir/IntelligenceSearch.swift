@@ -56,6 +56,7 @@ final class IntelligenceSearch {
     private(set) var phase = Phase.searching
     private(set) var steps: [Step] = []
     private(set) var answer: IntelligenceAnswer.PartiallyGenerated?
+    @ObservationIgnored private var modelError: String?
 
     var sources: [Step] { steps.filter(\.isRead) }
 
@@ -95,7 +96,7 @@ final class IntelligenceSearch {
         }
         guard !Task.isCancelled else { return }
         guard !sources.isEmpty else {
-            phase = .failed("None of the first results had text to answer from.")
+            phase = .failed(modelError.map { "The model couldn't read the pages: \($0)" } ?? "None of the first results had text to answer from.")
             return
         }
         await writeAnswer(to: request.question)
@@ -134,6 +135,13 @@ final class IntelligenceSearch {
         } catch {
             // A page the model refuses or can't take is skipped; the others may still answer.
             steps.removeAll { $0.id == id }
+            // These are about the model, not the page, and every page would fail the same way.
+            switch error as? LanguageModelSession.GenerationError {
+            case .rateLimited, .assetsUnavailable, .unsupportedLanguageOrLocale, .concurrentRequests:
+                modelError = error.localizedDescription
+            default:
+                break
+            }
         }
     }
 
@@ -181,7 +189,10 @@ final class IntelligenceSearch {
         let model = SystemLanguageModel.default
         let budget = min(pageBudget, model.contextSize / 2)
         guard #available(iOS 26.4, *), let count = try? await model.tokenCount(for: Instructions(text)) else {
-            return String(text.prefix(budget * 2))
+            // Other scripts take about twice the tokens per character.
+            let sample = text.prefix(500)
+            let isLatin = sample.unicodeScalars.filter(\.isASCII).count * 2 > sample.unicodeScalars.count
+            return String(text.prefix(isLatin ? budget * 2 : budget))
         }
         return count > budget ? String(text.prefix(text.count * budget / count)) : text
     }
@@ -193,7 +204,9 @@ final class IntelligenceSearch {
         for _ in 0..<7 where loader.webView.url.map(isRedirect) ?? false {
             try? await Task.sleep(for: .milliseconds(300))
         }
-        guard let finalURL = loader.webView.url, !isRedirect(finalURL), let article = await ReaderArticle.extract(from: loader.webView) else { return nil }
+        // The article's own address: webView.url can be a page that hasn't replaced this one yet.
+        guard let article = await ReaderArticle.extract(from: loader.webView), !isRedirect(article.url) else { return nil }
+        let finalURL = article.url
         let text = article.text.replacing(/\s+/, with: " ")
         guard text.count >= minimumPageLength else { return nil }
         let title = article.title.isEmpty ? finalURL.host() ?? finalURL.absoluteString : article.title
@@ -328,6 +341,10 @@ struct IntelligenceSearchView: View {
                         Label(message, systemImage: "exclamationmark.triangle")
                     } else if let answer = search.answer {
                         content(answer)
+                        // Cut off midway, it would read like a short but complete answer.
+                        if case .failed(let message) = search.phase {
+                            Label(message, systemImage: "exclamationmark.triangle").font(.footnote)
+                        }
                         sources
                     } else {
                         progress
@@ -494,8 +511,13 @@ struct IntelligenceSearchView: View {
         }
     }
 
+    private var isFinished: Bool {
+        if case .failed = search.phase { return true }
+        return search.phase == .done
+    }
+
     @ViewBuilder private var sources: some View {
-        if search.phase == .done {
+        if isFinished {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Sources").font(.headline)
                 VStack(spacing: 0) {

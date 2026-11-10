@@ -1,3 +1,4 @@
+import ImageIO
 import UIKit
 
 /// Site icons, taken from the site itself so no third-party icon service learns which sites are
@@ -58,10 +59,39 @@ final class Favicons {
         URL.cachesDirectory.appending(path: "favicons/\(host).png")
     }
 
+    /// No cookies or disk cache: a site's icon needs neither, and whatever the page names is fetched here.
+    private nonisolated static let session: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForResource = 15
+        return URLSession(configuration: configuration)
+    }()
+
+    /// Up to `limit` bytes, or nil if there are more: pages name these files, and any size can be served.
+    private nonisolated static func fetch(_ url: URL, limit: Int) async -> (data: Data, response: URLResponse)? {
+        guard url.scheme == "https", let (bytes, response) = try? await session.bytes(from: url) else { return nil }
+        guard response.expectedContentLength <= limit else {
+            bytes.task.cancel()
+            return nil
+        }
+        var data = Data()
+        do {
+            for try await byte in bytes {
+                data.append(byte)
+                if data.count > limit {
+                    bytes.task.cancel()
+                    return nil
+                }
+            }
+        } catch {
+            return nil
+        }
+        return (data, response)
+    }
+
     private nonisolated static func fetchFromSite(_ host: String) async -> UIImage? {
         guard let root = URL(string: "https://\(host)/") else { return nil }
         var candidates: [URL] = []
-        if let (data, response) = try? await URLSession.shared.data(from: root),
+        if let (data, response) = await fetch(root, limit: 2_000_000),
            let html = String(data: data.prefix(300_000), encoding: .utf8) ?? String(data: data.prefix(300_000), encoding: .isoLatin1) {
             // Links resolve against where redirects ended.
             let base = response.url ?? root
@@ -91,10 +121,8 @@ final class Favicons {
 
     /// Downloads candidates in order and caches the first that decodes.
     private nonisolated static func firstImage(_ candidates: [URL], host: String) async -> UIImage? {
-        for url in candidates {
-            guard let (data, _) = try? await URLSession.shared.data(from: url),
-                  let image = UIImage(data: data), image.size.width >= 16 else { continue }
-            let icon = downscaled(image, to: 128)
+        for url in candidates.prefix(6) {
+            guard let (data, _) = await fetch(url, limit: 2_000_000), let icon = thumbnail(data), icon.size.width >= 16 else { continue }
             if let png = icon.pngData() {
                 try? FileManager.default.createDirectory(at: file(host).deletingLastPathComponent(),
                                                          withIntermediateDirectories: true)
@@ -111,12 +139,19 @@ final class Favicons {
         return match.output[1].substring.map(String.init)
     }
 
-    private nonisolated static func downscaled(_ image: UIImage, to side: CGFloat) -> UIImage {
-        guard max(image.size.width, image.size.height) > side else { return image }
-        let scale = side / max(image.size.width, image.size.height)
-        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        return UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+    /// Decoded at icon size: decoding in full, a tiny file claiming huge dimensions got the app killed.
+    private nonisolated static func thumbnail(_ data: Data) -> UIImage? {
+        let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                                        kCGImageSourceCreateThumbnailWithTransform: true,
+                                        kCGImageSourceThumbnailMaxPixelSize: 128]
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        // An .ico holds several sizes, smallest often first.
+        func width(_ index: Int) -> Int {
+            let properties = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [CFString: Any]
+            return properties?[kCGImagePropertyPixelWidth] as? Int ?? 0
+        }
+        let largest = (0..<CGImageSourceGetCount(source)).max { width($0) < width($1) } ?? 0
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, largest, options as CFDictionary) else { return nil }
+        return UIImage(cgImage: image)
     }
 }

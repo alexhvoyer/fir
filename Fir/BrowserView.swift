@@ -34,6 +34,10 @@ struct BrowserView: View {
     @State private var veil: UIImage?
     /// Whether a transition is running; the live page is hidden then, even without a snapshot.
     @State private var transitioning = false
+    /// Where the lifted tab stood before moving to the end of the deck.
+    @State private var liftOrigin: Int?
+    /// The tab a committed swipe is sliding in, until it is in front.
+    @State private var landing: BrowserTab?
     @State private var screen: CGRect = .zero
     @State private var cardFrames: [BrowserTab.ID: CGRect] = [:]
     /// The deck's settings sheet, and whether it opens on Workspaces.
@@ -145,6 +149,8 @@ struct BrowserView: View {
                 holdsPosition: opening
             )
             .equatable()
+            // While a page grows or settles it takes no touches, and they fell through to the card under it.
+            .allowsHitTesting(!pageShown || progress > 0)
             // The root ignores the safe area for the page; the deck's bars still need it.
             .safeAreaPadding(safeInsets)
             // A dimming layer, not the deck's opacity: fading the deck re-rendered all its shadows and
@@ -288,14 +294,15 @@ struct BrowserView: View {
                         .offset(x: swipeX + screen.width + Self.swipeGap)
                 } else if swipeX != 0, let neighbour = swipeNeighbour {
                     PageImage(image: neighbour.snapshot, host: neighbour.isPrivate ? nil : neighbour.url?.host(),
-                              blank: neighbour.url == nil, space: neighbour.spaceID, offset: neighbour.startPageOffset)
+                              blank: neighbour.url == nil, space: neighbour.spaceID, offset: neighbour.startPageOffset,
+                              failed: neighbour)
                         .frame(width: screen.width, height: screen.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
                         .offset(x: swipeX + (swipeX > 0 ? -1 : 1) * (screen.width + Self.swipeGap))
                 }
                 PageImage(image: cover, view: coverView, host: browser.selected.isPrivate ? nil : browser.selected.url?.host(),
                           blank: browser.selected.url == nil, space: browser.selected.spaceID,
-                          offset: browser.selected.startPageOffset)
+                          offset: browser.selected.startPageOffset, failed: browser.selected)
                     .frame(width: screen.width, height: screen.height)
                     .clipShape(PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k))
                     // The card's shadow, growing in as the page shrinks: without it the shadow blinked out
@@ -367,10 +374,15 @@ struct BrowserView: View {
         if !lifting {
             lifting = true
             transitionID += 1
-            bringSelectedToEnd()
+            liftOrigin = nil
         }
         beginTransition()
         let up = max(0, -translation.height)
+        // Only once it really rises; undone if the lift is called off.
+        if up > 0, liftOrigin == nil {
+            liftOrigin = browser.position(of: browser.selected)
+            bringSelectedToEnd()
+        }
         // Matched to a Safari recording: about 40% of the screen height of travel reaches card size,
         // and the page rises at half finger speed so its top stays on screen while it shrinks.
         withAnimation(.interactiveSpring) {
@@ -383,21 +395,35 @@ struct BrowserView: View {
 
     private func endLift(translation: CGSize, predicted: CGSize) {
         lifting = false
-        if -translation.height > 70 || -predicted.height > 260 {
+        // Raised, then flung back down: called off, however high it got.
+        let flungBack = predicted.height - translation.height > 150
+        if (-translation.height > 70 && !flungBack) || -predicted.height > 260 {
             closePage()
         } else {
             // Retargeting the in-flight interactive spring keeps the finger's velocity.
             let id = transitionID
+            let origin = liftOrigin
+            let tab = browser.selected
             withAnimation(settle) { progress = 0; follow = .zero } completion: {
-                if id == transitionID { endTransition() }
+                guard id == transitionID else { return }
+                // Under the full-screen page again, so the deck's reshuffle isn't seen.
+                if let origin {
+                    var instant = Transaction()
+                    instant.disablesAnimations = true
+                    withTransaction(instant) { browser.move(tab, to: origin) }
+                }
+                endTransition()
             }
         }
+        liftOrigin = nil
     }
 
     private func openPage() {
         FrameMeter.mark("open page")
         let a = CGPoint(x: screen.midX, y: screen.midY)
         cover = browser.selected.snapshot
+        // Drawn over the image: a card tapped during a shrink would grow with the old page's picture.
+        coverView = nil
         transitioning = true
         anchor = a
         progress = 1
@@ -519,7 +545,24 @@ struct BrowserView: View {
         swipeX < 0 && swipeNeighbour == nil && browser.selected.url != nil
     }
 
+    /// Puts the tab a committed swipe is sliding in in front, at once.
+    private func land() {
+        guard let landing else { return }
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) {
+            browser.selectedID = landing.id
+            cover = landing.snapshot
+            coverView = nil
+            swipeX = 0
+            arriving = false
+        }
+        self.landing = nil
+    }
+
     private func swipe(_ dx: CGFloat) {
+        // A swipe during the last one's landing starts from the tab it was landing on.
+        land()
         // A new swipe, possibly while the last one's page is still being revealed.
         if swipeX == 0 { transitionID += 1 }
         beginTransition()
@@ -531,7 +574,8 @@ struct BrowserView: View {
     private func endSwipe(_ dx: CGFloat, predicted: CGFloat) {
         FrameMeter.mark("swipe end")
         let width = screen.width + Self.swipeGap
-        let committed = abs(dx) > width * 0.35 || abs(predicted) > width * 0.6
+        // Predicted includes the drag so far: opposite signs mean a flick back the other way.
+        let committed = dx * predicted > 0 && (abs(dx) > width * 0.35 || abs(predicted) > width * 0.6)
         if swipeOpensNewTab, committed {
             FrameMeter.mark("swipe to new tab")
             swipeCommits += 1
@@ -555,19 +599,14 @@ struct BrowserView: View {
         }
         let target = swipeX > 0 ? width : -width
         swipeCommits += 1
+        landing = neighbour
         withAnimation(swipeCommit) {
             swipeX = target
             arriving = true
         } completion: {
-            var instant = Transaction()
-            instant.disablesAnimations = true
-            withTransaction(instant) {
-                browser.selectedID = neighbour.id
-                cover = neighbour.snapshot
-                coverView = nil
-                swipeX = 0
-                arriving = false
-            }
+            // Another swipe already landed it and went on.
+            guard landing?.id == neighbour.id else { return }
+            land()
             Task {
                 // The neighbour's web view needs a moment to paint after being shown.
                 try? await Task.sleep(for: .milliseconds(150))
@@ -829,6 +868,8 @@ private struct PageImage: View {
     var blank = false
     var space: String? = nil
     var offset: CGFloat = 0
+    /// Its failure screen is drawn over the web view, so no snapshot of the page has it.
+    var failed: BrowserTab? = nil
 
     var body: some View {
         Color.white.overlay(alignment: .top) {
@@ -844,6 +885,28 @@ private struct PageImage: View {
         .overlay(alignment: .top) {
             if let view { SnapshotHost(view: view) }
         }
+        .overlay {
+            if let failed, failed.loadFailure != nil { LoadFailurePage(tab: failed) }
+        }
+    }
+}
+
+/// In place of a page that couldn't load; WebKit shows no error page of its own.
+private struct LoadFailurePage: View {
+    let tab: BrowserTab
+
+    var body: some View {
+        ContentUnavailableView {
+            Label("Can't Open This Page", systemImage: "exclamationmark.circle")
+        } description: {
+            Text(tab.loadFailure?.message ?? "")
+        } actions: {
+            Button("Try Again") { tab.retryFailedLoad() }
+                .buttonStyle(.borderedProminent)
+            if tab.pageURL != nil { Button("Back to Page") { tab.dismissLoadFailure() } }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
     }
 }
 
@@ -930,7 +993,7 @@ private struct PageView: View {
     @State private var collapsed = false
     /// 0 is the full bar, 1 the pill. Follows the scroll while it moves, then settles at either end.
     @State private var collapse: CGFloat = 0
-    @State private var settleTask: Task<Void, Never>?
+    @State private var settleTimer = SettleTimer()
     /// The collapsed pill's width: its host label plus padding.
     @State private var pillWidth: CGFloat = 120
     /// The host label's centre in the full bar, relative to the capsule's centre.
@@ -962,7 +1025,6 @@ private struct PageView: View {
     /// Set to start a translation; invalidated to run it again.
     @State private var translation: TranslationSession.Configuration?
     /// The tab whose page shows a translation, so its menu offers the original back.
-    @State private var translatedTab: BrowserTab.ID?
     @State private var translationFailed = false
     @State private var translating = false
     @State private var alreadyTranslated = false
@@ -1034,20 +1096,10 @@ private struct PageView: View {
                         .opacity(liveHidden ? 0 : 1)
                         .animation(nil, value: liveHidden)
                 }
-                if let failure = tab.loadFailure {
-                    ContentUnavailableView {
-                        Label("Can't Open This Page", systemImage: "exclamationmark.circle")
-                    } description: {
-                        Text(failure.message)
-                    } actions: {
-                        Button("Try Again") { tab.retryFailedLoad() }
-                            .buttonStyle(.borderedProminent)
-                        if tab.pageURL != nil { Button("Back to Page") { tab.dismissLoadFailure() } }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(.systemBackground))
-                    .opacity(liveHidden ? 0 : 1)
-                    .animation(nil, value: liveHidden)
+                if tab.loadFailure != nil {
+                    LoadFailurePage(tab: tab)
+                        .opacity(liveHidden ? 0 : 1)
+                        .animation(nil, value: liveHidden)
                 }
                 transitionLayer
                 if landscape {
@@ -1091,7 +1143,8 @@ private struct PageView: View {
         .ignoresSafeArea()
         // Restored tabs load their page only once shown.
         .onChange(of: browser.selectedID, initial: true) { browser.selected.loadIfNeeded() }
-        .onChange(of: tab.pageURL) { withAnimation(.snappy) { expand() } }
+        // Only a real load: sites rewrite their address while scrolling, which kept popping the bar open.
+        .onChange(of: tab.pageURL) { if tab.isLoading { withAnimation(.snappy) { expand() } } }
         .onChange(of: browser.selectedID) { expand() }
         .onChange(of: tab.isLoading) { if !tab.isLoading { browser.save() } }
         // An address change without a page load (a site's own navigation) gets no didFinish to check on.
@@ -1112,6 +1165,9 @@ private struct PageView: View {
                 guard scrollTab == browser.selectedID else { scrollTab = browser.selectedID; return }
                 handleScroll(from: old, to: new)
             }
+            // Here, not on the bar: turning the phone rebuilds the bar, and its gesture never ends.
+            .onChange(of: dragging) { if !dragging { cancelDrag() } }
+            .onChange(of: landscape) { if dragAxis != nil { cancelDrag() } }
         }
         .onChange(of: tab.isTouching) { fingerChanged() }
         // These sheets sit above the locked page's cover and would keep showing the private tab.
@@ -1142,7 +1198,7 @@ private struct PageView: View {
         }
         .sheet(isPresented: $showPageSheet, onDismiss: runPageAction) {
             // The system's zoom transition: the sheet grows out of whatever opened it, and shrinks back.
-            PageSheet(tab: tab, isTranslated: translatedTab == tab.id, sendTargets: account.sendTargets,
+            PageSheet(tab: tab, isTranslated: tab.isTranslated, sendTargets: account.sendTargets,
                       offersEssentials: folderEditor.offersEssentials(tab)) {
                 pageAction = $0
             }
@@ -1166,12 +1222,15 @@ private struct PageView: View {
         .translationTask(translation) { session in
             translating = true
             defer { translating = false }
+            let translated = browser.selected
             do {
                 // Shows the language download sheet first if the model isn't on the phone yet.
                 try await session.prepareTranslation()
-                try await PageTranslator.translate(browser.selected.webView, with: session)
+                try await PageTranslator.translate(translated.webView, with: session)
             } catch {
-                translatedTab = nil
+                // Earlier batches may already be in the page.
+                translated.isTranslated = false
+                await PageTranslator.restore(translated.webView)
                 translationFailed = true
             }
         }
@@ -1204,7 +1263,6 @@ private struct PageView: View {
         } message: {
             Text("This page is already in the language your iPhone uses.")
         }
-        .onChange(of: tab.pageURL) { translatedTab = nil }
         .alert("Couldn't Translate the Page", isPresented: $translationFailed) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -1243,7 +1301,7 @@ private struct PageView: View {
         case .translate(let target):
             Task { await startTranslation(of: tab, to: target) }
         case .showOriginal:
-            translatedTab = nil
+            tab.isTranslated = false
             Task { await PageTranslator.restore(tab.webView) }
         case .downloads:
             showDownloads = true
@@ -1268,7 +1326,7 @@ private struct PageView: View {
                 ?? source.minimalIdentifier
             return
         }
-        translatedTab = tab.id
+        tab.isTranslated = true
         let configuration = TranslationSession.Configuration(source: source, target: target)
         if translation == configuration {
             translation?.invalidate()
@@ -1312,14 +1370,14 @@ private struct PageView: View {
                 hostOffsets = hostOffsets.filter { open.contains($0.key) }
                 labelWidths = labelWidths.filter { open.contains($0.key) }
             }
-            // A cancelled drag never reaches onEnded; settle back instead of freezing mid-swipe.
-            .onChange(of: dragging) {
-                guard !dragging else { return }
-                dragIgnored = false
-                guard let axis = dragAxis else { return }
-                dragAxis = nil
-                if axis == .horizontal { onSwipeEnd(0, 0) } else { onLiftEnd(.zero, .zero) }
-            }
+    }
+
+    /// A cancelled drag never reaches onEnded; settle back instead of freezing mid-swipe.
+    private func cancelDrag() {
+        dragIgnored = false
+        guard let axis = dragAxis else { return }
+        dragAxis = nil
+        if axis == .horizontal { onSwipeEnd(0, 0) } else { onLiftEnd(.zero, .zero) }
     }
 
     /// Where the neighbouring tab's controls sit relative to the current ones, one page away.
@@ -1855,7 +1913,8 @@ private struct PageView: View {
             .onChanged { value in
                 if dragAxis == nil, !dragIgnored {
                     let sideways = abs(value.translation.width) > abs(value.translation.height)
-                    if sideways, !addressFrame.contains(value.startLocation) {
+                    // While a swipe lands its capsule has already left, and the next flick still counts.
+                    if sideways, swipeX == 0, !addressFrame.contains(value.startLocation) {
                         dragIgnored = true
                     } else if !sideways, landscape {
                         // A bar at the top has nowhere to lift the page to; the tabs button opens the deck.
@@ -1885,7 +1944,7 @@ private struct PageView: View {
     /// Counts as a toggle: in landscape the page's top inset follows the bar and shifts the scroll
     /// position, which must not collapse it straight back.
     private func expand() {
-        settleTask?.cancel()
+        settleTimer.task?.cancel()
         withAnimation(Self.settleSpring) { collapse = 0 }
         guard collapsed else { return }
         collapseToggled = .now
@@ -1899,8 +1958,8 @@ private struct PageView: View {
     }
 
     private func scheduleSettle() {
-        settleTask?.cancel()
-        settleTask = Task {
+        settleTimer.task?.cancel()
+        settleTimer.task = Task {
             try? await Task.sleep(for: .milliseconds(100))
             guard !Task.isCancelled, !browser.selected.isTouching else { return }
             settle(at: collapse > 0.5 ? 1 : 0)
@@ -1927,11 +1986,11 @@ private struct PageView: View {
             collapse = next
         }
         // While the finger is down the bar just follows; settling waits for it to lift.
-        if browser.selected.isTouching { settleTask?.cancel() } else { scheduleSettle() }
+        if browser.selected.isTouching { settleTimer.task?.cancel() } else { scheduleSettle() }
     }
 
     private func settle(at target: CGFloat) {
-        settleTask?.cancel()
+        settleTimer.task?.cancel()
         withAnimation(Self.settleSpring) { collapse = target }
         let settled = target == 1
         guard settled != collapsed else { return }
@@ -1939,6 +1998,11 @@ private struct PageView: View {
         collapseToggled = .now
         withAnimation(.snappy) { collapsed = settled }
     }
+}
+
+/// Restarted on every scroll step; as plain @State each restart counted as a change to the page view.
+@MainActor private final class SettleTimer {
+    var task: Task<Void, Never>?
 }
 
 /// Holds every opened tab's WKWebView and shows the selected one. The views stay attached while their
@@ -1970,7 +2034,8 @@ private struct WebHost: UIViewRepresentable {
         for case let webView as WKWebView in container.subviews {
             if webView === selected, webView.isHidden { FrameMeter.mark("web view shown \(webView.url?.host() ?? "-")") }
             webView.isHidden = webView !== selected
-            if webView !== selected { InsetAnimator.apply(insets, to: webView) }
+            // Not every step of a bar collapse: a hidden page gets its final insets when it is shown.
+            if webView !== selected, webView.obscuredContentInsets.top != insets.top { InsetAnimator.apply(insets, to: webView) }
         }
         context.coordinator.move(selected, to: insets)
     }

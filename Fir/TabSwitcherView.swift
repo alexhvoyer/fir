@@ -100,13 +100,21 @@ struct TabSwitcherView: View {
         .onChange(of: deckLayout.slot) { old, new in
             // Only when a card joined or left a stack. A reorder (the selected tab moving to the end as the
             // page shrinks) keeps the count, and following the old slot's card then landed on the wrong one.
-            guard Set(old.values).count != Set(new.values).count else { return }
+            // Under the page, centerSelected has already placed the deck for the new layout.
+            guard hiddenTab == nil, Set(old.values).count != Set(new.values).count else { return }
             let focused = Int(progress.rounded())
-            guard let id = old.first(where: { $0.value == focused })?.key, let slot = new[id] else {
+            // The lowest of a stack's cards: where the stack stood.
+            guard let slot = old.filter({ $0.value == focused }).compactMap({ new[$0.key] }).min() else {
                 progress = min(progress, CGFloat(max(0, deckLayout.count - 1)))
                 return
             }
             withAnimation(.smooth(duration: 0.35)) { progress = CGFloat(slot) }
+        }
+        // A workspace gone from the list (signed out, deleted) would leave an empty deck under no title.
+        .onChange(of: switcherItems.map(\.id)) { _, ids in
+            guard !ids.contains(selectionID) else { return }
+            device = nil
+            browser.space = nil
         }
         // A page shrinks back onto its card, so the deck must show that tab's workspace then.
         .onChange(of: hiddenTab) {

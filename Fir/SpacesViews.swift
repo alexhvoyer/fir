@@ -598,7 +598,7 @@ struct ZenFolderEditor {
         guard let zen = account.zenWorkspaces?.spaces.first(where: { $0.id == space })?.folders
             .first(where: { $0.id == folder.id }) else { return }
         Task {
-            await account.removeFromZen([zen.id] + zen.tabs.map(\.id))
+            await account.removeFromZen([zen.id] + Set(zen.tabs.map(\.id) + zen.recordIDs))
             await account.sync()
         }
     }

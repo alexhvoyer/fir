@@ -64,7 +64,9 @@ enum FilterListConverter {
     private static func isPlainSelector(_ selector: String) -> Bool {
         let extended = [":-abp-", ":has", ":contains", ":xpath", ":matches-", ":upward", ":remove", ":style",
                         ":nth-ancestor", ":min-text", ":watch-attr", "[-ext-", ":others", ":if"]
-        return !selector.isEmpty && isASCII(selector) && !extended.contains { selector.contains($0) }
+        // uBlock's scriptlets and HTML filters aren't CSS either, and sink the selectors they share a rule with.
+        return !selector.isEmpty && isASCII(selector) && !selector.hasPrefix("+js(") && !selector.hasPrefix("^")
+            && !extended.contains { selector.contains($0) }
     }
 
     private static func isASCII(_ text: String) -> Bool {

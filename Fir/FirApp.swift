@@ -34,7 +34,10 @@ struct FirApp: App {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
         Viaduct.shared.initialize(userAgent: "Fir-iOS-FxA/0.1")
         // Installs from before onboarding existed already have tabs; only a fresh one gets it.
-        if SessionStore.load() != nil { UserDefaults.standard.set(true, forKey: SettingsKey.onboardingDone) }
+        // A lone blank tab may just be someone who left onboarding halfway.
+        if SessionStore.load()?.tabs.contains(where: { $0.url != nil }) == true {
+            UserDefaults.standard.set(true, forKey: SettingsKey.onboardingDone)
+        }
     }
 
     var body: some Scene {

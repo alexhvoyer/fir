@@ -58,16 +58,29 @@ final class BrowserTab: NSObject, Identifiable {
     /// Dialogs since the page committed; see `mayShowDialog`.
     @ObservationIgnored private var dialogsThisPage = 0
     @ObservationIgnored private var lastTap = Date.distantPast
+    /// iOS reclaimed this hidden tab's page; it reloads when next shown.
+    @ObservationIgnored private var needsReload = false
+    /// The window came from a subframe, which may not open other apps; over once it has a page.
+    @ObservationIgnored var openedBySubframe = false
+    /// The tab whose page opened this window, to return to when the page closes it.
+    @ObservationIgnored var openerID: BrowserTab.ID?
+    /// Translated in place; a new document ends it, a change of address within the page doesn't.
+    var isTranslated = false
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
-    /// What each page in this tab's history looked like when it was left, for the swipe between them.
-    @ObservationIgnored let pageImages = NSMapTable<WKBackForwardListItem, UIImage>.weakToStrongObjects()
+    /// What the last few pages in this tab's history looked like when left, for the swipe between them.
+    @ObservationIgnored let pageImages: NSCache<WKBackForwardListItem, UIImage> = {
+        let cache = NSCache<WKBackForwardListItem, UIImage>()
+        cache.countLimit = 6
+        return cache
+    }()
 
     /// Keeps the page being left, as WebKit does for its own edge swipe. Only the experimental swipe
-    /// uses it, and each is a full-screen snapshot held up before the navigation starts.
+    /// uses it. At half width: it is only seen moving, and a full one is about 12 MB.
     func rememberPage() async {
         guard SwipeAnywhere.isEnabled, let item = webView.backForwardList.currentItem, webView.bounds.width > 0 else { return }
         let config = WKSnapshotConfiguration()
         config.afterScreenUpdates = false
+        config.snapshotWidth = NSNumber(value: Double(webView.bounds.width / 2))
         if let image = try? await webView.takeSnapshot(configuration: config) { pageImages.setObject(image, forKey: item) }
     }
     /// When the tab was last in front, for archiving and clearing unused tabs.
@@ -211,10 +224,23 @@ final class BrowserTab: NSObject, Identifiable {
                     // A cross-origin URL may still be loading under the old page, which could fake it; didCommit sets it.
                     guard let self, Self.sameOrigin(self.pageURL, web.url) else { return }
                     self.pageURL = web.url
+                    ExtensionManager.shared.tabChanged(self, .URL)
                 }
             },
-            webView.observe(\.title) { [weak self] web, _ in MainActor.assumeIsolated { self?.pageTitle = web.title ?? "" } },
-            webView.observe(\.isLoading) { [weak self] web, _ in MainActor.assumeIsolated { self?.isLoading = web.isLoading } },
+            webView.observe(\.title) { [weak self] web, _ in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.pageTitle = web.title ?? ""
+                    ExtensionManager.shared.tabChanged(self, .title)
+                }
+            },
+            webView.observe(\.isLoading) { [weak self] web, _ in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.isLoading = web.isLoading
+                    ExtensionManager.shared.tabChanged(self, .loading)
+                }
+            },
             webView.observe(\.underPageBackgroundColor, options: [.initial]) { [weak self] web, _ in
                 MainActor.assumeIsolated {
                     web.backgroundColor = web.underPageBackgroundColor
@@ -304,6 +330,11 @@ final class BrowserTab: NSObject, Identifiable {
     }
 
     func loadIfNeeded() {
+        if needsReload {
+            needsReload = false
+            webView.reload()
+            return
+        }
         guard let pendingURL, Self.isLoadable(pendingURL) else { return }
         // Kept until the load commits: a failed or slow one otherwise left the tab with no address at all.
         requestedURL = pendingURL
@@ -389,7 +420,7 @@ final class BrowserTab: NSObject, Identifiable {
 extension BrowserTab: WKUIDelegate {
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                  for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        model?.openPopup(from: self, configuration: configuration)
+        model?.openPopup(from: self, configuration: configuration, bySubframe: !navigationAction.sourceFrame.isMainFrame)
     }
 
     /// Safari's first two link actions, ahead of WebKit's own (open, copy, share).
@@ -421,7 +452,7 @@ extension BrowserTab: WKUIDelegate {
     }
 
     func webViewDidClose(_ webView: WKWebView) {
-        model?.close(self)
+        model?.closeFromPage(self)
     }
 
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String,
@@ -491,11 +522,15 @@ extension BrowserTab: WKNavigationDelegate {
                   await askToDownload(navigationAction.request.url?.lastPathComponent) else { return (.cancel, preferences) }
             return (.download, preferences)
         }
+        // No target frame is a new window: its own web view gets its own decision, so this tab is left alone.
+        let isMainFrame = navigationAction.targetFrame?.isMainFrame == true
         // Another page was asked for, so the wait for an upgraded one is over.
-        if navigationAction.targetFrame?.isMainFrame != false, navigationAction.navigationType != .other { stopUpgrade() }
-        if navigationAction.targetFrame?.isMainFrame == true { await rememberPage() }
+        if isMainFrame, navigationAction.navigationType != .other {
+            stopUpgrade()
+            await rememberPage()
+        }
         // The site's own settings from the page sheet: desktop layout and ad blocking.
-        if navigationAction.targetFrame?.isMainFrame != false, let url = navigationAction.request.url {
+        if isMainFrame, let url = navigationAction.request.url {
             let site = SiteSettings.shared.entry(for: url, isPrivate: isPrivate)
             preferences.preferredContentMode = site.desktop ? .desktop : .mobile
             if #available(iOS 27.0, *) {
@@ -506,12 +541,18 @@ extension BrowserTab: WKNavigationDelegate {
             }
             ContentBlocker.shared.setBlocking(site.blockAds, for: webView)
         }
-        if navigationAction.targetFrame?.isMainFrame != false, let url = navigationAction.request.url,
-           let secure = HTTPSOnly.upgrade(url) {
+        if isMainFrame, let url = navigationAction.request.url, let secure = HTTPSOnly.upgrade(url) {
             // Back here on its own upgrade: the site sent https to http, so it has no https to give.
             if upgradedFrom == url {
                 Task { await offerInsecure(url) }
                 return (.cancel, preferences)
+            }
+            // A form's data can't be sent again from here, so the original goes through or not at all.
+            if navigationAction.request.httpMethod != "GET" {
+                guard mayShowDialog(), await PageDialog.present(
+                    "This form will be sent over an insecure connection. Anything in it could be seen by others on the network.",
+                    host: url.host() ?? "", cancel: "Cancel", confirm: "Send") != nil else { return (.cancel, preferences) }
+                return (.allow, preferences)
             }
             upgradedFrom = url
             Task { webView.load(URLRequest(url: secure)) }
@@ -532,7 +573,11 @@ extension BrowserTab: WKNavigationDelegate {
         // Like Safari: only the page itself may hand off, after asking; a tapped call or draft link
         // skips the question, since iOS confirms calls and drafts need a tap to send.
         // No target frame is a new window, decided for the frame that opened it.
-        guard navigationAction.targetFrame?.isMainFrame ?? navigationAction.sourceFrame.isMainFrame else { return (.cancel, preferences) }
+        // Optional: nil at runtime for a load the app started, whatever the API says.
+        let source: WKFrameInfo? = navigationAction.sourceFrame
+        guard !openedBySubframe, source?.isMainFrame != false, navigationAction.targetFrame?.isMainFrame ?? true else {
+            return (.cancel, preferences)
+        }
         let quiet = ["tel", "facetime", "facetime-audio", "mailto", "sms"].contains(scheme)
         // WebKit reports a scripted click as a link click too, so a real tap is checked as well.
         if !(quiet && navigationAction.navigationType == .linkActivated && Date.now.timeIntervalSince(lastTap) < 1) {
@@ -548,8 +593,13 @@ extension BrowserTab: WKNavigationDelegate {
         stopUpgrade()
         loadFailure = nil
         dialogsThisPage = 0
+        needsReload = false
+        openedBySubframe = false
+        isTranslated = false
         isReaderable = false
         webView.pageZoom = SiteSettings.shared.entry(for: webView.url, isPrivate: isPrivate).zoom
+        PasswordAutofill.shared.pageChanged(in: webView)
+        ExtensionManager.shared.tabChanged(self, .URL)
     }
 
     /// Files the page can't show, or sends as attachments, are downloaded instead.
@@ -596,7 +646,8 @@ extension BrowserTab: WKNavigationDelegate {
         }
         if !isPrivate {
             Task { await adoptPageIcons() }
-            if let url = webView.url {
+            // The committed address: webView.url can already be the next page, still loading.
+            if let url = pageURL {
                 let title = webView.title
                 Task.detached(priority: .utility) { HistoryStore.shared?.recordVisit(url, title: title) }
             }
@@ -605,7 +656,7 @@ extension BrowserTab: WKNavigationDelegate {
 
     private func adoptPageIcons() async {
         let script = "Array.from(document.querySelectorAll('link[rel*=icon]')).map(l => [l.rel, l.href, l.getAttribute('sizes') || ''])"
-        guard let host = webView.url?.host(),
+        guard let host = pageURL?.host(),
               let rows = try? await webView.evaluateJavaScript(script) as? [[String]] else { return }
         let links = rows.filter { $0.count == 3 }.map { (rel: $0[0], href: $0[1], sizes: $0[2].isEmpty ? nil : $0[2]) }
         await Favicons.shared.adopt(links, host: host)
@@ -645,6 +696,11 @@ extension BrowserTab: WKNavigationDelegate {
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         hasPainted = false
+        // iOS reclaims hidden tabs together; reloading them all at once only brings on more of it.
+        if webView.isHidden || webView.window == nil {
+            needsReload = true
+            return
+        }
         if let lastCrash, Date.now.timeIntervalSince(lastCrash) < 10 { return }
         lastCrash = .now
         webView.reload()
@@ -655,13 +711,17 @@ extension BrowserTab: WKNavigationDelegate {
 @Observable
 final class BrowserModel {
     private(set) var tabs: [BrowserTab] {
-        didSet { for tab in tabs { tab.model = self } }
+        didSet {
+            for tab in tabs { tab.model = self }
+            ExtensionManager.shared.tabsChanged(from: oldValue, to: tabs)
+        }
     }
     var selectedID: BrowserTab.ID? {
         // Leaving a tab is its last view, as is arriving at one.
         didSet {
             guard oldValue != selectedID else { return }
             for tab in tabs where tab.id == oldValue || tab.id == selectedID { tab.lastViewed = .now }
+            ExtensionManager.shared.tabActivated(selected, previous: tabs.first { $0.id == oldValue })
         }
     }
     /// The workspace the deck shows and new tabs go into; nil for this iPhone's own tabs.
@@ -896,6 +956,16 @@ final class BrowserModel {
         save()
     }
 
+    /// Where a tab stands among all tabs, to put it back after a move that was called off.
+    func position(of tab: BrowserTab) -> Int? { tabs.firstIndex { $0.id == tab.id } }
+
+    func move(_ tab: BrowserTab, to position: Int) {
+        guard let index = tabs.firstIndex(where: { $0.id == tab.id }), index != position else { return }
+        tabs.remove(at: index)
+        tabs.insert(tab, at: min(position, tabs.count))
+        save()
+    }
+
     /// A pinned tab is never archived. It keeps its place in the deck like any other tab: held at the front,
     /// a page left from it shrank onto a card the next one covered.
     func setPinned(_ pinned: Bool, _ tab: BrowserTab) {
@@ -954,12 +1024,22 @@ final class BrowserModel {
     }
 
     /// A window the page opened becomes a new tab in the opener's workspace, shown at once, as in Safari.
-    func openPopup(from opener: BrowserTab, configuration: WKWebViewConfiguration) -> WKWebView {
+    func openPopup(from opener: BrowserTab, configuration: WKWebViewConfiguration, bySubframe: Bool) -> WKWebView {
         let tab = BrowserTab(popupWith: configuration, spaceID: opener.spaceID)
+        tab.openerID = opener.id
+        tab.openedBySubframe = bySubframe
         tabs.append(tab)
         select(tab)
         save()
         return tab.webView
+    }
+
+    /// A page closed its own window: back to the tab that opened it, with nothing to undo.
+    func closeFromPage(_ tab: BrowserTab) {
+        guard let opener = tabs.first(where: { $0.id == tab.openerID }) else { return close(tab) }
+        if selectedID == tab.id { select(opener) }
+        discard(tab)
+        save()
     }
 
     /// A link from another app, with Fir as the default browser: a new tab in front, never private.
@@ -1195,13 +1275,17 @@ final class BrowserModel {
 
     func goForward() { selected.webView.goForward() }
 
-    /// Treats input with a dot and no spaces as an address, anything else as a search query.
+    /// Input with a scheme, or a dot and no spaces, is an address; anything else is a search query.
     static func url(from input: String, engine: SearchEngine) -> URL? {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
-        if text.contains("."), !text.contains(" ") {
-            let withScheme = text.contains("://") ? text : "https://\(text)"
-            if let url = URL(string: withScheme) { return url }
+        if !text.contains(" ") {
+            if text.contains("://") {
+                if let url = URL(string: text), url.host() != nil { return url }
+            } else if text.contains("."), let url = URL(string: "\(HTTPSOnly.isEnabled ? "http" : "https")://\(text)") {
+                // Plain under HTTPS-Only, which upgrades it, keeps local hosts on HTTP and can offer a fallback.
+                return url
+            }
         }
         return engine.url(for: text)
     }
@@ -1262,9 +1346,15 @@ enum HTTPSOnly {
 
     /// The local network and this iPhone rarely have certificates; they stay on HTTP.
     private static func isLocal(_ host: String) -> Bool {
+        if host.contains(":") {
+            let address = host.trimmingCharacters(in: CharacterSet(charactersIn: "[]")).lowercased()
+            return address == "::1" || address.hasPrefix("fe80:") || address.hasPrefix("fc") || address.hasPrefix("fd")
+        }
         if host == "localhost" || host.hasSuffix(".local") || !host.contains(".") { return true }
-        let parts = host.split(separator: ".").compactMap { Int($0) }
-        guard parts.count == 4 else { return false }
+        let labels = host.split(separator: ".")
+        let parts = labels.compactMap { Int($0) }
+        // All four numeric: 10.1.2.3.example.com is a public name.
+        guard labels.count == 4, parts.count == 4 else { return false }
         return parts[0] == 10 || parts[0] == 127 || (parts[0] == 192 && parts[1] == 168)
             || (parts[0] == 172 && (16...31).contains(parts[1])) || (parts[0] == 169 && parts[1] == 254)
     }
@@ -1394,7 +1484,7 @@ final class SwipeAnywhere: NSObject, UIGestureRecognizerDelegate {
                            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
 }
 /// A link's page in a context menu preview, under a strip naming the host it has reached so far.
-final class LinkPreviewController: UIViewController {
+final class LinkPreviewController: UIViewController, WKNavigationDelegate {
     private let url: URL
     private let dataStore: WKWebsiteDataStore
     private var webView: WKWebView?
@@ -1420,6 +1510,7 @@ final class LinkPreviewController: UIViewController {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isUserInteractionEnabled = false
         ContentBlocker.shared.attach(webView)
+        webView.navigationDelegate = self
         self.webView = webView
 
         address.font = .preferredFont(forTextStyle: .footnote)
@@ -1452,6 +1543,12 @@ final class LinkPreviewController: UIViewController {
             MainActor.assumeIsolated { self?.address.attributedText = Self.label(webView.url) }
         }
         webView.load(URLRequest(url: HTTPSOnly.upgrade(url) ?? url))
+    }
+
+    /// A redirect to plain http stops here: a preview has nowhere to ask, as HTTPS-Only does in a tab.
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction) async -> WKNavigationActionPolicy {
+        guard action.targetFrame?.isMainFrame == true, let url = action.request.url, HTTPSOnly.upgrade(url) != nil else { return .allow }
+        return .cancel
     }
 
     private static func label(_ url: URL?) -> NSAttributedString {
