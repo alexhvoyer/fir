@@ -905,10 +905,10 @@ private struct PageView: View {
     /// The collapsed pill's width: its host label plus padding.
     @State private var pillWidth: CGFloat = 120
     /// The host label's centre in the full bar, relative to the capsule's centre.
-    @State private var hostOffset: CGFloat = 0
+    /// Per tab: its neighbour's capsule lands with the buttons of its own page, not the current tab's.
+    @State private var hostOffsets: [BrowserTab.ID: CGFloat] = [:]
     /// Each tab's host label width at full size, for its compact capsule during a swipe.
     @State private var labelWidths: [BrowserTab.ID: CGFloat] = [:]
-    @State private var addressWidth: CGFloat = 0
     /// The tab whose scroll offset was seen last.
     @State private var scrollTab: BrowserTab.ID?
     /// The page's bottom inset follows the bar, and that nudges the scroll position; scroll changes
@@ -1509,7 +1509,7 @@ private struct PageView: View {
         .frame(width: frame.full)
         .modifier(ClipBefore(x: contentLimit))
         .opacity(max(0, 1 - p * 2))
-        .frame(width: frame.width, height: 48 - 12 * p)
+        .frame(width: frame.width, height: min(48 - 12 * p, frame.width))
         .clipShape(.capsule)
         .glassEffect(.regular, in: .capsule)
         .offset(x: frame.x + offset)
@@ -1522,7 +1522,7 @@ private struct PageView: View {
         // Icons give way to the address as the capsule narrows, whether collapsing or swiping.
         let compacting = max(p, s)
         return ZStack {
-            addressBar(tab, live: live)
+            addressBar(tab, live: live, width: frame.full)
                 .frame(width: frame.full)
                 .opacity(max(0, 1 - compacting * 2) * presence)
                 .allowsHitTesting(compacting < 0.5)
@@ -1534,12 +1534,13 @@ private struct PageView: View {
                 }
                 .frame(maxWidth: max(0, frame.full - 168))
                 .scaleEffect(1 - (1 - Self.pillScale) * p)
-                .offset(x: hostOffset * (1 - compacting))
+                .offset(x: (hostOffsets[tab.id] ?? 0) * (1 - compacting))
                 .opacity(presence)
                 .allowsHitTesting(false)
         }
         .modifier(ClipBefore(x: contentLimit))
-        .frame(width: frame.width, height: 48 - 12 * p)
+        // No taller than wide: glass at zero width still draws a full-height line, which merged with the arriving capsule.
+        .frame(width: frame.width, height: min(48 - 12 * p, frame.width))
         .clipShape(.capsule)
         .contentShape(.capsule)
         .onTapGesture { if collapse > 0.5, !justLongPressed { withAnimation(.snappy) { expand() } } }
@@ -1587,7 +1588,7 @@ private struct PageView: View {
         .lineLimit(1)
     }
 
-    private func addressBar(_ tab: BrowserTab, live: Bool) -> some View {
+    private func addressBar(_ tab: BrowserTab, live: Bool, width: CGFloat) -> some View {
         HStack(spacing: 0) {
             Button("Page Menu", systemImage: "line.3.horizontal") {
                 pageSheetSource = "menu"
@@ -1603,7 +1604,7 @@ private struct PageView: View {
                 .contentShape(.rect)
                 .onTapGesture { if !justLongPressed { search = .edit } }
                 .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(Self.addressSpace)).midX } action: {
-                    if live { hostOffset = $0 - addressWidth / 2 }
+                    hostOffsets[tab.id] = $0 - width / 2
                 }
             // Smart buttons, as in Lens: shown only while the page needs them.
             if live { smartButtons(tab) }
@@ -1625,7 +1626,6 @@ private struct PageView: View {
         .animation(.snappy, value: tab.isReaderable)
         .animation(.snappy, value: DownloadManager.shared.active.first?.state)
         .coordinateSpace(.named(Self.addressSpace))
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { if live { addressWidth = $0 } }
     }
 
     private static let addressSpace = "PageView.address"

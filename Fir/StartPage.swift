@@ -301,6 +301,7 @@ struct BlankTab: View {
                 let full = window?.bounds.size ?? geo.size
                 let scale = min(1, geo.size.width / full.width)
                 let safe = window?.safeAreaInsets ?? .zero
+                let padding = insets ?? EdgeInsets(top: safe.top, leading: safe.left, bottom: 0, trailing: safe.right)
                 StartPage(spaceID: spaceID, onPullUp: {}, onOpen: { tab?.load($0) },
                           onOpenPin: { browser.open($0, replacing: tab) }, fillsPage: true,
                           offset: offset, onScrolled: tab.map { tab in { y, resting in
@@ -308,12 +309,14 @@ struct BlankTab: View {
                               if resting { tab.startPageOffset = y }
                           } },
                           isCopy: tab == nil, isCovered: isCovered)
-                    .safeAreaPadding(insets ?? EdgeInsets(top: safe.top, leading: safe.left, bottom: 0, trailing: safe.right))
+                    .safeAreaPadding(tab == nil ? EdgeInsets() : padding)
+                    // A copy gets plain padding: through the safe area its content jumped as it moved under the status bar.
+                    .padding(tab == nil ? padding : EdgeInsets())
                     .frame(width: geo.size.width / scale, height: geo.size.height / scale)
                     .scaleEffect(scale, anchor: .topLeading)
                     .allowsHitTesting(tab != nil)
             }
-            .ignoresSafeArea()
+            .ignoresSafeArea(edges: tab == nil ? [] : .all)
             // As in the search sheet: its cards are drawn for a grouped background.
             .background(Color(.systemGroupedBackground))
         } else {
