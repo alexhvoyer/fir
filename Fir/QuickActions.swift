@@ -1,26 +1,15 @@
 import UIKit
 
 /// The quick actions on the home screen icon, declared in project.yml. SwiftUI has no hook for them,
-/// so a scene delegate catches each one; one that launched the app waits until a handler is set.
+/// so a scene delegate catches each one.
 enum QuickAction: String {
     case newTab = "NewTab"
     case newPrivateTab = "NewPrivateTab"
 
-    @MainActor static var handler: ((QuickAction) -> Void)? {
-        didSet { deliver() }
-    }
-    @MainActor private static var pending: QuickAction?
+    @MainActor static let requests = PendingRequest<QuickAction>()
 
     @MainActor static func perform(_ item: UIApplicationShortcutItem) {
-        guard let action = QuickAction(rawValue: item.type) else { return }
-        pending = action
-        deliver()
-    }
-
-    @MainActor private static func deliver() {
-        guard let handler, let action = pending else { return }
-        pending = nil
-        handler(action)
+        if let action = QuickAction(rawValue: item.type) { requests.send(action) }
     }
 }
 

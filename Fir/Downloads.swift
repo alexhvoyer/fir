@@ -16,7 +16,7 @@ final class DownloadManager: NSObject {
         var file: URL?
         var progress = 0.0
         var state = State.running
-        /// False for a private tab's file: its name must not appear on the Lock Screen.
+        /// False for a private tab's file: nothing about it may appear on the Lock Screen.
         var showsActivity = true
         enum State { case running, finished, failed }
     }
@@ -27,11 +27,16 @@ final class DownloadManager: NSObject {
     @ObservationIgnored private var progressObservations: [ObjectIdentifier: NSKeyValueObservation] = [:]
     @ObservationIgnored private var activity: Activity<DownloadAttributes>?
     @ObservationIgnored private var activityUpdated = Date.distantPast
+    @ObservationIgnored private var backgroundTask = UIBackgroundTaskIdentifier.invalid
+    /// One of the activity's downloads failed, so it doesn't end on a checkmark.
+    @ObservationIgnored private var activityHadFailure = false
 
     private override init() {
         super.init()
-        // One left by a launch that ended mid-download would otherwise stay up for hours.
-        Task { for leftover in Activity<DownloadAttributes>.activities { await leftover.end(nil, dismissalPolicy: .immediate) } }
+        // One left by a launch that ended mid-download would otherwise stay up for hours. Listed now:
+        // a download can start before the task runs, and its activity isn't a leftover.
+        let leftovers = Activity<DownloadAttributes>.activities
+        Task { for leftover in leftovers { await leftover.end(nil, dismissalPolicy: .immediate) } }
     }
 
     static var folder: URL {
@@ -68,6 +73,8 @@ final class DownloadManager: NSObject {
     func delete(_ file: URL) {
         try? FileManager.default.removeItem(at: file)
         active.removeAll { $0.file == file }
+        if !active.contains(where: { $0.showsActivity && $0.state == .running }) { dropActivity() }
+        refreshActivity()
     }
 
     private func update(_ key: ObjectIdentifier, _ change: (inout Item) -> Void) {
@@ -80,33 +87,62 @@ final class DownloadManager: NSObject {
         }
     }
 
-    /// One activity for all downloads. Updates at most once a second: the system throttles faster ones.
+    /// One activity for all downloads. At most one change a second: the system throttles faster ones,
+    /// and a refused request isn't retried on every percent.
     private func refreshActivity() {
-        let shown = active.filter(\.showsActivity)
-        let running = shown.filter { $0.state == .running }
-        if let newest = running.first {
+        keepRunningInBackground(active.contains { $0.state == .running })
+        let running = active.filter { $0.showsActivity && $0.state == .running }
+        if !running.isEmpty {
+            guard Date.now.timeIntervalSince(activityUpdated) >= 1 else { return }
+            activityUpdated = .now
             let progress = running.map(\.progress).reduce(0, +) / Double(running.count)
-            let state = DownloadAttributes.ContentState(name: newest.name, progress: progress, count: running.count, phase: .running)
-            let content = ActivityContent(state: state, staleDate: nil)
+            let state = DownloadAttributes.ContentState(progress: progress, count: running.count, phase: .running)
+            let content = ActivityContent(state: state, staleDate: .now + 60)
             if let activity {
-                guard Date.now.timeIntervalSince(activityUpdated) >= 1 else { return }
-                activityUpdated = .now
                 Task { await activity.update(content) }
             } else if ActivityAuthorizationInfo().areActivitiesEnabled {
                 activity = try? Activity.request(attributes: DownloadAttributes(), content: content)
-                activityUpdated = .now
             }
-        } else if let activity, let last = shown.first {
+        } else {
+            let failed = activityHadFailure
+            activityHadFailure = false
+            guard let activity else { return }
             self.activity = nil
-            let state = DownloadAttributes.ContentState(name: last.name, progress: 1, count: 0,
-                                                        phase: last.state == .failed ? .failed : .finished)
+            let state = DownloadAttributes.ContentState(progress: 1, count: 0, phase: failed ? .failed : .finished)
             Task { await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .after(.now + 4)) }
+        }
+    }
+
+    private func dropActivity() {
+        let dropped = activity
+        activity = nil
+        activityHadFailure = false
+        Task { await dropped?.end(nil, dismissalPolicy: .immediate) }
+    }
+
+    /// The extra time iOS gives a backgrounded app. When it runs out the download stops moving, so
+    /// its activity goes too; the next progress on return starts another.
+    private func keepRunningInBackground(_ needed: Bool) {
+        if needed, backgroundTask == .invalid {
+            backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "Downloads") { [weak self] in
+                MainActor.assumeIsolated {
+                    self?.dropActivity()
+                    self?.keepRunningInBackground(false)
+                }
+            }
+        } else if !needed, backgroundTask != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTask)
+            backgroundTask = .invalid
         }
     }
 
     private func finish(_ download: WKDownload, _ state: Item.State) {
         let key = ObjectIdentifier(download)
-        update(key) { $0.state = state; $0.progress = 1 }
+        update(key) { item in
+            if state == .failed, item.showsActivity { activityHadFailure = true }
+            item.state = state
+            item.progress = 1
+        }
         progressObservations[key] = nil
         items[key] = nil
     }

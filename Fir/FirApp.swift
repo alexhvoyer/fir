@@ -60,9 +60,9 @@ struct FirApp: App {
                 .tint(accent.color)
                 .task { await account.start() }
                 .onAppear {
-                    QuickAction.handler = { browser.searchRequested = $0 == .newPrivateTab ? .privateTab : .tab }
-                    SystemSearch.handler = { browser.openLink($0) }
-                    NewTabRequest.handler = { browser.searchRequested = $0 ? .privateTab : .tab }
+                    QuickAction.requests.handler = { browser.searchRequested = $0 == .newPrivateTab ? .privateTab : .tab }
+                    SystemSearch.requests.handler = { browser.openLink($0) }
+                    NewTabRequest.requests.handler = { browser.searchRequested = $0 ? .privateTab : .tab }
                 }
                 // "Search in app" from Spotlight, with what was typed there.
                 .onContinueUserActivity(CSQueryContinuationActionType) { activity in
