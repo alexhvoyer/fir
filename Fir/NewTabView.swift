@@ -96,7 +96,8 @@ struct NewTabView: View {
         })
         .task {
             if mode == .edit { query = browser.selected.url?.absoluteString ?? "" }
-            await account.sync()
+            // Its own task: closing this sheet cancels `.task`, which aborted the workspace fetch.
+            Task { await account.sync() }
         }
         .task(id: query) { await loadSuggestions() }
         .sheet(isPresented: $showSignIn) { SignInView() }

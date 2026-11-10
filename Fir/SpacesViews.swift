@@ -814,7 +814,8 @@ private struct WorkspaceEditor: View {
             let trimmed = name.trimmingCharacters(in: .whitespaces)
             let icon = emoji.isEmpty ? nil : emoji
             let done = if let space = renaming {
-                await account.renameZenSpace(space.id, to: trimmed, icon: icon)
+                // Zen's own icons don't show here, so an untouched field must not replace one.
+                await account.renameZenSpace(space.id, to: trimmed, icon: emoji == (space.icon ?? "") ? nil : emoji)
             } else {
                 await account.createZenSpace(named: trimmed, icon: icon)
             }

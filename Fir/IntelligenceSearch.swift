@@ -139,7 +139,12 @@ final class IntelligenceSearch {
 
     /// Named outright: told only "the language of the question", the model sometimes answered Russian in English.
     private static func languageRule(for question: String) -> String {
-        guard let code = NLLanguageRecognizer.dominantLanguage(for: question)?.rawValue,
+        // Limited to the user's languages: unconstrained, "iphone 17 price" came back as Turkish.
+        let recognizer = NLLanguageRecognizer()
+        let preferred = Locale.preferredLanguages.compactMap { Locale(identifier: $0).language.languageCode?.identifier }
+        recognizer.languageConstraints = (preferred + ["en"]).map(NLLanguage.init(rawValue:))
+        recognizer.processString(question)
+        guard let code = recognizer.dominantLanguage?.rawValue,
               let name = Locale(identifier: "en").localizedString(forLanguageCode: code) else {
             return "Write in the language of the question."
         }

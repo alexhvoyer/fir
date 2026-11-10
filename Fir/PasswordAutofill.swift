@@ -55,7 +55,8 @@ final class PasswordAutofill: NSObject {
             in: offer.frame, contentWorld: Self.world
         )
         self.offer = nil
-        Task.detached { PasswordStore.shared?.touch(login) }
+        // Use counts sync to other devices; a private tab leaves none.
+        if webView.configuration.websiteDataStore.isPersistent { Task.detached { PasswordStore.shared?.touch(login) } }
     }
 
     func save(_ prompt: SavePrompt) async {

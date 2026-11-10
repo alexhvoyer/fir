@@ -36,7 +36,7 @@ struct PageSheet: View {
     @AppStorage("translateTarget") private var targetID = ""
 
     private var settings: SiteSettings { .shared }
-    private var site: SiteSettings.Entry { settings.entry(for: tab.pageURL) }
+    private var site: SiteSettings.Entry { settings.entry(for: tab.pageURL, isPrivate: tab.isPrivate) }
 
     var body: some View {
         NavigationStack {
@@ -259,14 +259,14 @@ struct PageSheet: View {
     }
 
     private func setZoom(_ zoom: Double) {
-        settings.update(tab.pageURL) { $0.zoom = zoom }
+        settings.update(tab.pageURL, isPrivate: tab.isPrivate) { $0.zoom = zoom }
         tab.webView.pageZoom = zoom
     }
 
     /// A toggle for one of the site's settings; those that change how the page loads reload it.
     private func binding(_ key: WritableKeyPath<SiteSettings.Entry, Bool>, reload: Bool = false) -> Binding<Bool> {
         Binding(get: { site[keyPath: key] }, set: { value in
-            settings.update(tab.pageURL) { $0[keyPath: key] = value }
+            settings.update(tab.pageURL, isPrivate: tab.isPrivate) { $0[keyPath: key] = value }
             if reload { tab.webView.reload() }
         })
     }

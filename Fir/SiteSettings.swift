@@ -19,6 +19,9 @@ final class SiteSettings {
         return (try? JSONDecoder().decode([String: Entry].self, from: data)) ?? [:]
     }()
 
+    /// Changes made in private tabs: in force while those tabs exist, and never saved.
+    private var privateEntries: [String: Entry] = [:]
+
     private static let key = "siteSettings"
 
     static func site(_ url: URL?) -> String? {
@@ -26,16 +29,25 @@ final class SiteSettings {
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
 
-    func entry(for url: URL?) -> Entry {
-        Self.site(url).flatMap { entries[$0] } ?? Entry()
+    func entry(for url: URL?, isPrivate: Bool = false) -> Entry {
+        guard let site = Self.site(url) else { return Entry() }
+        return (isPrivate ? privateEntries[site] : nil) ?? entries[site] ?? Entry()
     }
 
-    func update(_ url: URL?, _ change: (inout Entry) -> Void) {
+    func update(_ url: URL?, isPrivate: Bool = false, _ change: (inout Entry) -> Void) {
         guard let site = Self.site(url) else { return }
-        var entry = entries[site] ?? Entry()
+        var entry = entry(for: url, isPrivate: isPrivate)
         change(&entry)
+        if isPrivate {
+            privateEntries[site] = entry
+            return
+        }
         entries[site] = entry == Entry() ? nil : entry
         save()
+    }
+
+    func forgetPrivate() {
+        privateEntries = [:]
     }
 
     /// Drops the site's cookies, storage and caches, and its settings here.

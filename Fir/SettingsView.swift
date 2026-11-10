@@ -243,6 +243,7 @@ private struct AppearanceSettingsView: View {
 /// Open tabs from other devices: the engine itself, then which devices' tabs show here.
 private struct SyncSettingsView: View {
     @Environment(AccountService.self) private var account
+    @State private var confirmSignOut = false
     @AppStorage(SettingsKey.syncTabs) private var syncTabs = true
     @AppStorage(SettingsKey.syncHistory) private var syncHistory = true
     @AppStorage(SettingsKey.syncWorkspaces) private var syncWorkspaces = true
@@ -280,7 +281,12 @@ private struct SyncSettingsView: View {
                 Section {
                     Button("Sync Now") { Task { await account.sync() } }
                         .disabled(account.isSyncing)
-                    Button("Sign Out", role: .destructive) { Task { await account.signOut() } }
+                    Button("Sign Out", role: .destructive) { confirmSignOut = true }
+                        .confirmationDialog("Sign out?", isPresented: $confirmSignOut, titleVisibility: .visible) {
+                            Button("Sign Out", role: .destructive) { Task { await account.signOut() } }
+                        } message: {
+                            Text("Passwords and history are removed from this iPhone. What has synced stays in your Mozilla account.")
+                        }
                 }
             } else {
                 Section {

@@ -92,7 +92,8 @@ struct TabSwitcherView: View {
         .onChange(of: browser.space) { centerSelected(animated: false) }
         .onChange(of: browser.spaceTabs.map(\.id)) { old, new in
             // A new tab growing out of the front card: the deck stays put under it, as for an old one.
-            guard !holdsPosition else { return }
+            // On screen too: closing another card must not spring the deck back to the selected one.
+            guard !holdsPosition, hiddenTab != nil else { return }
             centerSelected(animated: !Set(old).isDisjoint(with: new))
         }
         // A card joining or leaving a folder's stack moves slots: the deck follows the card it was on.

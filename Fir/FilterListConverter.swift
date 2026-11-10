@@ -24,7 +24,8 @@ enum FilterListConverter {
                 let line = line.trimmingCharacters(in: .whitespaces)
                 if line.isEmpty || line.hasPrefix("!") || line.hasPrefix("[") { continue }
                 if let range = line.range(of: "##") {
-                    let domains = String(line[..<range.lowerBound])
+                    // WebKit rejects a whole list over one domain that isn't lowercase.
+                    let domains = String(line[..<range.lowerBound]).lowercased()
                     let selector = String(line[range.upperBound...])
                     guard isPlainSelector(selector), !domains.contains("#") else { continue }
                     if domains.isEmpty {
@@ -123,7 +124,7 @@ enum FilterListConverter {
             // `@@||site^$document`: leave the whole site alone.
             guard text.hasPrefix("||"), let host = text.dropFirst(2).split(whereSeparator: { "^/*".contains($0) }).first,
                   isASCII(String(host)) else { return nil }
-            return (["trigger": ["url-filter": ".*", "if-domain": ["*\(host)"]], "action": ["type": "ignore-previous-rules"]], true)
+            return (["trigger": ["url-filter": ".*", "if-domain": ["*\(host.lowercased())"]], "action": ["type": "ignore-previous-rules"]], true)
         }
         guard let filter = urlFilter(String(text)) else { return nil }
         trigger["url-filter"] = filter

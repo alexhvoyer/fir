@@ -20,6 +20,8 @@ struct BrowserView: View {
     @State private var heldCard: CGRect?
     /// Tracked here, not in the login capsule: it appears after the keyboard's notification has passed.
     @State private var keyboardShown = false
+    /// Landscape layout, kept here for what is drawn outside the content.
+    @State private var barOnTop = false
     /// Horizontal travel of a bar swipe between tabs.
     @State private var swipeX: CGFloat = 0
     /// The snapshot standing in for the live page during a transition; nil shows the live page.
@@ -92,7 +94,7 @@ struct BrowserView: View {
             if pageShown, !transitioning {
                 PasswordFillBar(autofill: .shared, webView: browser.selected.webView)
                     // A focused field doesn't always raise the keyboard, and then the capsule sat on the bar.
-                    .padding(.bottom, keyboardShown || screen.width > screen.height ? 0 : Self.barClearance)
+                    .padding(.bottom, keyboardShown || barOnTop ? 0 : Self.barClearance)
                     .animation(.snappy, value: PasswordAutofill.shared.offer?.host)
                     .animation(.snappy, value: keyboardShown)
             }
@@ -188,6 +190,7 @@ struct BrowserView: View {
         // Beside a camera column the bars go in the column, so even the Duo's wide inner screen keeps
         // the upright layout: no top bar or tab strip over the page.
         .environment(\.isLandscape, screen.width > screen.height && !Self.sideRail(safeInsets))
+        .onChange(of: screen.width > screen.height && !Self.sideRail(safeInsets), initial: true) { barOnTop = $1 }
         // Over the bottom bar, on the page and on the deck.
         .overlay(alignment: .bottom) {
             UndoCloseCapsule()
@@ -1018,6 +1021,21 @@ private struct PageView: View {
                         .opacity(liveHidden ? 0 : 1)
                         .animation(nil, value: liveHidden)
                 }
+                if let failure = tab.loadFailure {
+                    ContentUnavailableView {
+                        Label("Can't Open This Page", systemImage: "exclamationmark.circle")
+                    } description: {
+                        Text(failure.message)
+                    } actions: {
+                        Button("Try Again") { tab.retryFailedLoad() }
+                            .buttonStyle(.borderedProminent)
+                        if tab.pageURL != nil { Button("Back to Page") { tab.dismissLoadFailure() } }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemBackground))
+                    .opacity(liveHidden ? 0 : 1)
+                    .animation(nil, value: liveHidden)
+                }
                 transitionLayer
                 if landscape {
                     VStack(spacing: 6) {
@@ -1268,6 +1286,11 @@ private struct PageView: View {
             .contentShape(.rect)
             // High priority so interactive glass on the buttons doesn't swallow the drag; taps still pass.
             .highPriorityGesture(liftGesture)
+            .onChange(of: browser.tabs.count) {
+                let open = Set(browser.tabs.map(\.id))
+                hostOffsets = hostOffsets.filter { open.contains($0.key) }
+                labelWidths = labelWidths.filter { open.contains($0.key) }
+            }
             // A cancelled drag never reaches onEnded; settle back instead of freezing mid-swipe.
             .onChange(of: dragging) {
                 guard !dragging else { return }
@@ -1620,7 +1643,8 @@ private struct PageView: View {
                     hostOffsets[tab.id] = $0 - width / 2
                 }
             // Smart buttons, as in Lens: shown only while the page needs them.
-            if live { smartButtons(tab) }
+            // On a swipe neighbour too: they move the address, which landed in the wrong place without them.
+            smartButtons(tab)
             // Keyed on the address, not the loaded page: a tab still loading (restored, or just swiped
             // to) gets them at once, instead of later shifting the address when the page commits.
             if let url = tab.url {
@@ -1630,7 +1654,7 @@ private struct PageView: View {
                     iconButton("xmark") { tab.webView.stopLoading() }
                 } else {
                     iconButton("arrow.clockwise") {
-                        if tab.pageURL == nil { tab.load(url) } else { tab.webView.reload() }
+                        tab.reload()
                     }
                 }
             }

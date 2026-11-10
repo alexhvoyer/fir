@@ -16,6 +16,10 @@ final class HistoryStore: @unchecked Sendable {
         api.registerWithSyncManager()
     }
 
+    func wipeLocal() {
+        try? api.getWriter().deleteEverythingHistory()
+    }
+
     func recordVisit(_ url: URL, title: String?) {
         guard url.scheme == "https" || url.scheme == "http" else { return }
         try? api.getWriter().applyObservation(visitObservation: VisitObservation(

@@ -43,7 +43,8 @@ Do not undo these. `fir-security-reviewer` checks a change against them.
   skips the dialog.
 - Autofill runs its `location.origin === origin` check in the same `callAsyncJavaScript` call as the fill.
 - Private tabs leave nothing on disk and nothing outside the app: no session, snapshot, icon, history, Handoff or
-  Live Activity. Extensions never see them.
+  Live Activity. Extensions never see them. The one exception is a file the user downloads, which stays in Downloads.
+- A Live Activity shows no file names or page text: a server chooses them, and the Lock Screen ignores Fir's lock.
 - Text from the system, such as Spotlight or an intent, is always searched, never treated as an address.
 
 ## Behaviour worth knowing
@@ -53,6 +54,8 @@ Do not undo these. `fir-security-reviewer` checks a change against them.
 - During a released swipe `swipeX` already holds its target. Anything derived from it sees the end value unless it
   animates: do not branch view structure on it.
 - Glass inside a `GlassEffectContainer` draws even at zero width, and a mask has no effect on it.
+- Sign-out wipes local passwords and history, then disconnects sync, in that order: disconnecting drops anything the
+  wipes queued for upload, so the deletions cannot reach the account.
 - `BrowserTab.isBlank` drops one-colour snapshots that WebKit returns on real phones. Keep it.
 
 ## Simulator testing traps

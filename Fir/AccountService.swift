@@ -137,6 +137,7 @@ final class AccountService {
         sendTargets = []
         receivedTabs = []
         SyncCache.clear()
+        await tabsSync?.wipeLocalData()
     }
 
     func sync() async {
@@ -265,11 +266,12 @@ final class AccountService {
         }
     }
 
+    /// A nil icon leaves the record's alone; an empty one clears it.
     func renameZenSpace(_ id: String, to name: String, icon: String?) async -> Bool {
         await updateZenRecord(id) { data in
             var data = data
             data["name"] = name
-            data["icon"] = icon ?? NSNull()
+            if let icon { data["icon"] = icon.isEmpty ? NSNull() : icon }
             return data
         }
     }

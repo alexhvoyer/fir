@@ -91,6 +91,8 @@ final class ContentBlocker {
     }
 
     private(set) var state = State.off
+    /// Why the last update of the lists left some out, if it did.
+    private(set) var lastFailure: String?
     private(set) var updated: Date?
     private(set) var selection: Set<String>
     @ObservationIgnored private var ruleLists: [FilterList.Group: (list: WKContentRuleList, rules: Int)] = [:]
@@ -146,7 +148,9 @@ final class ContentBlocker {
         guard isEnabled else { state = .off; return }
         updated = UserDefaults.standard.object(forKey: Self.updatedKey) as? Date
         let fresh = updated.map { $0.timeIntervalSinceNow > -7 * 24 * 3600 } ?? false
-        await run { await self.rebuild(FilterList.Group.allCases, fetch: !fresh) }
+        // Cached rules first: a weekly refresh mustn't leave pages unblocked while it downloads.
+        await run { await self.rebuild(FilterList.Group.allCases, fetch: self.updated == nil) }
+        if updated != nil, !fresh { await update() }
     }
 
     /// Fetches every chosen list again.
@@ -202,7 +206,7 @@ final class ContentBlocker {
     /// Compiles each group from its chosen lists, reusing WebKit's cached copy when the lists are the same
     /// and `fetch` is off. A group whose lists can't be fetched keeps its cached rules.
     private func rebuild(_ groups: [FilterList.Group], fetch: Bool) async {
-        if ruleLists.isEmpty { state = .loading }
+        if ruleLists.isEmpty || fetch { state = .loading }
         let store = WKContentRuleListStore.default()!
         var failure: String?
         var fetched = false
@@ -226,16 +230,28 @@ final class ContentBlocker {
             }
             do {
                 var texts: [String] = []
+                var missed: (any Error)?
                 for list in lists {
-                    let (data, response) = try await URLSession.shared.data(from: list.url)
-                    let text = String(decoding: data, as: UTF8.self)
-                    // A captive portal or a rate-limited host answers with a web page; compiled, it replaced the rules.
-                    guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode),
-                          !text.prefix(512).lowercased().contains("<html") else { throw URLError(.badServerResponse) }
-                    texts.append(text)
+                    do {
+                        let (data, response) = try await URLSession.shared.data(from: list.url)
+                        let text = String(decoding: data, as: UTF8.self)
+                        // A captive portal or a rate-limited host answers with a web page; compiled, it replaced the rules.
+                        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode),
+                              !text.prefix(512).lowercased().contains("<html") else { throw URLError(.badServerResponse) }
+                        texts.append(text)
+                    } catch {
+                        missed = error
+                    }
                 }
+                let hasRules = ruleLists[group] != nil
+                if let missed, hasRules || texts.isEmpty { throw missed }
                 let (list, count) = try await Self.compile(texts, identifier: identifier)
                 ruleLists[group] = (list, count)
+                if let missed {
+                    // Better some rules than none. No sources saved, so the next launch fetches the rest.
+                    failure = missed.localizedDescription
+                    continue
+                }
                 defaults.set(sourcesID, forKey: sourcesKey)
                 defaults.set(count, forKey: "\(sourcesKey).rules")
                 fetched = true
@@ -250,6 +266,7 @@ final class ContentBlocker {
             updated = .now
             UserDefaults.standard.set(updated, forKey: Self.updatedKey)
         }
+        if fetch { lastFailure = failure }
         guard isEnabled else { return }
         if ruleLists.isEmpty, let failure {
             state = .failed(failure)

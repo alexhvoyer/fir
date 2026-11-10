@@ -153,6 +153,7 @@ private struct FilterListsView: View {
 
     private var footer: String {
         let updated = blocker.updated.map { "Updated \($0.formatted(.relative(presentation: .named)))." } ?? ""
-        return "Lists update weekly. Changes apply from the next page load. \(updated)"
+        let failed = blocker.lastFailure.map { "Some lists couldn't be updated: \($0)" } ?? ""
+        return "Lists update weekly. Changes apply from the next page load. \(updated) \(failed)"
     }
 }

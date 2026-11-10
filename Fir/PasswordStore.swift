@@ -41,6 +41,10 @@ final class PasswordStore: @unchecked Sendable {
         return all.filter { $0.origin == origin }.sorted { $0.timeLastUsed > $1.timeLastUsed }
     }
 
+    func wipeLocal() {
+        try? store.wipeLocal()
+    }
+
     func touch(_ login: Login) {
         try? store.touch(id: login.id)
     }

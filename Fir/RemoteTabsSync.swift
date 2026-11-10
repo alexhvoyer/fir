@@ -15,6 +15,17 @@ final class RemoteTabsSync: @unchecked Sendable {
         store.registerWithSyncManager()
     }
 
+    /// After sign-out: nothing of this account stays here, or merges into the next one. In this order,
+    /// so disconnecting also drops anything the wipes queued for upload.
+    func wipeLocalData() async {
+        await Task.detached { [syncManager] in
+            PasswordStore.shared?.wipeLocal()
+            HistoryStore.shared?.wipeLocal()
+            syncManager.disconnect()
+            UserDefaults.standard.removeObject(forKey: Self.persistedStateKey)
+        }.value
+    }
+
     /// Engines left out are skipped on this device only; declining them would turn them off account-wide.
     @MainActor
     /// The other devices' tabs, plus the first engine that failed: one failing, say passwords,
