@@ -18,6 +18,8 @@ struct BrowserView: View {
     @State private var anchor: CGPoint?
     /// The card a new tab grows from, held for the whole transition: its own card is placed only later.
     @State private var heldCard: CGRect?
+    /// Tracked here, not in the login capsule: it appears after the keyboard's notification has passed.
+    @State private var keyboardShown = false
     /// Horizontal travel of a bar swipe between tabs.
     @State private var swipeX: CGFloat = 0
     /// The snapshot standing in for the live page during a transition; nil shows the live page.
@@ -68,6 +70,8 @@ struct BrowserView: View {
     private let settle = Animation.spring(response: 0.34, dampingFraction: 0.88)
     private let swipeCommit = Animation.spring(response: 0.32, dampingFraction: 0.92)
     static let swipeGap: CGFloat = 10
+    /// The bottom bar's height and a gap.
+    private static let barClearance: CGFloat = 56
 
     /// A camera column down one side only, as on both of the iPhone Duo's screens: Apple lays bars out
     /// beside it, so the buttons move there. A notched iPhone on its side has both sides inset.
@@ -87,8 +91,17 @@ struct BrowserView: View {
             // Only over its page: on the deck it covered the switcher.
             if pageShown, !transitioning {
                 PasswordFillBar(autofill: .shared, webView: browser.selected.webView)
+                    // A focused field doesn't always raise the keyboard, and then the capsule sat on the bar.
+                    .padding(.bottom, keyboardShown || screen.width > screen.height ? 0 : Self.barClearance)
                     .animation(.snappy, value: PasswordAutofill.shared.offer?.host)
+                    .animation(.snappy, value: keyboardShown)
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardShown = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardShown = false
         }
         .alert(savePromptTitle, isPresented: Binding(
             get: { PasswordAutofill.shared.savePrompt != nil },
