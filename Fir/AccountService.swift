@@ -116,6 +116,11 @@ final class AccountService {
             manager.finishAuthentication(authData: auth) { continuation.resume(returning: $0) }
         }
         if case .failure(let error) = result { lastError = "\(error)"; return }
+        // Success only means the step ran: a failed code exchange reports it too.
+        guard manager.hasAccount() else {
+            lastError = "Couldn't finish signing in. Try again."
+            return
+        }
         isSignedIn = true
         refreshProfile()
         await sync()
@@ -280,7 +285,9 @@ final class AccountService {
     func reorderZenSpaces(_ ids: [String]) async -> Bool {
         await updateZenRecord("layout") { data in
             var data = data
-            data["spaces"] = ids
+            // Fir's list may be behind: a workspace made on the computer since stays, one deleted stays gone.
+            let current = data["spaces"] as? [String] ?? ids
+            data["spaces"] = ids.filter(current.contains) + current.filter { !ids.contains($0) }
             return data
         }
     }

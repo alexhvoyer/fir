@@ -294,7 +294,8 @@ final class ContentBlocker {
         for webView in webViews.allObjects {
             let controller = webView.configuration.userContentController
             controller.removeAllContentRuleLists()
-            for (list, _) in ruleLists.values { controller.add(list) }
+            let site = SiteSettings.shared.entry(for: webView.url, isPrivate: !webView.configuration.websiteDataStore.isPersistent)
+            if site.blockAds { for (list, _) in ruleLists.values { controller.add(list) } }
             // Re-enabling must bring the script back to open tabs too.
             controller.removeAllUserScripts()
             controller.addUserScript(Self.layoutFixes)

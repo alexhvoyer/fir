@@ -40,9 +40,12 @@ enum SearchEngine: String, CaseIterable, Identifiable {
         return components.url
     }
 
+    /// What's typed leaves no cache on disk, and no cookie ties private queries to regular ones.
+    private static let suggestionSession = URLSession(configuration: .ephemeral)
+
     func suggestions(for query: String) async -> [String] {
         guard let url = suggestionsURL(for: query),
-              let (data, _) = try? await URLSession.shared.data(from: url),
+              let (data, _) = try? await Self.suggestionSession.data(from: url),
               let json = try? JSONSerialization.jsonObject(with: data) as? [Any],
               json.count > 1, let list = json[1] as? [String],
               // The response echoes its query; a late answer to an earlier prefix is dropped.

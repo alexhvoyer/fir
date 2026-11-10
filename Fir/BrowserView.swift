@@ -18,6 +18,8 @@ struct BrowserView: View {
     @State private var anchor: CGPoint?
     /// The card a new tab grows from, held for the whole transition: its own card is placed only later.
     @State private var heldCard: CGRect?
+    /// Counts requests to close PageView's sheets, which only it can reach.
+    @State private var sheetsDismissed = 0
     /// Tracked here, not in the login capsule: it appears after the keyboard's notification has passed.
     @State private var keyboardShown = false
     /// Landscape layout, kept here for what is drawn outside the content.
@@ -91,7 +93,7 @@ struct BrowserView: View {
         // Outside the keyboard-ignoring area, so it sits on top of the keyboard.
         .overlay(alignment: .bottom) {
             // Only over its page: on the deck it covered the switcher.
-            if pageShown, !transitioning {
+            if pageShown, !transitioning, !(browser.selected.isPrivate && browser.privateLocked) {
                 PasswordFillBar(autofill: .shared, webView: browser.selected.webView)
                     // A focused field doesn't always raise the keyboard, and then the capsule sat on the bar.
                     .padding(.bottom, keyboardShown || barOnTop ? 0 : Self.barClearance)
@@ -157,6 +159,7 @@ struct BrowserView: View {
                 search: $search,
                 sheetSource: sheetSource,
                 liveHidden: transitioning,
+                sheetsDismissed: sheetsDismissed,
                 chromeOpacity: max(0, 1 - progress * 2.5),
                 swipeX: swipeX,
                 screenWidth: screen.width,
@@ -229,6 +232,7 @@ struct BrowserView: View {
         .onChange(of: whatsNewPending) { takeSearchRequest() }
         // From the deck too: the new tab's page shows, not just its card.
         .onChange(of: browser.linksOpened) {
+            dismissSheets()
             search = nil
             showPageAtOnce()
         }
@@ -243,7 +247,15 @@ struct BrowserView: View {
     private func takeSearchRequest() {
         guard !whatsNewPending, let request = browser.searchRequested else { return }
         browser.searchRequested = nil
+        dismissSheets()
         openSearch(request)
+    }
+
+    /// A link or search from outside the app goes in front, not behind whatever sheet was left open.
+    private func dismissSheets() {
+        settings = nil
+        showDownloads = false
+        sheetsDismissed += 1
     }
 
     /// New-tab search asked for from outside, in Private or else the current tab's workspace; a search
@@ -888,6 +900,7 @@ private struct PageView: View {
     @Binding var search: NewTabView.Mode?
     let sheetSource: Namespace.ID
     let liveHidden: Bool
+    let sheetsDismissed: Int
     let chromeOpacity: Double
     let swipeX: CGFloat
     let screenWidth: CGFloat
@@ -1106,6 +1119,7 @@ private struct PageView: View {
             guard browser.privateLocked, tab.isPrivate else { return }
             reader = nil
             showPageSheet = false
+            intelligenceSearch = nil
             search = nil
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
@@ -1286,6 +1300,13 @@ private struct PageView: View {
             .contentShape(.rect)
             // High priority so interactive glass on the buttons doesn't swallow the drag; taps still pass.
             .highPriorityGesture(liftGesture)
+            .onChange(of: sheetsDismissed) {
+                reader = nil
+                showPageSheet = false
+                showSettings = false
+                showDownloads = false
+                intelligenceSearch = nil
+            }
             .onChange(of: browser.tabs.count) {
                 let open = Set(browser.tabs.map(\.id))
                 hostOffsets = hostOffsets.filter { open.contains($0.key) }

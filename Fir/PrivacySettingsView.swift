@@ -5,7 +5,7 @@ struct PrivacySettingsView: View {
     @State private var blockAds = ContentBlocker.shared.isEnabled
     @State private var lockApp = AppLock.isEnabled
     @AppStorage(SettingsKey.httpsOnly) private var httpsOnly = true
-    @AppStorage(SettingsKey.lockPrivateTabs) private var lockPrivateTabs = false
+    @State private var lockPrivateTabs = UserDefaults.standard.bool(forKey: SettingsKey.lockPrivateTabs)
     @AppStorage(SettingsKey.globalPrivacyControl) private var globalPrivacyControl = true
     @AppStorage(SettingsKey.hardenPrivateTabs) private var hardenPrivateTabs = false
     @State private var confirmClear = false
@@ -81,8 +81,15 @@ struct PrivacySettingsView: View {
             }
         }
         .onChange(of: lockPrivateTabs) { old, new in
-            guard old, !new, AppLock.isAvailable else { return }
-            Task { if !(await AppLock.authenticate(reason: "Turn off the private tabs lock")) { lockPrivateTabs = true } }
+            guard new != UserDefaults.standard.bool(forKey: SettingsKey.lockPrivateTabs) else { return }
+            Task {
+                // Written only after the check: quitting during the prompt mustn't leave the lock off.
+                if old, AppLock.isAvailable, !(await AppLock.authenticate(reason: "Turn off the private tabs lock")) {
+                    lockPrivateTabs = old
+                    return
+                }
+                UserDefaults.standard.set(new, forKey: SettingsKey.lockPrivateTabs)
+            }
         }
         .confirmationDialog("Clear all website data?", isPresented: $confirmClear, titleVisibility: .visible) {
             Button("Clear", role: .destructive) {

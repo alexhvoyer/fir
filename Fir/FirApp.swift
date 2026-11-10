@@ -15,6 +15,9 @@ struct FirApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     private var lockCovers: Bool { lock.isLocked || (AppLock.isEnabled && scenePhase != .active) }
+    /// iOS photographs the screen for the app switcher and keeps the image on disk.
+    private var privateCovers: Bool { browser.selected.isPrivate && scenePhase != .active }
+    private var coverTitle: LocalizedStringKey { lockCovers ? "Fir is Locked" : "Private Browsing" }
 
     /// Never a private tab's page, or anything while Fir is locked.
     private var handoffURL: URL? {
@@ -42,9 +45,11 @@ struct FirApp: App {
                 .overlay {
                     // Also hides the page in the app switcher, where the lock hasn't engaged yet. The
                     // window covers sheets; this covers the browser before the window exists.
-                    if lockCovers { LockScreen(lock: lock) }
+                    if lockCovers || privateCovers { LockScreen(lock: lock, title: coverTitle) }
                 }
-                .onChange(of: lockCovers, initial: true) { LockWindow.show(lockCovers, lock: lock, tint: accent.color) }
+                .onChange(of: lockCovers || privateCovers, initial: true) {
+                    LockWindow.show(lockCovers || privateCovers, lock: lock, tint: accent.color, title: coverTitle)
+                }
                 .fullScreenCover(isPresented: Binding(get: { !onboardingDone }, set: { onboardingDone = !$0 })) {
                     OnboardingView {
                         WhatsNew.markSeen()
@@ -85,7 +90,7 @@ struct FirApp: App {
                     guard !account.receivedTabs.isEmpty else { return }
                     let urls = account.receivedTabs
                     account.receivedTabs = []
-                    for url in urls.dropLast() { browser.openInBackground(url, in: browser.selected.spaceID) }
+                    for url in urls.dropLast() { browser.openInBackground(url, in: browser.selected.isPrivate ? nil : browser.selected.spaceID) }
                     if let last = urls.last { browser.openLink(last) }
                 }
                 // The page in front continues on the Mac, as in Safari.
@@ -106,6 +111,7 @@ struct FirApp: App {
             switch scenePhase {
             case .background:
                 lock.lock()
+                browser.pausePrivateMedia()
                 // The app lock already asks on return; a second Face ID prompt for private tabs would race it.
                 if !AppLock.isEnabled { browser.lockPrivate() }
             case .active:

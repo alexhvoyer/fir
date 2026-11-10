@@ -43,7 +43,7 @@ enum LockWindow {
     private static var window: UIWindow?
     static var isShown: Bool { window != nil }
 
-    static func show(_ shown: Bool, lock: AppLock, tint: Color?) {
+    static func show(_ shown: Bool, lock: AppLock, tint: Color?, title: LocalizedStringKey) {
         guard shown else {
             window?.isHidden = true
             window = nil
@@ -56,7 +56,7 @@ enum LockWindow {
         let window = UIWindow(windowScene: scene)
         window.windowLevel = .alert + 1
         window.overrideUserInterfaceStyle = scene.windows.first?.overrideUserInterfaceStyle ?? .unspecified
-        let host = UIHostingController(rootView: LockScreen(lock: lock).tint(tint))
+        let host = UIHostingController(rootView: LockScreen(lock: lock, title: title).tint(tint))
         host.view.backgroundColor = .clear
         window.rootViewController = host
         window.isHidden = false
@@ -67,11 +67,12 @@ enum LockWindow {
 /// Covers the browser while locked, and in the app switcher while the lock is on.
 struct LockScreen: View {
     let lock: AppLock
+    var title: LocalizedStringKey = "Fir is Locked"
 
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "lock.fill").font(.largeTitle)
-            Text("Fir is Locked").font(.brandHeading(.title3))
+            Text(title).font(.brandHeading(.title3))
             if lock.isLocked {
                 Button("Unlock") { Task { await lock.unlock() } }
                     .buttonStyle(.glassProminent)

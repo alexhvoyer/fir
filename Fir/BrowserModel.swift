@@ -273,7 +273,7 @@ final class BrowserTab: NSObject, Identifiable {
 
     /// Hidden tabs stay quiet, and a page gets a few dialogs per load: `while (true) alert(1)` traps the app.
     private func mayShowDialog() -> Bool {
-        guard model?.selectedID == id, dialogsThisPage < 5 else { return false }
+        guard model?.selectedID == id, dialogsThisPage < 5, !(isPrivate && model?.privateLocked == true) else { return false }
         dialogsThisPage += 1
         return true
     }
@@ -507,7 +507,7 @@ extension BrowserTab: WKNavigationDelegate {
             ContentBlocker.shared.setBlocking(site.blockAds, for: webView)
         }
         if navigationAction.targetFrame?.isMainFrame != false, let url = navigationAction.request.url,
-           let secure = HTTPSOnly.upgrade(url, isPrivate: isPrivate) {
+           let secure = HTTPSOnly.upgrade(url) {
             // Back here on its own upgrade: the site sent https to http, so it has no https to give.
             if upgradedFrom == url {
                 Task { await offerInsecure(url) }
@@ -624,14 +624,14 @@ extension BrowserTab: WKNavigationDelegate {
         let plain = upgradedFrom
         stopUpgrade()
         if let plain, HTTPSOnly.isSecureFailure(error) {
-            Task { await offerInsecure(plain) }
+            Task { await offerInsecure(plain, remember: !HTTPSOnly.isCertificateFailure(error)) }
         } else {
             loadFailure = LoadFailure(url: failure.userInfo[NSURLErrorFailingURLErrorKey] as? URL ?? url, message: failure.localizedDescription)
         }
     }
 
     /// HTTPS-Only couldn't reach the site securely: asks before opening it over plain HTTP, as in Lens.
-    private func offerInsecure(_ url: URL) async {
+    private func offerInsecure(_ url: URL, remember: Bool = true) async {
         upgradedFrom = nil
         guard let host = url.host(), await PageDialog.present(
             "This site doesn't support a secure connection. Anything you send could be seen by others on the network.",
@@ -639,7 +639,7 @@ extension BrowserTab: WKNavigationDelegate {
             loadFailure = LoadFailure(url: url, message: "This site doesn't support a secure connection.")
             return
         }
-        HTTPSOnly.allow(host, isPrivate: isPrivate)
+        HTTPSOnly.allow(host, permanently: remember && !isPrivate)
         webView.load(URLRequest(url: url))
     }
 
@@ -1039,7 +1039,7 @@ final class BrowserModel {
         guard !tabs.contains(where: \.isPrivate) else { return }
         privateStore = nil
         SiteSettings.shared.forgetPrivate()
-        HTTPSOnly.forgetPrivate()
+        HTTPSOnly.forgetTemporary()
     }
 
     /// Closes every tab of a workspace, leaving one new tab if that empties the browser.
@@ -1084,7 +1084,15 @@ final class BrowserModel {
     static var locksPrivateTabs: Bool { UserDefaults.standard.bool(forKey: SettingsKey.lockPrivateTabs) }
 
     func lockPrivate() {
-        if Self.locksPrivateTabs, tabs.contains(where: \.isPrivate) { privateLocked = true }
+        if Self.locksPrivateTabs, tabs.contains(where: \.isPrivate) {
+            privateLocked = true
+            pausePrivateMedia()
+        }
+    }
+
+    /// Media playing in the background shows its title on the Lock Screen, which Fir's lock doesn't cover.
+    func pausePrivateMedia() {
+        for tab in tabs where tab.isPrivate { tab.webView.pauseAllMediaPlayback(completionHandler: nil) }
     }
 
     func unlockPrivate() async {
@@ -1207,26 +1215,34 @@ enum HTTPSOnly {
     private static var allowed = Set(UserDefaults.standard.stringArray(forKey: allowedKey) ?? [])
     private static let allowedKey = "httpsOnlyAllowed"
 
-    /// Private tabs' choices last while those tabs do, and are never saved.
-    private static var allowedPrivately = Set<String>()
+    /// Never saved: choices from private tabs, and after a bad certificate, which someone on the network can fake.
+    private static var allowedForNow = Set<String>()
 
-    static func allow(_ host: String, isPrivate: Bool) {
-        if isPrivate {
-            allowedPrivately.insert(host)
+    static func allow(_ host: String, permanently: Bool) {
+        guard permanently else {
+            allowedForNow.insert(host)
             return
         }
         allowed.insert(host)
         UserDefaults.standard.set(Array(allowed), forKey: allowedKey)
     }
 
-    static func forgetPrivate() {
-        allowedPrivately = []
+    static func forgetTemporary() {
+        allowedForNow = []
+    }
+
+    static func isCertificateFailure(_ error: any Error) -> Bool {
+        let error = error as NSError
+        return error.domain == NSURLErrorDomain && [
+            NSURLErrorSecureConnectionFailed, NSURLErrorServerCertificateHasBadDate, NSURLErrorServerCertificateUntrusted,
+            NSURLErrorServerCertificateHasUnknownRoot, NSURLErrorServerCertificateNotYetValid,
+        ].contains(error.code)
     }
 
     /// The https form of a plain address that should be upgraded; nil to load it as it is.
-    static func upgrade(_ url: URL, isPrivate: Bool = false) -> URL? {
+    static func upgrade(_ url: URL) -> URL? {
         guard isEnabled, url.scheme?.lowercased() == "http", let host = url.host(), !allowed.contains(host),
-              !(isPrivate && allowedPrivately.contains(host)),
+              !allowedForNow.contains(host),
               !isLocal(host), var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         else { return nil }
         components.scheme = "https"

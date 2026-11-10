@@ -110,6 +110,8 @@ final class PasswordAutofill: NSObject {
             handled[origin] = fingerprint
             Task {
                 let logins = await Task.detached { PasswordStore.shared?.logins(for: origin) ?? [] }.value
+                // A second step that shows only the password field: this login is already saved.
+                if username.isEmpty, logins.contains(where: { $0.password == password }) { return }
                 let sameUser = logins.first { $0.username == username }
                 if sameUser?.password == password { return }
                 savePrompt = SavePrompt(origin: origin, username: username, password: password, existing: sameUser)
