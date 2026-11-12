@@ -21,6 +21,11 @@ targets:
       - package: MozillaRustComponents
         product: MozillaRustComponents
       - target: FirWidget
+    entitlements:
+      path: Fir/Fir.entitlements
+      properties:
+        # New files can't be opened while the phone is locked. Not "complete": saving must still work while page audio plays.
+        com.apple.developer.default-data-protection: NSFileProtectionCompleteUnlessOpen
     info:
       path: Fir/Info.plist
       properties:
@@ -72,6 +77,18 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
+  # Unit tests for code that parses untrusted input. It compiles those files directly, so no app host is needed.
+  FirTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - FirTests
+      - Fir/ZipExtractor.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser.Tests
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
   FirWidget:
     type: app-extension
     platform: iOS

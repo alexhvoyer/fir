@@ -29,13 +29,14 @@ struct FirApp: App {
     init() {
         // Rust components (NSS, HTTP) must be initialized before any FxA or sync call.
         MozillaAppServices.initialize()
+        DataProtection.upgradeExistingFiles()
         // A media app's session: page audio keeps playing in the background and when silenced by
         // the ring switch, as in Safari, and video can go picture in picture.
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
         Viaduct.shared.initialize(userAgent: "Fir-iOS-FxA/0.1")
         // Installs from before onboarding existed already have tabs; only a fresh one gets it.
         // A lone blank tab may just be someone who left onboarding halfway.
-        if SessionStore.load()?.tabs.contains(where: { $0.url != nil }) == true {
+        if (try? SessionStore.load())?.tabs.contains(where: { $0.url != nil }) == true {
             UserDefaults.standard.set(true, forKey: SettingsKey.onboardingDone)
         }
     }
@@ -119,6 +120,7 @@ struct FirApp: App {
                 if !AppLock.isEnabled { browser.lockPrivate() }
             case .active:
                 Task { await lock.unlock() }
+                browser.restoreIfPending()
                 browser.sweepIdleTabs()
             default: break
             }

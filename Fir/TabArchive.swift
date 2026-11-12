@@ -54,8 +54,10 @@ struct ArchivedTab: Codable, Identifiable {
 enum ArchiveStore {
     private static var url: URL { URL.applicationSupportDirectory.appending(path: "archived-tabs.json") }
 
-    static func load() -> [ArchivedTab] {
-        guard let data = try? Data(contentsOf: url) else { return [] }
+    /// Throws when the file is there but unreadable, as at a launch while the phone is locked.
+    static func load() throws -> [ArchivedTab] {
+        let data: Data
+        do { data = try Data(contentsOf: url) } catch CocoaError.fileReadNoSuchFile { return [] }
         return (try? JSONDecoder().decode([ArchivedTab].self, from: data)) ?? []
     }
 

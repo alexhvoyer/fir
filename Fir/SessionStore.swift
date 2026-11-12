@@ -40,8 +40,10 @@ enum SessionStore {
         URL.cachesDirectory.appending(path: "snapshots-v2", directoryHint: .isDirectory)
     }
 
-    static func load() -> Session? {
-        guard let data = try? Data(contentsOf: sessionURL) else { return nil }
+    /// Nil when there is none. Throws when the file is there but unreadable, as at a launch while the phone is locked.
+    static func load() throws -> Session? {
+        let data: Data
+        do { data = try Data(contentsOf: sessionURL) } catch CocoaError.fileReadNoSuchFile { return nil }
         return try? JSONDecoder().decode(Session.self, from: data)
     }
 

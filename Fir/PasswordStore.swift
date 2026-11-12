@@ -6,7 +6,15 @@ import Security
 /// The database is encrypted with a key kept in this iPhone's Keychain. Calls block on SQLite and
 /// crypto, so callers stay off the main actor.
 final class PasswordStore: @unchecked Sendable {
-    static let shared = try? PasswordStore()
+    /// Opened on first use. The key can't be read while the phone is locked, so a failed open is retried later.
+    static var shared: PasswordStore? {
+        lock.withLock {
+            if opened == nil { opened = try? PasswordStore() }
+            return opened
+        }
+    }
+    private static let lock = NSLock()
+    private static var opened: PasswordStore?
 
     /// The Sync engine's name, as Firefox Sync knows it.
     static let engine = "passwords"
@@ -21,6 +29,7 @@ final class PasswordStore: @unchecked Sendable {
         let key: String
         if let saved = try Keychain.read() {
             key = saved
+            Keychain.restrict()
         } else {
             // Without its key an old database can't be read; Sync restores the passwords into a new one.
             try? FileManager.default.removeItem(atPath: path)
@@ -77,7 +86,7 @@ final class PasswordStore: @unchecked Sendable {
         case keychain
     }
 
-    /// The database key, readable only on this device after its first unlock.
+    /// The database key, readable only on this device while it is unlocked.
     private enum Keychain {
         private static let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -101,9 +110,16 @@ final class PasswordStore: @unchecked Sendable {
         static func save(_ key: String) -> Bool {
             var item = query
             item[kSecValueData as String] = Data(key.utf8)
-            item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            item[kSecAttrAccessible as String] = accessible
             SecItemDelete(query as CFDictionary)
             return SecItemAdd(item as CFDictionary, nil) == errSecSuccess
         }
+
+        /// Keys saved by older builds were readable after first unlock; moves them to the stricter class.
+        static func restrict() {
+            SecItemUpdate(query as CFDictionary, [kSecAttrAccessible as String: accessible] as CFDictionary)
+        }
+
+        private static let accessible = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
     }
 }

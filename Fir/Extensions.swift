@@ -1,8 +1,8 @@
 import SwiftUI
 import WebKit
 
-/// Experimental WebExtensions support on WebKit's extension API (iOS 18.4+). Extensions come from
-/// addons.mozilla.org or a direct .xpi/.zip link; the requested permissions are granted at install.
+/// Experimental WebExtensions support on WebKit's extension API (iOS 18.4+). Extensions come only from
+/// addons.mozilla.org; the requested permissions are granted at install.
 @MainActor
 @Observable
 final class ExtensionManager: NSObject {
@@ -40,7 +40,7 @@ final class ExtensionManager: NSObject {
         }
     }
 
-    /// Accepts an addons.mozilla.org page or slug ("darkreader"), or a direct .xpi/.zip URL.
+    /// Accepts an addons.mozilla.org page or slug ("darkreader").
     func install(_ input: String) async throws {
         let download = try await Self.packageURL(for: input.trimmingCharacters(in: .whitespacesAndNewlines))
         let (temp, _) = try await URLSession.shared.download(from: download)
@@ -54,7 +54,7 @@ final class ExtensionManager: NSObject {
                 try ZipExtractor.extract(temp, to: folder)
                 try Self.adaptManifest(in: folder)
             }.value
-            guard await Self.confirm(try await WKWebExtension(resourceBaseURL: folder), from: download) else {
+            guard await Self.confirm(try await WKWebExtension(resourceBaseURL: folder)) else {
                 try? FileManager.default.removeItem(at: folder)
                 return
             }
@@ -66,18 +66,16 @@ final class ExtensionManager: NSObject {
         saveIndex()
     }
 
-    /// Permissions are granted whole at install, so the sites it gets are named first. Only
-    /// addons.mozilla.org vouches for what it serves; any other host is called out.
-    private static func confirm(_ webExtension: WKWebExtension, from source: URL) async -> Bool {
+    /// Permissions are granted whole at install, so the sites it gets are named first.
+    private static func confirm(_ webExtension: WKWebExtension) async -> Bool {
         let patterns = webExtension.allRequestedMatchPatterns
         let hosts = patterns.compactMap(\.host).filter { !$0.isEmpty }.sorted()
         let reach = patterns.contains(where: \.matchesAllHosts) || hosts.contains("*") ? "every website"
             : hosts.isEmpty ? "no websites" : hosts.prefix(5).joined(separator: ", ") + (hosts.count > 5 ? " and \(hosts.count - 5) more" : "")
-        let warning = source.host() == "addons.mozilla.org" ? "" : "\n\nIt doesn't come from addons.mozilla.org, so Mozilla hasn't checked it."
         let tabs = webExtension.requestedPermissions.contains(.tabs) ? " It will also see the addresses of your open tabs." : ""
         // The add-on's own text: one short line, so it can't push the rest out of view.
         let name = String((webExtension.displayName ?? "This add-on").prefix { !$0.isNewline }.prefix(40))
-        return await PageDialog.present("\"\(name)\" will be able to read and change \(reach).\(tabs)\(warning)",
+        return await PageDialog.present("\"\(name)\" will be able to read and change \(reach).\(tabs)",
                                         host: "Install Add-on?", cancel: "Cancel", confirm: "Install") != nil
     }
 
@@ -162,10 +160,9 @@ final class ExtensionManager: NSObject {
         UserDefaults.standard.set(installed.map { ["id": $0.id, "enabled": $0.isEnabled] }, forKey: Self.indexKey)
     }
 
+    /// Packages aren't signature-checked here, so only Mozilla's reviewed store is trusted to serve them.
     private static func packageURL(for input: String) async throws -> URL {
-        if let url = URL(string: input), url.scheme?.lowercased() == "https", ["xpi", "zip"].contains(url.pathExtension.lowercased()) {
-            return url
-        }
+        if let url = URL(string: input), isStore(url), url.pathExtension.lowercased() == "xpi" { return url }
         // A listing URL ends in /addon/<slug>/; anything else is taken as the slug itself.
         let slug: String
         if let url = URL(string: input), let index = url.pathComponents.firstIndex(of: "addon"),
@@ -180,9 +177,14 @@ final class ExtensionManager: NSObject {
               let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let version = json["current_version"] as? [String: Any],
               let file = version["file"] as? [String: Any],
-              let link = file["url"] as? String, let url = URL(string: link)
+              let link = file["url"] as? String, let url = URL(string: link),
+              isStore(url)
         else { throw InstallError.notFound }
         return url
+    }
+
+    private static func isStore(_ url: URL) -> Bool {
+        url.scheme?.lowercased() == "https" && url.host()?.lowercased() == "addons.mozilla.org"
     }
 
     enum InstallError: LocalizedError {

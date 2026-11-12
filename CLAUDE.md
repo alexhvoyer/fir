@@ -9,7 +9,8 @@ systems sit behind `#available`.
 - `project.yml` is the source of the Xcode project and `Fir/Info.plist`. `Fir.xcodeproj` is generated and ignored.
 - Run `xcodegen generate` after changing `project.yml` or adding a file.
 - `Packages/MozillaRustComponents` is generated Mozilla code. Leave it alone.
-- There is no test target. Changes are verified on the simulator and, for feel, on a phone.
+- `FirTests` covers code that parses untrusted input (`ZipExtractor`). Everything else is verified on the simulator
+  and, for feel, on a phone.
 
 ## Commands
 
@@ -18,6 +19,7 @@ xcodegen generate
 xcodebuild -project Fir.xcodeproj -scheme Fir -destination "id=<simulator>" -derivedDataPath build/sim build
 xcrun simctl install <simulator> build/sim/Build/Products/Debug-iphonesimulator/Fir.app
 xcrun simctl launch --terminate-running-process <simulator> dev.khvoynitsky.browser
+xcodebuild test -project Fir.xcodeproj -scheme FirTests -destination "id=<simulator>" -derivedDataPath build/sim
 ```
 
 `/fir-install` builds for a phone or uploads to TestFlight. `/animation-check` measures an animation from a recording.
@@ -46,6 +48,9 @@ Do not undo these. `fir-security-reviewer` checks a change against them.
   Live Activity. Extensions never see them. The one exception is a file the user downloads, which stays in Downloads.
 - A Live Activity shows no file names or page text: a server chooses them, and the Lock Screen ignores Fir's lock.
 - Text from the system, such as Spotlight or an intent, is always searched, never treated as an address.
+- Add-ons install only from addons.mozilla.org: packages aren't signature-checked.
+- Saved logins are offered and saved only on https pages.
+- The password database key is readable only while the phone is unlocked; new files default to complete-unless-open.
 
 ## Behaviour worth knowing
 
@@ -63,6 +68,6 @@ Do not undo these. `fir-security-reviewer` checks a change against them.
 - Launch arguments set defaults. For a Bool read through `bool(forKey:default:)` pass `-key '<false/>'`: plain `NO`
   arrives as a string and reads as unset. `simctl spawn defaults` writes to another domain and changes nothing.
 - JIT seems to be off in the simulator, so script-speed comparisons mean nothing there.
-- Test sign-in and scheme behaviour on pages served from `127.0.0.1`.
+- Test scheme behaviour on pages served from `127.0.0.1`. Autofill skips http, so sign-in needs an https page.
 - Face ID: `xcrun simctl spawn booted notifyutil -p com.apple.BiometricKit_Sim.pearl.match`, or `.nomatch`.
 - Control Center puts a control in a different place than its edit mode does. Take a screenshot before tapping.

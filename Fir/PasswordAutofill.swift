@@ -88,10 +88,9 @@ final class PasswordAutofill: NSObject {
 
     private func received(_ body: [String: Any], frame: WKFrameInfo, webView: WKWebView?) {
         let security = frame.securityOrigin
-        guard ["https", "http"].contains(security.protocol), !security.host.isEmpty else { return }
-        let origin = security.port == 0 || security.port == (security.protocol == "https" ? 443 : 80)
-            ? "\(security.protocol)://\(security.host)"
-            : "\(security.protocol)://\(security.host):\(security.port)"
+        // On plain http anyone on the network could read or rewrite the form, so saved logins stay out of it.
+        guard security.protocol == "https", !security.host.isEmpty else { return }
+        let origin = Self.documentOrigin(security)
         switch body["type"] as? String {
         case "focus":
             hideTask?.cancel()

@@ -763,7 +763,9 @@ final class BrowserModel {
     private static let closedKey = "recentlyClosedTabs"
 
     init() {
-        let session = SessionStore.load()
+        let session: SessionStore.Session?
+        do { session = try SessionStore.load() } catch { session = nil; restorePending = true }
+        do { archived = try ArchiveStore.load() } catch { archivePending = true }
         tabs = session?.tabs.map(BrowserTab.init(restoring:)) ?? []
         localFolders = session?.localFolders ?? []
         localPins = session?.localPins ?? []
@@ -781,8 +783,35 @@ final class BrowserModel {
         sweepIdleTabs()
     }
 
+    /// A launch while the phone was locked couldn't read the saved files. Saving waits, or it would overwrite
+    /// them with a blank session; they load at the first unlock.
+    @ObservationIgnored private var restorePending = false
+    @ObservationIgnored private var archivePending = false
+
+    func restoreIfPending() {
+        if archivePending, let saved = try? ArchiveStore.load() {
+            archivePending = false
+            archived = saved + archived
+        }
+        guard restorePending else { return }
+        let loaded: SessionStore.Session?
+        do { loaded = try SessionStore.load() } catch { return }
+        restorePending = false
+        guard let session = loaded else { return }
+        localFolders = session.localFolders ?? []
+        localPins = session.localPins ?? []
+        let restored = session.tabs.map(BrowserTab.init(restoring:))
+        guard !restored.isEmpty else { return }
+        // A link opened from another app before the unlock stays; the blank launch tab goes.
+        let opened = tabs.filter { $0.url != nil }
+        tabs = restored + opened
+        selectedID = opened.last?.id ?? (tabs.contains { $0.id == session.selectedID } ? session.selectedID : tabs.last?.id)
+        space = selected.spaceID
+    }
+
     /// Writes off the main thread: on it, the file write cost a frame of the deck transition.
     func save() {
+        guard !restorePending else { return }
         pruneLocalFolders()
         let session = SessionStore.Session(
             tabs: tabs.filter { !$0.isPrivate }.map {
@@ -1193,7 +1222,11 @@ final class BrowserModel {
         }
     }
 
-    private(set) var archived = ArchiveStore.load()
+    private(set) var archived: [ArchivedTab] = []
+
+    private func saveArchive() {
+        if !archivePending { ArchiveStore.save(archived) }
+    }
 
     /// Archives and clears tabs nobody has looked at in the chosen time, as Lens does. The tab in front
     /// stays; private tabs close rather than being archived, and blank ones simply close.
@@ -1207,7 +1240,7 @@ final class BrowserModel {
             archiveChanged = archived.count != before
         }
         guard let limit = archiveAfter ?? clearAfter else {
-            if archiveChanged { ArchiveStore.save(archived) }
+            if archiveChanged { saveArchive() }
             return
         }
         let idle = tabs.filter { $0.id != selectedID && !$0.isPinned && now.timeIntervalSince($0.lastViewed) > limit }
@@ -1220,7 +1253,7 @@ final class BrowserModel {
             }
             discard(tab)
         }
-        if archiveChanged { ArchiveStore.save(archived) }
+        if archiveChanged { saveArchive() }
         if !idle.isEmpty { save() }
     }
 
@@ -1232,7 +1265,7 @@ final class BrowserModel {
 
     func deleteArchived(_ ids: [ArchivedTab.ID]) {
         archived.removeAll { ids.contains($0.id) }
-        ArchiveStore.save(archived)
+        saveArchive()
     }
 
     /// Takes a tab away without the undo capsule or its haptic: for tabs Fir closes on its own.
