@@ -84,16 +84,21 @@ enum Sprig {
     /// One row of needles; `side` is -1 or 1. The rows alternate, and the needles shorten near the tip.
     static func needles(side: CGFloat) -> Path {
         var path = Path()
-        for i in 0..<count {
-            let t = 0.08 + 0.9 * (CGFloat(i) + (side > 0 ? 0.5 : 0)) / CGFloat(count)
-            let a = point(t), b = point(min(t + 0.01, 1))
-            let dx = b.x - a.x, dy = b.y - a.y, length = max((dx * dx + dy * dy).squareRoot(), 0.0001)
-            let r = angle * .pi / 180 * Double(side)
-            let ux = dx / length * cos(r) - dy / length * sin(r), uy = dx / length * sin(r) + dy / length * cos(r)
-            let n = needle * (t > 0.75 ? max(0.35, (1 - t) / 0.25) : 1)
-            path.move(to: a)
-            path.addLine(to: CGPoint(x: a.x + ux * n, y: a.y + uy * n))
-        }
+        for i in 0..<count { path.addPath(needle(i, side: side).line) }
         return path.strokedPath(StrokeStyle(lineWidth: thickness, lineCap: .round))
+    }
+
+    /// Needle `i` of a row as an unstroked line, and where along the stem it grows from.
+    static func needle(_ i: Int, side: CGFloat, grown: CGFloat = 1) -> (t: CGFloat, line: Path) {
+        let t = 0.08 + 0.9 * (CGFloat(i) + (side > 0 ? 0.5 : 0)) / CGFloat(count)
+        let a = point(t), b = point(min(t + 0.01, 1))
+        let dx = b.x - a.x, dy = b.y - a.y, length = max((dx * dx + dy * dy).squareRoot(), 0.0001)
+        let r = angle * .pi / 180 * Double(side)
+        let ux = dx / length * cos(r) - dy / length * sin(r), uy = dx / length * sin(r) + dy / length * cos(r)
+        let n = needle * (t > 0.75 ? max(0.35, (1 - t) / 0.25) : 1) * grown
+        var path = Path()
+        path.move(to: a)
+        path.addLine(to: CGPoint(x: a.x + ux * n, y: a.y + uy * n))
+        return (t, path)
     }
 }

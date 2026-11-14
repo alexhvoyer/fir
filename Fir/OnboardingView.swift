@@ -13,6 +13,7 @@ struct OnboardingView: View {
     @AppStorage(SettingsKey.whatsNew) private var whatsNew = true
     @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     @State private var blockAds = ContentBlocker.shared.isEnabled
+    @State private var pageWidth: CGFloat = 0
 
     private static let pageCount = IntelligenceSearch.isSupported ? 6 : 5
 
@@ -36,6 +37,8 @@ struct OnboardingView: View {
                 setup.tag(Self.pageCount - 1)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { pageWidth = $0 }
+            .environment(\.onboardingPageWidth, pageWidth)
 
             PageDots(count: Self.pageCount, current: page)
                 .padding(.bottom, 20)
@@ -48,11 +51,7 @@ struct OnboardingView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 12)
         }
-        .background(alignment: .top) {
-            LinearGradient(colors: [Palette.teal.opacity(0.22), Palette.teal.opacity(0.06), .clear],
-                           startPoint: .top, endPoint: .center)
-                .ignoresSafeArea()
-        }
+        .background { OnboardingBackground(page: page) }
         .sheet(isPresented: $showSignIn) { SignInView() }
         .onChange(of: blockAds) { Task { await ContentBlocker.shared.setEnabled(blockAds) } }
         // Signing in from the sync page moves on by itself.
@@ -71,21 +70,20 @@ struct OnboardingView: View {
 
     private var welcome: some View {
         OnboardingPage(title: "Welcome to Fir",
-                       text: "A calm iPhone browser that brings along your Zen workspaces.") {
-            SprigMark()
-                .frame(width: 84, height: 84)
-                .padding(18)
-                .background(Palette.field, in: .rect(cornerRadius: 30, style: .continuous))
-                .shadow(color: .black.opacity(0.3), radius: 24, y: 10)
+                       text: "A calm iPhone browser. Your Zen or Firefox tabs come along.") {
+            GrowingSprig()
+                .frame(width: 150, height: 150)
+                .background {
+                    Circle().fill(Palette.teal.opacity(0.35)).blur(radius: 50).scaleEffect(1.3)
+                }
+                .padding(.bottom, 12)
         }
     }
 
     private var sync: some View {
         OnboardingPage(title: "Your tabs, everywhere",
-                       text: "Sign in with the Mozilla account you use in Zen to bring its workspaces, pinned sites, open tabs and history to this iPhone.") {
-            Image(systemName: "arrow.triangle.2.circlepath")
-                .font(.system(size: 56, weight: .medium))
-                .foregroundStyle(Palette.teal.gradient)
+                       text: "Sign in with the Mozilla account from Zen or Firefox. Workspaces, tabs, history and passwords come along.") {
+            SyncOrbit()
         } footer: {
             if account.isSignedIn {
                 Label(account.email ?? "Signed in", systemImage: "checkmark.circle.fill")
@@ -102,18 +100,14 @@ struct OnboardingView: View {
     }
 
     private var gestures: some View {
-        // The list goes under the title: a footer, not art.
-        OnboardingPage(title: "Gestures", text: nil) {
-            EmptyView()
+        OnboardingPage(title: "Swipe through tabs",
+                       text: "Swipe the bar sideways to switch tabs, or up to see them all.") {
+            GestureDemo()
         } footer: {
-            VStack(alignment: .leading, spacing: 18) {
-                FeatureRow("arrow.left.and.right", "Swipe the address bar", "to move between tabs")
-                FeatureRow("arrow.up", "Swipe up from the bar", "to see all tabs")
-                FeatureRow("plus.square.on.square", "Swipe left on the last tab", "for a new one")
-                FeatureRow("hand.tap", "Long-press the tabs button", "for a new or private tab")
-            }
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
+            Text("Swipe left past the last tab for a new one. Long-press the tabs button for a private tab.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
     }
 
@@ -142,14 +136,19 @@ struct OnboardingView: View {
             HStack(spacing: 24) {
                 ForEach(NewTabStyle.allCases) { style in
                     let selected = newTabStyle == style
-                    Button { newTabStyle = style } label: {
+                    Button {
+                        withAnimation(.spring(duration: 0.45, bounce: 0.35)) { newTabStyle = style }
+                    } label: {
                         VStack(spacing: 12) {
                             NewTabPreview(style: style, selected: selected)
                                 .frame(width: 120, height: 240)
+                                .scaleEffect(selected ? 1 : 0.92)
+                                .opacity(selected ? 1 : 0.7)
                             Text(style.name).font(.subheadline.weight(.medium))
                             Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                                 .font(.title2)
                                 .foregroundStyle(selected ? Palette.teal : .secondary)
+                                .contentTransition(.symbolEffect(.replace))
                         }
                     }
                     .buttonStyle(.plain)
@@ -161,44 +160,76 @@ struct OnboardingView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
+        .sensoryFeedback(.selection, trigger: newTabStyle)
     }
 
-    /// The same settings as in Settings, as system rows: choosing here is choosing there.
+    /// The same settings as in Settings. Not a Form: inside the paged TabView its margins came out
+    /// lopsided on a phone, flush with the left edge.
     private var setup: some View {
-        VStack(spacing: 12) {
-            Text("Make it yours").font(.brandHeading(.largeTitle))
-            Text("You can change these later in Settings.")
-                .foregroundStyle(.secondary)
-            Form {
-                Section {
-                    Picker("Search Engine", selection: $engine) {
-                        ForEach(SearchEngine.allCases) { Text($0.name).tag($0) }
+        ScrollView {
+            VStack(spacing: 12) {
+                Text("Make it yours").font(.brandHeading(.largeTitle))
+                Text("You can change these later in Settings.")
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 8)
+                SettingsGroup("Search", footer: "Suggestions send what you type to the search engine.") {
+                    HStack {
+                        Text("Search Engine")
+                        Spacer()
+                        Picker("Search Engine", selection: $engine) {
+                            ForEach(SearchEngine.allCases) { Text($0.name).tag($0) }
+                        }
+                        .labelsHidden()
+                        .tint(.secondary)
                     }
+                    Divider()
                     Toggle("Search Suggestions", isOn: $searchSuggestions)
-                } header: {
-                    Text("Search")
-                } footer: {
-                    Text("Suggestions send what you type to the search engine.")
                 }
-                Section {
+                SettingsGroup("Privacy", footer: "Private tabs leave nothing behind. You can also lock Fir with Face ID in Settings.") {
                     Toggle("Block Ads & Trackers", isOn: $blockAds)
-                } header: {
-                    Text("Privacy")
-                } footer: {
-                    Text("Private tabs leave nothing behind. You can also lock Fir with Face ID in Settings.")
                 }
-                Section {
+                SettingsGroup(nil, footer: "A short list of changes after a major update.") {
                     Toggle("What's New After Updates", isOn: $whatsNew)
-                } footer: {
-                    Text("A short list of changes after a major update.")
                 }
             }
-            .scrollContentBackground(.hidden)
-            .scrollBounceBehavior(.basedOnSize)
+            .padding(.horizontal, 16)
+            .padding(.top, 40)
         }
-        .padding(.top, 40)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
+}
+
+/// A grouped section as in Settings: a header, rows on a rounded card, and a footer.
+private struct SettingsGroup<Rows: View>: View {
+    let header: LocalizedStringKey?
+    let footer: LocalizedStringKey
+    @ViewBuilder let rows: Rows
+
+    init(_ header: LocalizedStringKey?, footer: LocalizedStringKey, @ViewBuilder rows: () -> Rows) {
+        self.header = header
+        self.footer = footer
+        self.rows = rows()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let header {
+                Text(header).font(.headline).foregroundStyle(.secondary).padding(.horizontal, 16)
+            }
+            VStack(spacing: 12) { rows }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 26, style: .continuous))
+            Text(footer)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.bottom, 8)
+    }
 }
 
 /// An icon in a glass circle beside a title and a line of detail.
@@ -246,14 +277,18 @@ private struct NewTabPreview: View {
                 .frame(maxWidth: .infinity, maxHeight: 110, alignment: .top)
                 .background(Color(.systemBackground),
                             in: UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18, style: .continuous))
+                // Chosen, the sheet rises as it does over a page.
+                .offset(y: selected ? 0 : 60)
             } else {
                 Color(.systemBackground)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
-                        ForEach(0..<4, id: \.self) { _ in
+                        ForEach(0..<4, id: \.self) { index in
                             RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                .fill(Palette.teal.opacity(0.3))
+                                .fill(Palette.teal.opacity(selected ? 0.6 : 0.3))
                                 .aspectRatio(1, contentMode: .fit)
+                                .scaleEffect(selected ? 1 : 0.6)
+                                .animation(.spring(duration: 0.4, bounce: 0.45).delay(Double(index) * 0.04), value: selected)
                         }
                     }
                     ForEach(0..<4, id: \.self) { _ in row }
@@ -317,7 +352,14 @@ private struct IntelligenceSearchDemo: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         // Fixed, so the page's text doesn't move as the demo plays.
         .frame(height: 170)
-        .background(Palette.field, in: .rect(cornerRadius: 24, style: .continuous))
+        .glassEffect(.regular, in: .rect(cornerRadius: 24, style: .continuous))
+        .background {
+            Ellipse()
+                .fill(LinearGradient(colors: [Palette.teal, Color(light: 0x7A62C9, dark: 0x9A84E6)],
+                                     startPoint: .leading, endPoint: .trailing))
+                .blur(radius: 44)
+                .opacity(0.45)
+        }
         .task {
             while !Task.isCancelled {
                 for next in 0...(Self.sites.count + 1) {
@@ -340,7 +382,7 @@ private struct OnboardingPage<Art: View, Footer: View>: View {
     var body: some View {
         VStack(spacing: 28) {
             Spacer(minLength: 0)
-            art
+            art.modifier(Parallax())
             VStack(spacing: 12) {
                 Text(title).font(.brandHeading(.largeTitle)).multilineTextAlignment(.center)
                 if let text {
