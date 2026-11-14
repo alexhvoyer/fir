@@ -10,6 +10,13 @@
   Fir is an independent app, not affiliated with Zen or Mozilla.
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/page.jpg" width="200" alt="A Wikipedia article in Fir with the floating address bar">
+  <img src="docs/screenshots/deck.jpg" width="200" alt="The tab deck with three open tabs">
+  <img src="docs/screenshots/reader.jpg" width="200" alt="Reader view of the same article in dark mode">
+  <img src="docs/screenshots/search.jpg" width="200" alt="A new tab: the search field and the Zen sign-in card">
+</p>
+
 ## Features
 
 - Firefox Sync: the workspaces, essentials and pinned tabs of Zen, the tabs open on your other
