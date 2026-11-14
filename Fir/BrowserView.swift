@@ -140,6 +140,7 @@ struct BrowserView: View {
         ZStack {
             TabSwitcherView(
                 hiddenTab: pageShown ? browser.selectedID : nil,
+                coveredTabs: Set(deckNeighbours.map(\.tab.id)),
                 onCardFrame: { cardFrames[$0] = $1 },
                 onOpen: openPage,
                 onNewTab: startNewTab,
@@ -317,6 +318,17 @@ struct BrowserView: View {
                                  anchor: UnitPoint(x: a.x / max(screen.width, 1), y: a.y / max(screen.height, 1)))
                     .offset(follow)
                     .offset(x: swipeX)
+                // The later card, or folder pile, slides in over the shrinking page as the deck layers it:
+                // landing on top of it, the page then dropped under it at once. Dimmed like the deck.
+                if let front = deckNeighbours.first?.frame {
+                    ForEach(Array(deckNeighbours.enumerated().reversed()), id: \.element.tab.id) { depth, card in
+                        CardImage(tab: card.tab, width: card.frame.width, height: card.frame.height)
+                            .brightness(-Double(depth) * 0.04)
+                            .colorMultiply(Color(white: pageShown ? 0.3 + 0.7 * progress : 1))
+                            .offset(x: card.frame.minX - screen.minX + (1 - progress) * (screen.maxX - front.minX),
+                                    y: card.frame.minY - screen.minY)
+                    }
+                }
             }
             .frame(width: screen.width, height: screen.height, alignment: .topLeading)
             .allowsHitTesting(false)
@@ -355,6 +367,18 @@ struct BrowserView: View {
     }
 
     // MARK: - Deck transitions
+
+    /// The cards the deck lays over the selected one's right edge, front first: one card, or a folder's
+    /// pile as deep as the deck shows it.
+    private var deckNeighbours: [(tab: BrowserTab, frame: CGRect)] {
+        guard transitioning, swipeX == 0, !swipeOpensNewTab else { return [] }
+        let card = currentCard
+        // Deck order puts a stack's front card first, then its deeper ones.
+        return Array(browser.tabs(in: browser.selected.spaceID)
+            .compactMap { tab in cardFrames[tab.id].map { (tab: tab, frame: $0) } }
+            .filter { $0.tab.id != browser.selectedID && $0.frame.minX > card.minX + 1 && $0.frame.minX < card.maxX }
+            .prefix(4))
+    }
 
     private var currentCard: CGRect {
         heldCard ?? cardFrames[browser.selectedID ?? UUID()] ?? Self.fallbackCard(in: screen)

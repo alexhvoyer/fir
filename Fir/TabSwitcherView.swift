@@ -9,6 +9,8 @@ struct TabSwitcherView: View {
     @Environment(\.isLandscape) private var landscape
     /// The tab whose page is layered on top; its card stays hidden so it isn't drawn twice.
     let hiddenTab: BrowserTab.ID?
+    /// The later neighbour drawn over the page as it shrinks, so it isn't drawn twice either.
+    var coveredTabs: Set<BrowserTab.ID> = []
     /// Reports each card's on-screen frame so the page can grow out of it.
     let onCardFrame: (BrowserTab.ID, CGRect) -> Void
     let onOpen: () -> Void
@@ -236,7 +238,7 @@ struct TabSwitcherView: View {
                     TabCard(tab: tab,
                             width: cardWidth, height: cardHeight,
                             titleOpacity: depth > 0 ? 0 : max(0, 1 - Double(abs(rel)) * 2) * max(0, 1 + Double(lift) / 40),
-                            imageHidden: tab.id == hiddenTab,
+                            imageHidden: tab.id == hiddenTab || coveredTabs.contains(tab.id),
                             heading: layout.heading[tab.id] ?? .tab,
                             folderMenu: folderMenu,
                             tabMenu: tabMenu,
@@ -561,29 +563,9 @@ private struct TabCard: View {
             }
             .padding(.leading, 6)
             .opacity(titleOpacity)
-            Group {
-                if let image = tab.snapshot {
-                    Image(uiImage: image).resizable().scaledToFill()
-                        .frame(width: width, height: height, alignment: .top)
-                } else if tab.url == nil {
-                    BlankTab(spaceID: tab.spaceID, offset: tab.startPageOffset)
-                        // A new offset alone didn't redraw the card's copy.
-                        .id(tab.startPageOffset)
-                } else {
-                    Color(.secondarySystemBackground)
-                        .overlay(SiteIcon(host: tab.url?.host(), size: 56, fetch: !tab.isPrivate))
-                }
-            }
-            .frame(width: width, height: height)
-            .clipShape(.rect(cornerRadius: 34, style: .continuous))
-            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { onFrame($0) }
-            // Shadow of a plain shape behind the card: on the clipped snapshot it was redrawn every frame.
-            .background {
-                RoundedRectangle(cornerRadius: 34, style: .continuous)
-                    .fill(.black)
-                    .shadow(color: .black.opacity(0.25), radius: 18, x: -6, y: 8)
-            }
-            .opacity(imageHidden ? 0 : 1)
+            CardImage(tab: tab, width: width, height: height)
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { onFrame($0) }
+                .opacity(imageHidden ? 0 : 1)
         }
         .frame(width: width)
     }
@@ -903,7 +885,8 @@ private struct SpacePager<Page: View>: View, Animatable {
 /// Spares the hidden deck a re-render on every touch of a bar lift or tab swipe.
 extension TabSwitcherView: Equatable {
     nonisolated static func == (a: Self, b: Self) -> Bool {
-        a.hiddenTab == b.hiddenTab && a.holdsPosition == b.holdsPosition && a.railWidth == b.railWidth
+        a.hiddenTab == b.hiddenTab && a.coveredTabs == b.coveredTabs && a.holdsPosition == b.holdsPosition
+            && a.railWidth == b.railWidth
     }
 }
 
@@ -915,5 +898,36 @@ extension TabCard: Equatable {
             && a.titleOpacity == b.titleOpacity && a.imageHidden == b.imageHidden && a.heading == b.heading
             && (a.folderMenu == nil) == (b.folderMenu == nil) && (a.tabMenu == nil) == (b.tabMenu == nil)
             && a.space?.id == b.space?.id && a.space?.folders == b.space?.folders && a.localFolders == b.localFolders
+    }
+}
+
+/// A card's picture of its page, with its corners and shadow; also drawn over a shrinking page.
+struct CardImage: View {
+    let tab: BrowserTab
+    let width: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        Group {
+            if let image = tab.snapshot {
+                Image(uiImage: image).resizable().scaledToFill()
+                    .frame(width: width, height: height, alignment: .top)
+            } else if tab.url == nil {
+                BlankTab(spaceID: tab.spaceID, offset: tab.startPageOffset)
+                    // A new offset alone didn't redraw the card's copy.
+                    .id(tab.startPageOffset)
+            } else {
+                Color(.secondarySystemBackground)
+                    .overlay(SiteIcon(host: tab.url?.host(), size: 56, fetch: !tab.isPrivate))
+            }
+        }
+        .frame(width: width, height: height)
+        .clipShape(.rect(cornerRadius: 34, style: .continuous))
+        // Shadow of a plain shape behind the card: on the clipped snapshot it was redrawn every frame.
+        .background {
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                .fill(.black)
+                .shadow(color: .black.opacity(0.25), radius: 18, x: -6, y: 8)
+        }
     }
 }
