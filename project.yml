@@ -26,6 +26,8 @@ targets:
       properties:
         # New files can't be opened while the phone is locked. Not "complete": saving must still work while page audio plays.
         com.apple.developer.default-data-protection: NSFileProtectionCompleteUnlessOpen
+        # Granted by Apple on request; lets Fir be chosen as the default browser.
+        com.apple.developer.web-browser: true
     info:
       path: Fir/Info.plist
       properties:
