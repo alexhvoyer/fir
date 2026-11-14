@@ -321,8 +321,12 @@ struct BrowserView: View {
                 if let front = deckNeighbours.first?.frame {
                     ForEach(Array(deckNeighbours.enumerated().reversed()), id: \.element.tab.id) { depth, card in
                         CardImage(tab: card.tab, width: card.frame.width, height: card.frame.height)
-                            .brightness(-Double(depth) * 0.04)
-                            .colorMultiply(Color(white: pageShown ? 0.3 + 0.7 * progress : 1))
+                            // A dimming layer like the deck's, not colour filters, which render in an extra
+                            // off-screen pass.
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 34, style: .continuous)
+                                    .fill(.black.opacity((pageShown ? 0.7 * (1 - progress) : 0) + Double(depth) * 0.04))
+                            }
                             .offset(x: card.frame.minX - screen.minX + (1 - progress) * (screen.maxX - front.minX),
                                     y: card.frame.minY - screen.minY)
                     }
