@@ -6,6 +6,10 @@ enum DataProtection {
     private static let doneKey = "dataProtectionUpgraded"
 
     static func upgradeExistingFiles() {
+        // The simulator can't reopen files of this class; its builds go without the entitlement too.
+        #if targetEnvironment(simulator)
+        return
+        #else
         guard !UserDefaults.standard.bool(forKey: doneKey) else { return }
         Task.detached(priority: .utility) {
             // Only Fir's own folders: WebKit's caches belong to its processes.
@@ -25,6 +29,7 @@ enum DataProtection {
             // A file that couldn't be changed is tried again on the next launch.
             if !failed { UserDefaults.standard.set(true, forKey: doneKey) }
         }
+        #endif
     }
 
     private static func protect(_ url: URL) -> Bool {

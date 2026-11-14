@@ -106,7 +106,9 @@ private struct GeneralSettingsView: View {
                     UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
                 }
             } footer: {
-                Text("iOS offers an app as the default browser only if Apple granted it the default-browser entitlement, which the developer requests for the app's bundle ID. This build doesn't have it yet.")
+                if isDefault != true {
+                    Text("In iOS Settings, choose Fir under Apps > Default Apps > Browser App. Links from other apps then open here.")
+                }
             }
             Section {
                 Picker("New Tab", selection: $newTabStyle) {

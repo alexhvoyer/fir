@@ -27,7 +27,17 @@ struct ReaderArticle: Identifiable {
             const rules = [{ host: /(^|\\.)(dtf|vc)\\.ru$/, root: '.content__body', author: '.content-header .author__name' }];
             const rule = rules.find(r => r.host.test(location.hostname));
             const root = rule && document.querySelector(rule.root);
+            // Absolutely placed scraps, like Wikipedia's timeline letters, stack into a tall column once
+            // Readability drops their styles. Found on the live page, removed from the copy.
+            const all = [...document.querySelectorAll('*')];
+            const media = 'img, picture, video, iframe, embed, object, canvas';
+            const scraps = new Set(all.flatMap((el, i) =>
+              getComputedStyle(el).position === 'absolute' && el.textContent.trim().length <= 4
+                && !el.matches(media) && !el.querySelector(media) ? [i] : []));
             let doc = document.cloneNode(true);
+            if (scraps.size) {
+              [...doc.querySelectorAll('*')].filter((_, i) => scraps.has(i)).forEach(el => el.remove());
+            }
             if (root) {
               doc = document.implementation.createHTMLDocument(document.title);
               const body = doc.createElement('article');
@@ -43,7 +53,14 @@ struct ReaderArticle: Identifiable {
             const h1 = document.querySelector('h1')?.textContent.trim();
             const title = h1 && document.title.startsWith(h1) ? h1 : article.title || '';
             // Scripts are off in the reader, so videos need the browser's own controls.
-            const content = article.content.replace(/<video /g, '<video controls ');
+            const box = document.createElement('template');
+            box.innerHTML = article.content.replace(/<video /g, '<video controls ');
+            // Inline icons may be dark or white on transparent; marked, they get a mid-grey backing on the dark page.
+            for (const img of box.content.querySelectorAll('img')) {
+              const size = name => +(img.getAttribute(name) || Infinity);
+              if (Math.min(size('width'), size('height')) <= 24) img.classList.add('fir-icon');
+            }
+            const content = box.innerHTML;
             // A rule's own author: Readability can take one from a post embedded in the article.
             const author = rule && document.querySelector(rule.author)?.textContent.trim();
             return { title, byline: author || article.byline, siteName: article.siteName, content, text: article.textContent, address: location.href };
@@ -125,6 +142,7 @@ struct ReaderView: View {
               figure { margin: 1.2em 0; } figcaption { font-size: 0.8em; color: \(dark ? "#9C9A90" : "#76736A"); }
               pre, code { font-size: 0.85em; white-space: pre-wrap; }
               blockquote { margin: 1em 0; padding-left: 1em; border-left: 3px solid \(linkCSS); }
+              img.fir-icon { border-radius: 2px; vertical-align: middle; \(dark ? "background: #9C9A90;" : "") }
               table { display: block; overflow-x: auto; }
               svg { display: none; }
             </style></head><body>

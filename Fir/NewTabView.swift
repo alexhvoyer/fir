@@ -5,8 +5,8 @@ import UIKit.UIGestureRecognizerSubclass
 /// Search field with the engine's suggestions, and matches from open tabs here, in Zen, on other
 /// devices and in history.
 struct NewTabView: View {
-    /// A new tab carries the workspace it was asked for in. Read live instead, Return lost Private: it hides
-    /// the keyboard, which closes the sheet and resets the deck before the page opens.
+    /// A new tab carries the workspace it was asked in. Read live, Return lost Private: hiding the keyboard
+    /// closes the sheet and resets the deck first.
     enum Mode: Equatable, Identifiable {
         case newTab(space: String?)
         case edit
@@ -99,7 +99,7 @@ struct NewTabView: View {
         // there closes rather than stopping half-way. Two from the start made the keyboard lift it to full.
         .presentationDetents(expanded ? [Self.tall] : [Self.low], selection: $detent)
         // A swipe down on a sheet with a keyboard only drops the keyboard; closing with it makes one motion.
-        .background(SheetKeyboard {
+        .background(SheetKeyboard(onRevive: reset) {
             guard !rising else { return }
             dismiss()
         })
@@ -110,6 +110,14 @@ struct NewTabView: View {
         }
         .task(id: query) { await loadSuggestions() }
         .sheet(isPresented: $showSignIn) { SignInView() }
+    }
+
+    /// A request while this sheet was closing brings it back; it starts as a new one would.
+    private func reset() {
+        query = mode == .edit ? browser.selected.url?.absoluteString ?? "" : ""
+        expanded = false
+        rising = false
+        detent = Self.low
     }
 
     /// The Zen workspace a new tab opens in: the deck's, when it is one.
@@ -448,7 +456,7 @@ private final class HeldFieldDelegate: NSObject, UITextFieldDelegate {
     override func forwardingTarget(for selector: Selector!) -> Any? { original }
 
     func textFieldShouldEndEditing(_ field: UITextField) -> Bool {
-        !holds() && original?.textFieldShouldEndEditing?(field) != false
+        return !holds() && original?.textFieldShouldEndEditing?(field) != false
     }
 }
 
@@ -486,28 +494,34 @@ private extension View {
     }
 }
 
-/// Makes the sheet's text field first responder as the sheet starts to appear, so UIKit raises the
-/// keyboard with the presentation; focus set from SwiftUI then was dropped mid-slide. Reports the
-/// keyboard going away, unless something was presented over the sheet or the app is leaving. While a
-/// finger is on the sheet the keyboard is held, as iOS drops it on any drag; it goes once a swipe closes.
+/// Raises the keyboard with the sheet: focus set from SwiftUI was dropped mid-slide. Holds it while a finger
+/// is on the sheet, as iOS drops it on any drag.
 private struct SheetKeyboard: UIViewControllerRepresentable {
+    let onRevive: () -> Void
     let onDrop: () -> Void
 
-    func makeUIViewController(context: Context) -> Controller { Controller(onDrop: onDrop) }
-    func updateUIViewController(_ controller: Controller, context: Context) { controller.onDrop = onDrop }
+    func makeUIViewController(context: Context) -> Controller { Controller(onRevive: onRevive, onDrop: onDrop) }
+    func updateUIViewController(_ controller: Controller, context: Context) {
+        controller.onRevive = onRevive
+        controller.onDrop = onDrop
+    }
 
     final class Controller: UIViewController, UIGestureRecognizerDelegate {
+        var onRevive: () -> Void
         var onDrop: () -> Void
-        private var focused = false
-        private var observer: NSObjectProtocol?
+        private var observers: [NSObjectProtocol] = []
+        /// The keyboard rose in this appearance; one hiding before that belongs to the last.
+        private var raised = false
         private var isDragged = false
         /// The keyboard left because of a drag whose outcome isn't known yet.
         private var droppedByDrag = false
         private var isDismissing = false
         private var isLeaving = false
         private var fieldDelegate: HeldFieldDelegate?
+        private weak var field: UITextField?
 
-        init(onDrop: @escaping () -> Void) {
+        init(onRevive: @escaping () -> Void, onDrop: @escaping () -> Void) {
+            self.onRevive = onRevive
             self.onDrop = onDrop
             super.init(nibName: nil, bundle: nil)
         }
@@ -523,36 +537,44 @@ private struct SheetKeyboard: UIViewControllerRepresentable {
 
         override func viewIsAppearing(_ animated: Bool) {
             super.viewIsAppearing(animated)
+            // Asked for again while closing, SwiftUI brings this same sheet back: each appearance starts afresh.
+            if isLeaving { onRevive() }
+            raised = false
+            isLeaving = false
+            isDismissing = false
+            isDragged = false
+            droppedByDrag = false
             // Under the app lock the keyboard would sit above it and type into the hidden field.
-            guard !focused, !LockWindow.isShown else { return }
-            focused = true
+            guard !LockWindow.isShown else { return }
             // One run-loop pass after the sheet starts: in the same pass, sheet and keyboard layout held
             // the main thread for 110 ms; split, each costs about half. The keyboard still rises with the sheet.
             let field = Self.field(in: sheet.view)
+            self.field = field
             DispatchQueue.main.async { field?.becomeFirstResponder() }
-            fieldDelegate = field.map { field in
-                let held = HeldFieldDelegate(original: field.delegate) { [weak self] in
-                    self?.isDragged == true && self?.isLeaving == false
-                }
-                field.delegate = held
-                return held
-            }
+            holdField()
+            guard observers.isEmpty else { return }
             let touch = SheetTouch(target: self, action: #selector(touched))
             touch.cancelsTouchesInView = false
             touch.delaysTouchesEnded = false
             touch.delegate = self
             sheet.view.addGestureRecognizer(touch)
-            observer = NotificationCenter.default.addObserver(
+            observers.append(NotificationCenter.default.addObserver(
+                forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated { self?.raised = true }
+            })
+            // A drop nobody dragged for is reported, unless something covers the sheet or the app is leaving.
+            observers.append(NotificationCenter.default.addObserver(
                 forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main
             ) { [weak self] _ in
                 MainActor.assumeIsolated {
                     guard let self, self.sheet.presentedViewController == nil,
                           UIApplication.shared.applicationState == .active else { return }
                     // Going with a closing sheet: the finger may still count as down, so it isn't a stray drop.
-                    guard !self.isLeaving else { return }
+                    guard !self.isLeaving, self.raised else { return }
                     if self.isDragged { self.droppedByDrag = true } else { self.onDrop() }
                 }
-            }
+            })
         }
 
         override func viewWillDisappear(_ animated: Bool) {
@@ -577,7 +599,19 @@ private struct SheetKeyboard: UIViewControllerRepresentable {
             }
         }
 
+        /// Wraps SwiftUI's field delegate to refuse ending editing during a drag. Checked on every touch,
+        /// so a delegate SwiftUI sets again is wrapped again rather than silently losing the hold.
+        private func holdField() {
+            guard let field, field.delegate !== fieldDelegate else { return }
+            let held = HeldFieldDelegate(original: field.delegate) { [weak self] in
+                self?.isDragged == true && self?.isLeaving == false
+            }
+            field.delegate = held
+            fieldDelegate = held
+        }
+
         @objc private func touched(_ touch: SheetTouch) {
+            if touch.state == .began { holdField() }
             isDragged = touch.state == .began || touch.state == .changed
             // A drag UIKit never turned into a dismissal; one that it did reports through its transition.
             if !isDragged, !isDismissing { raiseKeyboard() }
@@ -593,7 +627,7 @@ private struct SheetKeyboard: UIViewControllerRepresentable {
                                shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
 
         deinit {
-            if let observer { NotificationCenter.default.removeObserver(observer) }
+            for observer in observers { NotificationCenter.default.removeObserver(observer) }
         }
 
         private static func field(in view: UIView) -> UITextField? {

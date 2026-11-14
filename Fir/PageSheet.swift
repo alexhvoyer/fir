@@ -34,6 +34,8 @@ struct PageSheet: View {
         ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.height ?? 800) * 0.9
     }
     @AppStorage("translateTarget") private var targetID = ""
+    @State private var pageLanguage: Locale.Language?
+    @State private var languageChecked = false
 
     private var settings: SiteSettings { .shared }
     private var site: SiteSettings.Entry { settings.entry(for: tab.pageURL, isPrivate: tab.isPrivate) }
@@ -97,6 +99,10 @@ struct PageSheet: View {
             // The list never scrolls, so the edge effect only drew a dark band behind the capsule.
             .scrollEdgeEffectHidden(true, for: .top)
             .contentMargins(.top, 8, for: .scrollContent)
+            .task {
+                pageLanguage = await PageTranslator.pageLanguage(tab.webView)
+                languageChecked = true
+            }
             .toolbar(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItemGroup(placement: .bottomBar) {
@@ -238,19 +244,33 @@ struct PageSheet: View {
                 .foregroundStyle(.primary)
         } else {
             let target = targetID.isEmpty ? PageTranslator.readerLanguage : Locale.Language(identifier: targetID)
-            HStack {
-                Button("Translate to \(name(target))", systemImage: "translate") { finish(.translate(target)) }
-                    .foregroundStyle(.primary)
-                Spacer()
-                Menu {
-                    Picker("Translate To", selection: $targetID) {
-                        Text("iPhone Language").tag("")
-                        ForEach(languages, id: \.minimalIdentifier) { Text(name($0)).tag($0.minimalIdentifier) }
-                    }
-                } label: {
-                    Image(systemName: "chevron.up.chevron.down")
+            if let pageLanguage, Self.same(pageLanguage, target) {
+                // The page already reads in that language: only another one is on offer.
+                Menu { targetPicker } label: { Label("Translate", systemImage: "translate") }
+                    .tint(.primary)
+            } else {
+                HStack {
+                    Button("Translate to \(name(target))", systemImage: "translate") { finish(.translate(target)) }
+                        .foregroundStyle(.primary)
+                        // Until the page's language is known, a tap could translate it into its own.
+                        .disabled(!languageChecked)
+                    Spacer()
+                    Menu { targetPicker } label: { Image(systemName: "chevron.up.chevron.down") }
                 }
             }
+        }
+    }
+
+    /// Same language and script: Simplified and Traditional Chinese share a code but still translate.
+    private static func same(_ a: Locale.Language, _ b: Locale.Language) -> Bool {
+        let (a, b) = (Locale.Language(identifier: a.maximalIdentifier), Locale.Language(identifier: b.maximalIdentifier))
+        return a.languageCode == b.languageCode && a.script == b.script
+    }
+
+    private var targetPicker: some View {
+        Picker("Translate To", selection: $targetID) {
+            Text("iPhone Language").tag("")
+            ForEach(languages, id: \.minimalIdentifier) { Text(name($0)).tag($0.minimalIdentifier) }
         }
     }
 

@@ -21,9 +21,9 @@ struct OnboardingBackground: View {
         ZStack {
             Color(.systemBackground)
             ForEach(Self.tints.indices, id: \.self) { index in
-                // Only the page in front and its neighbours exist, so at most three meshes draw.
+                // Only the page in front and its neighbours exist, and only the one in front moves.
                 if abs(index - page) <= 1 {
-                    mesh(Self.tints[index]).opacity(index == page ? 1 : 0)
+                    mesh(Self.tints[index], moving: index == page).opacity(index == page ? 1 : 0)
                 }
             }
         }
@@ -31,8 +31,8 @@ struct OnboardingBackground: View {
         .ignoresSafeArea()
     }
 
-    private func mesh(_ tint: (Color, Color)) -> some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { context in
+    private func mesh(_ tint: (Color, Color), moving: Bool) -> some View {
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion || !moving)) { context in
             let s = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate
             MeshGradient(width: 3, height: 3, points: [
                 [0, 0], [Float(0.5 + 0.15 * sin(s * 0.35)), 0], [1, 0],
@@ -81,12 +81,13 @@ struct GrowingSprig: View {
     @State private var progress: Double = 0
     @State private var ripple: Double = 0
     @State private var taps = 0
+    @State private var rippleStart = Date.distantPast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         SprigDrawing(progress: progress, ripple: ripple)
             .keyframeAnimator(initialValue: Sway(), trigger: taps) { content, sway in
-                content.rotationEffect(.degrees(sway.angle)).scaleEffect(sway.scale)
+                content.rotationEffect(.degrees(reduceMotion ? 0 : sway.angle)).scaleEffect(reduceMotion ? 1 : sway.scale)
             } keyframes: { _ in
                 KeyframeTrack(\.angle) {
                     SpringKeyframe(-7, duration: 0.15)
@@ -101,8 +102,11 @@ struct GrowingSprig: View {
             .contentShape(.rect)
             .onTapGesture {
                 taps += 1
-                // Each tap runs the ripple over one whole number; the drawing uses the fraction.
-                if !reduceMotion { withAnimation(.easeOut(duration: 0.6)) { ripple = ripple.rounded(.up) + 1 } }
+                // A ripple runs over one whole number; the drawing uses the fraction. A tap mid-ripple
+                // only sways, or the fraction would wrap and the wave jump back.
+                guard !reduceMotion, Date.now.timeIntervalSince(rippleStart) >= 0.6 else { return }
+                rippleStart = .now
+                withAnimation(.easeOut(duration: 0.6)) { ripple += 1 }
             }
             .sensoryFeedback(.impact(weight: .light), trigger: taps)
             .accessibilityHidden(true)
@@ -270,7 +274,12 @@ struct GestureDemo: View {
         .highPriorityGesture(swipe)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("A demo of the tab gestures")
-        .task(id: touched) { if !touched && !reduceMotion { await autoplay() } }
+        .task(id: touched) {
+            guard !touched, !reduceMotion else { return }
+            await autoplay()
+            // Cancelled mid-slide when the page is swiped away; the dot mustn't wait there for the return.
+            finger = nil
+        }
     }
 
     private func card(_ page: Int) -> some View {

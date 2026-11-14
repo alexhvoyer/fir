@@ -67,6 +67,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser
+        # The simulator can't reopen "complete unless open" files: tabs and history were lost on every launch.
+        CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]: ""
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # Chosen in Settings > Appearance.
         ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIcon-Night AppIcon-Spruce"

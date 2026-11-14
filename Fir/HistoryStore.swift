@@ -4,15 +4,9 @@ import MozillaAppServices
 /// Browsing history in Mozilla's Places database; the Sync "history" engine shares it with Zen.
 /// Calls block on SQLite, so callers stay off the main actor.
 final class HistoryStore: @unchecked Sendable {
-    /// Opened on first use. The database can't be opened while the phone is locked, so a failed open is retried later.
-    static var shared: HistoryStore? {
-        lock.withLock {
-            if opened == nil { opened = try? HistoryStore() }
-            return opened
-        }
-    }
-    private static let lock = NSLock()
-    private static var opened: HistoryStore?
+    /// The database can't be read while the phone is locked, so the open waits for it.
+    static var shared: HistoryStore? { opener.value }
+    private static let opener = StoreOpener { try HistoryStore() }
 
     private let api: PlacesAPI
 

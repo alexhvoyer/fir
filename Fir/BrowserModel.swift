@@ -433,22 +433,47 @@ extension BrowserTab: WKUIDelegate {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: {
             LinkPreviewController(url: url, dataStore: store)
         }) { suggested in
-            let newTab = UIAction(title: "Open in New Tab", image: UIImage(systemName: "plus.square.on.square")) { _ in
-                model.openInBackground(url, in: spaceID)
-            }
-            let privateTab = UIAction(title: "Open in Private Tab", image: UIImage(systemName: "eyes")) { _ in
-                model.openInBackground(url, in: BrowserModel.privateSpace)
-            }
-            return UIMenu(children: [UIMenu(options: .displayInline, children: [newTab, privateTab])] + suggested)
+            UIMenu(children: [UIMenu(options: .displayInline, children: BrowserTab.openers(url, in: spaceID, model: model))] + suggested)
         }
     }
 
-    /// Tapping the preview opens the page it reached, redirects already followed.
+    /// A link's two openers, on the page and inside a glance alike.
+    static func openers(_ url: URL, in spaceID: String?, model: BrowserModel) -> [UIMenuElement] {
+        [UIAction(title: "Open in New Tab", image: UIImage(systemName: "plus.square.on.square")) { _ in
+            model.openInBackground(url, in: spaceID)
+        },
+         UIAction(title: "Open in Private Tab", image: UIImage(systemName: "eyes")) { _ in
+            model.openInBackground(url, in: BrowserModel.privateSpace)
+        }]
+    }
+
+    /// Tapping the preview glances at it: the same page, live in a sheet. A context menu preview takes no touches.
     func webView(_ webView: WKWebView, contextMenuForElement elementInfo: WKContextMenuElementInfo,
                  willCommitWithAnimator animator: any UIContextMenuInteractionCommitAnimating) {
-        guard let url = (animator.previewViewController as? LinkPreviewController)?.currentURL
-                ?? elementInfo.linkURL else { return }
-        animator.addCompletion { [weak self] in self?.load(url) }
+        guard let preview = animator.previewViewController as? LinkPreviewController else {
+            guard let url = elementInfo.linkURL else { return }
+            animator.addCompletion { [weak self] in self?.load(url) }
+            return
+        }
+        animator.preferredCommitStyle = .dismiss
+        animator.addCompletion { [weak self] in self?.glance(preview) }
+    }
+
+    /// Shows a preview live in a sheet, over any glance already up: a link previewed inside a glance glances in turn.
+    func glance(_ preview: LinkPreviewController) {
+        guard let model else { return }
+        let spaceID = spaceID
+        preview.makeInteractive(
+            handOff: { [weak self] url in
+                model.glances = []
+                self?.load(url)
+            },
+            openers: { BrowserTab.openers($0, in: spaceID, model: model) },
+            glance: { [weak self] in self?.glance($0) })
+        // A covered glance goes quiet, and the deepest gives way: each one holds a live page.
+        model.glances.last?.preview.pauseMedia()
+        if model.glances.count >= 5 { model.glances.removeLast() }
+        model.glances.append(BrowserModel.Glance(preview: preview, tab: self))
     }
 
     func webViewDidClose(_ webView: WKWebView) {
@@ -743,6 +768,13 @@ final class BrowserModel {
     var searchRequested: SearchRequest?
     /// Set as the search sheet leaves; its question's sheet can only rise once that one has gone.
     var intelligenceRequest: IntelligenceSearchRequest?
+    /// Pages opened from link previews, live in sheets over the tab they came from, each over the last.
+    var glances: [Glance] = []
+    struct Glance: Identifiable {
+        let id = UUID()
+        let preview: LinkPreviewController
+        let tab: BrowserTab
+    }
     enum SearchRequest { case tab, privateTab }
     /// Counts links opened from other apps; the root view closes search on each so the page shows.
     private(set) var linksOpened = 0
@@ -775,10 +807,7 @@ final class BrowserModel {
         searchRequested = UserDefaults.standard.bool(forKey: SettingsKey.keyboardAtLaunch) ? .tab : nil
         // didSet doesn't run in an initializer.
         for tab in tabs { tab.model = self }
-        // Pinned before pins outlived their tabs.
-        for tab in tabs where tab.isPinned && tab.spaceID == nil && tab.localPinID == nil {
-            if let url = tab.url { tab.localPinID = localPin(for: url, title: tab.title) }
-        }
+        adoptLegacyPins()
         // Tabs left unviewed while Fir was closed go at launch, not only on the next return to it.
         sweepIdleTabs()
     }
@@ -789,13 +818,22 @@ final class BrowserModel {
     @ObservationIgnored private var archivePending = false
 
     func restoreIfPending() {
-        if archivePending, let saved = try? ArchiveStore.load() {
-            archivePending = false
-            archived = saved + archived
+        // Unreadable while unlocked means damaged, not locked: waiting on it would stop saving for good.
+        let unlocked = UIApplication.shared.isProtectedDataAvailable
+        if archivePending {
+            if let saved = try? ArchiveStore.load() {
+                archivePending = false
+                archived = saved + archived
+            } else if unlocked {
+                archivePending = false
+            }
         }
         guard restorePending else { return }
         let loaded: SessionStore.Session?
-        do { loaded = try SessionStore.load() } catch { return }
+        do { loaded = try SessionStore.load() } catch {
+            if unlocked { restorePending = false }
+            return
+        }
         restorePending = false
         guard let session = loaded else { return }
         localFolders = session.localFolders ?? []
@@ -803,10 +841,20 @@ final class BrowserModel {
         let restored = session.tabs.map(BrowserTab.init(restoring:))
         guard !restored.isEmpty else { return }
         // A link opened from another app before the unlock stays; the blank launch tab goes.
+        let blanks = tabs.filter { $0.url == nil }
         let opened = tabs.filter { $0.url != nil }
         tabs = restored + opened
         selectedID = opened.last?.id ?? (tabs.contains { $0.id == session.selectedID } ? session.selectedID : tabs.last?.id)
         space = selected.spaceID
+        for tab in blanks { discard(tab) }
+        adoptLegacyPins()
+    }
+
+    /// Pinned before pins outlived their tabs.
+    private func adoptLegacyPins() {
+        for tab in tabs where tab.isPinned && tab.spaceID == nil && tab.localPinID == nil {
+            if let url = tab.url { tab.localPinID = localPin(for: url, title: tab.title) }
+        }
     }
 
     /// Writes off the main thread: on it, the file write cost a frame of the deck transition.
@@ -1094,8 +1142,9 @@ final class BrowserModel {
     func open(_ url: URL?, in spaceID: String?) {
         // A blank tab in front gives way to the page, as a pin's does; Close All left one beside it.
         let current = selected
-        let blank = url != nil && current.url == nil && !current.isPinned && current.localPinID == nil
-            && current.spaceID == spaceID ? current : nil
+        // Not a page's popup: it has no URL until its opener writes to it.
+        let blank = url != nil && current.url == nil && current.openerID == nil && !current.isPinned
+            && current.localPinID == nil && current.spaceID == spaceID ? current : nil
         let tab = BrowserTab(url: url, spaceID: spaceID, dataStore: dataStore(for: spaceID))
         tabs.append(tab)
         select(tab)
@@ -1522,14 +1571,55 @@ final class SwipeAnywhere: NSObject, UIGestureRecognizerDelegate {
                            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
 }
 /// A link's page in a context menu preview, under a strip naming the host it has reached so far.
-final class LinkPreviewController: UIViewController, WKNavigationDelegate {
+final class LinkPreviewController: UIViewController, WKNavigationDelegate, WKUIDelegate {
     private let url: URL
     private let dataStore: WKWebsiteDataStore
     private var webView: WKWebView?
     private let address = UILabel()
     private var observation: NSKeyValueObservation?
+    /// Touched in a glance, the page may start loads that never commit; the address then waits for each commit.
+    private var isInteractive = false
+    private var committedURL: URL?
 
-    var currentURL: URL? { webView?.url ?? url }
+    /// The page last committed, redirects followed: what Open loads.
+    var pageURL: URL { committedURL ?? url }
+
+    /// Links a tab must handle (plain http, other apps, downloads) go to it, which asks as it always does.
+    private var handOff: ((URL) -> Void)?
+    private var openers: ((URL) -> [UIMenuElement])?
+    private var onGlance: ((LinkPreviewController) -> Void)?
+
+    func makeInteractive(handOff: @escaping (URL) -> Void, openers: @escaping (URL) -> [UIMenuElement],
+                         glance: @escaping (LinkPreviewController) -> Void) {
+        isInteractive = true
+        self.handOff = handOff
+        self.openers = openers
+        onGlance = glance
+        webView?.isUserInteractionEnabled = true
+    }
+
+    func pauseMedia() { webView?.pauseAllMediaPlayback(completionHandler: nil) }
+
+    /// The tab's own link menu: WebKit's default opened a committed preview in Safari.
+    func webView(_ webView: WKWebView, contextMenuConfigurationFor elementInfo: WKContextMenuElementInfo)
+        async -> UIContextMenuConfiguration? {
+        guard isInteractive, let url = elementInfo.linkURL else { return nil }
+        let store = dataStore
+        let openers = openers?(url) ?? []
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: {
+            LinkPreviewController(url: url, dataStore: store)
+        }) { _ in
+            let copy = UIAction(title: "Copy Link", image: UIImage(systemName: "link")) { _ in UIPasteboard.general.url = url }
+            return UIMenu(children: [UIMenu(options: .displayInline, children: openers), copy])
+        }
+    }
+
+    func webView(_ webView: WKWebView, contextMenuForElement elementInfo: WKContextMenuElementInfo,
+                 willCommitWithAnimator animator: any UIContextMenuInteractionCommitAnimating) {
+        guard let nested = animator.previewViewController as? LinkPreviewController else { return }
+        animator.preferredCommitStyle = .dismiss
+        animator.addCompletion { [weak self] in self?.onGlance?(nested) }
+    }
 
     init(url: URL, dataStore: WKWebsiteDataStore) {
         self.url = url
@@ -1549,6 +1639,7 @@ final class LinkPreviewController: UIViewController, WKNavigationDelegate {
         webView.isUserInteractionEnabled = false
         ContentBlocker.shared.attach(webView)
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         self.webView = webView
 
         address.font = .preferredFont(forTextStyle: .footnote)
@@ -1578,14 +1669,38 @@ final class LinkPreviewController: UIViewController, WKNavigationDelegate {
         ])
         // Each redirect shows as it happens, so a tracking link's real destination is plain to see.
         observation = webView.observe(\.url, options: .new) { [weak self] webView, _ in
-            MainActor.assumeIsolated { self?.address.attributedText = Self.label(webView.url) }
+            MainActor.assumeIsolated {
+                guard let self, !self.isInteractive else { return }
+                self.address.attributedText = Self.label(webView.url)
+            }
         }
         webView.load(URLRequest(url: HTTPSOnly.upgrade(url) ?? url))
     }
 
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        committedURL = webView.url
+        if isInteractive { address.attributedText = Self.label(webView.url) }
+    }
+
+    /// A link for a new window opens in place: a glance has no tabs of its own.
+    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                 for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        if action.targetFrame == nil, action.sourceFrame.isMainFrame { webView.load(action.request) }
+        return nil
+    }
+
     /// A redirect to plain http stops here: a preview has nowhere to ask, as HTTPS-Only does in a tab.
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction) async -> WKNavigationActionPolicy {
-        guard action.targetFrame?.isMainFrame == true, let url = action.request.url, HTTPSOnly.upgrade(url) != nil else { return .allow }
+        guard action.targetFrame?.isMainFrame == true, let url = action.request.url else { return .allow }
+        let web = ["https", "http", "about", "data", "blob"].contains(url.scheme?.lowercased() ?? "")
+        guard HTTPSOnly.upgrade(url) != nil || !web else { return .allow }
+        if isInteractive { handOff?(url) }
+        return .cancel
+    }
+
+    func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        guard isInteractive, response.isForMainFrame, !response.canShowMIMEType, let url = response.response.url else { return .allow }
+        handOff?(url)
         return .cancel
     }
 

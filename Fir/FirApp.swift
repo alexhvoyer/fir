@@ -102,6 +102,10 @@ struct FirApp: App {
                     activity.webpageURL = url
                 }
                 // The search widget opens firbrowser://search; web links come from other apps.
+                // Data protection can lift after the app is already active: a locked launch restores then.
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)) { _ in
+                    browser.restoreIfPending()
+                }
                 .onOpenURL { url in
                     switch url.scheme?.lowercased() {
                     case "firbrowser" where url.host() == "search": browser.searchRequested = .tab

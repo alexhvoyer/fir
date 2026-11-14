@@ -374,11 +374,11 @@ struct TabSwitcherView: View {
                 }
                 let dy = value.translation.height
                 let predicted = value.predictedEndTranslation.height
-                // Predicted includes the drag so far: opposite signs mean a flick back the other way.
-                let sameWay = dy * predicted > 0
-                if deckLayout.stacks[focusedSlot] == nil, sameWay, dy < -120 || predicted < -400 {
+                // A long drag flicked back the other way is called off; a jitter before a flick isn't.
+                let up = dy < -120, down = dy > 90
+                if deckLayout.stacks[focusedSlot] == nil, (up && predicted < 0) || (!down && predicted < -400) {
                     closeFocused(height: height)
-                } else if sameWay, dy > 90 || predicted > 360 {
+                } else if (down && predicted > 0) || (!up && predicted > 360) {
                     openFocused()
                 } else {
                     withAnimation(.snappy) { liftOffset = 0 }

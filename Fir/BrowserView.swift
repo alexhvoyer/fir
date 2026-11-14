@@ -1017,6 +1017,8 @@ private struct PageView: View {
     /// The host label's centre in the full bar, relative to the capsule's centre.
     /// Per tab: its neighbour's capsule lands with the buttons of its own page, not the current tab's.
     @State private var hostOffsets: [BrowserTab.ID: CGFloat] = [:]
+    /// The room between the bar's icons; a fixed allowance for all of them cut short addresses.
+    @State private var hostSlots: [BrowserTab.ID: CGFloat] = [:]
     /// Each tab's host label width at full size, for its compact capsule during a swipe.
     @State private var labelWidths: [BrowserTab.ID: CGFloat] = [:]
     /// The tab whose scroll offset was seen last.
@@ -1195,6 +1197,7 @@ private struct PageView: View {
             showPageSheet = false
             intelligenceSearch = nil
             search = nil
+            if browser.glances.first?.tab.isPrivate == true { browser.glances = [] }
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
         .sheet(isPresented: $showDownloads) { NavigationStack { DownloadsView() } }
@@ -1208,6 +1211,7 @@ private struct PageView: View {
                 .background(SheetLeaving(action: onSearchLeave))
                 .modifier(ZoomFromSource(id: mode == .edit ? "address" : nil, namespace: sheetSource))
         }
+        .sheet(item: browser.glance(at: 0)) { GlanceView(glance: $0, depth: 0) }
         .sheet(item: $intelligenceSearch) { request in
             IntelligenceSearchView(request: request) { url in
                 intelligenceSearch = nil
@@ -1386,6 +1390,7 @@ private struct PageView: View {
             .onChange(of: browser.tabs.count) {
                 let open = Set(browser.tabs.map(\.id))
                 hostOffsets = hostOffsets.filter { open.contains($0.key) }
+                hostSlots = hostSlots.filter { open.contains($0.key) }
                 labelWidths = labelWidths.filter { open.contains($0.key) }
             }
     }
@@ -1665,7 +1670,7 @@ private struct PageView: View {
                     labelWidths[tab.id] = width
                     if live { pillWidth = width * Self.pillScale + 36 }
                 }
-                .frame(maxWidth: max(0, frame.full - 168))
+                .frame(maxWidth: max(0, hostSlots[tab.id] ?? frame.full - 168))
                 .scaleEffect(1 - (1 - Self.pillScale) * p)
                 .offset(x: (hostOffsets[tab.id] ?? 0) * (1 - compacting))
                 .opacity(presence)
@@ -1712,6 +1717,7 @@ private struct PageView: View {
             } else {
                 if tab.isPrivate { PrivateMark() }
                 Text(tab.url?.host() ?? "Search or enter address")
+                    .minimumScaleFactor(0.8)
                     .foregroundStyle(tab.url == nil ? .secondary : .primary)
                     .transition(.blurReplace)
                 // A hidden twin on the right keeps the address centred, as in a regular tab.
@@ -1736,8 +1742,9 @@ private struct PageView: View {
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .contentShape(.rect)
                 .onTapGesture { if !justLongPressed { search = .edit } }
-                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(Self.addressSpace)).midX } action: {
-                    hostOffsets[tab.id] = $0 - width / 2
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.addressSpace)) } action: {
+                    hostOffsets[tab.id] = $0.midX - width / 2
+                    hostSlots[tab.id] = $0.width
                 }
             // Smart buttons, as in Lens: shown only while the page needs them.
             // On a swipe neighbour too: they move the address, which landed in the wrong place without them.
@@ -1745,8 +1752,11 @@ private struct PageView: View {
             // Keyed on the address, not the loaded page: a tab still loading (restored, or just swiped
             // to) gets them at once, instead of later shifting the address when the page commits.
             if let url = tab.url {
-                ShareLink(item: url) { Image(systemName: "square.and.arrow.up").frame(width: 40, height: 48) }
-                    .foregroundStyle(.primary)
+                // Gives way to back and forward, which cut even "duckduckgo.com" short; the page menu shares too.
+                if !tab.canGoBack, !tab.canGoForward {
+                    ShareLink(item: url) { Image(systemName: "square.and.arrow.up").frame(width: 40, height: 48) }
+                        .foregroundStyle(.primary)
+                }
                 if tab.isLoading {
                     iconButton("xmark") { tab.webView.stopLoading() }
                 } else {

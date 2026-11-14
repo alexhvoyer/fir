@@ -29,6 +29,8 @@ xcodebuild test -project Fir.xcodeproj -scheme FirTests -destination "id=<simula
 - Build UI, transitions and effects from system components: sheets, zoom transitions, Form, List, Menu, glass.
   Draw something custom only when nothing native exists, and say so.
 - Never commit, push, upload to TestFlight or install on a phone unless asked. Several ideas often share one build.
+- Every non-trivial change gets `/code-review` before it is reported done; each finding is fixed or answered.
+  Trivial means copy, a constant or a one-line fix.
 - After a verification build, leave the final build on the simulator, not a control build.
 - Code, comments and docs are in English. A comment block is at most 30 words and explains why.
 - Temporary test code must contain `dbg` or `DBG`, so the commit hook can catch what was left behind.
@@ -57,6 +59,9 @@ Do not undo these. `fir-security-reviewer` checks a change against them.
 - `open(_:in: nil)` means this iPhone's tabs; `open(_:)` means the workspace on screen.
 - A new-tab search opens in the workspace its request carried (`NewTabView.Mode.newTab(space:)`), never the live
   `browser.space`: Return hides the keyboard, which closes the sheet and resets the deck before the page opens.
+- A link preview takes no touches, so tapping it opens a glance: the same `LinkPreviewController` in a sheet. Links a
+  tab must handle (plain http, other apps, downloads) are handed to the tab; a private lock closes it. Glances stack
+  (at most five) and use Fir's link menu: WebKit's default one sent a committed preview to Safari.
 - Deck transitions carry `transitionID`; a completion from an older transition stands aside.
 - During a released swipe `swipeX` already holds its target. Anything derived from it sees the end value unless it
   animates: do not branch view structure on it.

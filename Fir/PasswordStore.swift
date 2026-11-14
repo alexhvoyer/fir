@@ -6,15 +6,9 @@ import Security
 /// The database is encrypted with a key kept in this iPhone's Keychain. Calls block on SQLite and
 /// crypto, so callers stay off the main actor.
 final class PasswordStore: @unchecked Sendable {
-    /// Opened on first use. The key can't be read while the phone is locked, so a failed open is retried later.
-    static var shared: PasswordStore? {
-        lock.withLock {
-            if opened == nil { opened = try? PasswordStore() }
-            return opened
-        }
-    }
-    private static let lock = NSLock()
-    private static var opened: PasswordStore?
+    /// The key can't be read while the phone is locked, so the open waits for it.
+    static var shared: PasswordStore? { opener.value }
+    private static let opener = StoreOpener { try PasswordStore() }
 
     /// The Sync engine's name, as Firefox Sync knows it.
     static let engine = "passwords"
