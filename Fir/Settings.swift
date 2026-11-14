@@ -112,6 +112,44 @@ enum NewTabStyle: String, CaseIterable, Identifiable {
     }
 }
 
+/// A button the address bar can show right of the address, in the order the user put them.
+enum BarAction: String, CaseIterable, Identifiable {
+    case share, reload, find, translate
+
+    var id: Self { self }
+
+    static let defaults: [BarAction] = [.share, .reload]
+    /// More squeezed the address down to a few letters.
+    static let limit = 3
+
+    var name: String {
+        switch self {
+        case .share: "Share"
+        case .reload: "Reload"
+        case .find: "Find on Page"
+        case .translate: "Translate"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .share: "square.and.arrow.up"
+        case .reload: "arrow.clockwise"
+        case .find: "text.magnifyingglass"
+        case .translate: "translate"
+        }
+    }
+
+    /// Stored as comma-separated names; ones this version doesn't know are dropped.
+    static func decode(_ stored: String) -> [BarAction] {
+        stored.split(separator: ",").compactMap { BarAction(rawValue: String($0)) }
+    }
+
+    static func encode(_ actions: [BarAction]) -> String {
+        actions.map(\.rawValue).joined(separator: ",")
+    }
+}
+
 enum SettingsKey {
     static let searchEngine = "searchEngine"
     static let appearance = "appearance"
@@ -129,6 +167,8 @@ enum SettingsKey {
     static let keyboardAtLaunch = "keyboardAtLaunch"
     static let swipeAnywhere = "swipeAnywhere"
     static let newTabStyle = "newTabStyle"
+    static let barActions = "barActions"
+    static let translateTarget = "translateTarget"
     static let intelligenceSearch = "intelligenceSearch"
     static let archiveTabsAfter = "archiveTabsAfter"
     static let clearTabsAfter = "clearTabsAfter"

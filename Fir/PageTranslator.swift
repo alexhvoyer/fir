@@ -61,6 +61,11 @@ enum PageTranslator {
         Locale.Language(identifier: Locale.preferredLanguages.first ?? "en")
     }
 
+    /// The language picked in the page menu, stored as an identifier; empty means the iPhone's.
+    static func target(_ stored: String) -> Locale.Language {
+        stored.isEmpty ? readerLanguage : Locale.Language(identifier: stored)
+    }
+
     /// The page's main language, guessed from its text; nil when there is too little to tell.
     @MainActor
     static func pageLanguage(_ webView: WKWebView) async -> Locale.Language? {

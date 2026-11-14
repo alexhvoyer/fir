@@ -119,6 +119,7 @@ private struct GeneralSettingsView: View {
             }
             Section {
                 Toggle("Collapse Toolbar on Scroll", isOn: $collapseOnScroll)
+                NavigationLink("Address Bar Buttons") { BarActionsView() }
                 Toggle("Haptics", isOn: $haptics)
             }
             Section {
@@ -314,4 +315,63 @@ extension Bundle {
     var shortVersion: String {
         object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "-"
     }
+}
+
+/// The address bar's buttons, in edit mode as iOS lists are customised: drag to reorder, minus to remove,
+/// plus to add.
+private struct BarActionsView: View {
+    @AppStorage(SettingsKey.barActions) private var stored = BarAction.encode(BarAction.defaults)
+
+    var body: some View {
+        let shown = BarAction.decode(stored)
+        let more = BarAction.allCases.filter { !shown.contains($0) }
+        let full = shown.count >= BarAction.limit
+        List {
+            Section {
+                ForEach(shown) { Label($0.name, systemImage: $0.symbol) }
+                    .onMove { from, to in
+                        var actions = shown
+                        actions.move(fromOffsets: from, toOffset: to)
+                        stored = BarAction.encode(actions)
+                    }
+                    .onDelete { offsets in
+                        var actions = shown
+                        actions.remove(atOffsets: offsets)
+                        stored = BarAction.encode(actions)
+                    }
+            } header: {
+                Text("Shown")
+            } footer: {
+                Text("Up to three. While Back and Forward are shown, only the last one stays, to leave room for the address.")
+            }
+            if !more.isEmpty {
+                Section("More Buttons") {
+                    // Ids apart from the Shown rows': sharing them, an added row kept this cell, without
+                    // its delete and reorder controls.
+                    ForEach(more, id: \.addRowID) { action in
+                        HStack {
+                            // Borderless, so the plus alone adds, as iOS insert controls do.
+                            Button("Add \(action.name)", systemImage: "plus.circle.fill") {
+                                withAnimation { stored = BarAction.encode(shown + [action]) }
+                            }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.borderless)
+                            // Set colours don't grey out by themselves.
+                            .foregroundStyle(.white, full ? .gray : .green)
+                            .font(.title3)
+                            .disabled(full)
+                            Label(action.name, systemImage: action.symbol)
+                        }
+                    }
+                }
+            }
+        }
+        .environment(\.editMode, .constant(.active))
+        .navigationTitle("Address Bar Buttons")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private extension BarAction {
+    var addRowID: String { "add." + rawValue }
 }

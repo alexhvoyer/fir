@@ -33,7 +33,7 @@ struct PageSheet: View {
     private static var cap: CGFloat {
         ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.height ?? 800) * 0.9
     }
-    @AppStorage("translateTarget") private var targetID = ""
+    @AppStorage(SettingsKey.translateTarget) private var targetID = ""
     @State private var pageLanguage: Locale.Language?
     @State private var languageChecked = false
 
@@ -243,7 +243,7 @@ struct PageSheet: View {
             Button("Show Original", systemImage: "character.book.closed") { finish(.showOriginal) }
                 .foregroundStyle(.primary)
         } else {
-            let target = targetID.isEmpty ? PageTranslator.readerLanguage : Locale.Language(identifier: targetID)
+            let target = PageTranslator.target(targetID)
             if let pageLanguage, Self.same(pageLanguage, target) {
                 // The page already reads in that language: only another one is on offer.
                 Menu { targetPicker } label: { Label("Translate", systemImage: "translate") }

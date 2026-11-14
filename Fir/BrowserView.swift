@@ -1001,6 +1001,8 @@ private struct PageView: View {
 
     @Environment(BrowserModel.self) private var browser
     @AppStorage(SettingsKey.collapseOnScroll) private var collapseOnScroll = true
+    @AppStorage(SettingsKey.barActions) private var barActions = BarAction.encode(BarAction.defaults)
+    @AppStorage(SettingsKey.translateTarget) private var translateTarget = ""
     /// Settled state: the page's insets and the landscape strip follow it, not the live progress.
     @State private var collapsed = false
     /// 0 is the full bar, 1 the pill. Follows the scroll while it moves, then settles at either end.
@@ -1277,7 +1279,7 @@ private struct PageView: View {
         .alert("Already in Your Language", isPresented: $alreadyTranslated) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("This page is already in the language your iPhone uses.")
+            Text("This page is already in the language it would be translated into.")
         }
         .alert("Couldn't Translate the Page", isPresented: $translationFailed) {
             Button("OK", role: .cancel) {}
@@ -1317,8 +1319,7 @@ private struct PageView: View {
         case .translate(let target):
             Task { await startTranslation(of: tab, to: target) }
         case .showOriginal:
-            tab.isTranslated = false
-            Task { await PageTranslator.restore(tab.webView) }
+            showOriginal(tab)
         case .downloads:
             showDownloads = true
         case .settings:
@@ -1746,17 +1747,10 @@ private struct PageView: View {
             // Keyed on the address, not the loaded page: a tab still loading (restored, or just swiped
             // to) gets them at once, instead of later shifting the address when the page commits.
             if let url = tab.url {
-                // Gives way to back and forward, which cut even "duckduckgo.com" short; the page menu shares too.
-                if !tab.canGoBack, !tab.canGoForward {
-                    ShareLink(item: url) { Image(systemName: "square.and.arrow.up").frame(width: 40, height: 48) }
-                        .foregroundStyle(.primary)
-                }
-                if tab.isLoading {
-                    iconButton("xmark") { tab.webView.stopLoading() }
-                } else {
-                    iconButton("arrow.clockwise") {
-                        tab.reload()
-                    }
+                // Only the last gives way to back and forward, which cut even "duckduckgo.com" short.
+                let actions = BarAction.decode(barActions)
+                ForEach(tab.canGoBack || tab.canGoForward ? Array(actions.suffix(1)) : actions) { action in
+                    barButton(action, tab: tab, url: url)
                 }
             }
         }
@@ -1767,6 +1761,40 @@ private struct PageView: View {
     }
 
     private static let addressSpace = "PageView.address"
+
+    @ViewBuilder private func barButton(_ action: BarAction, tab: BrowserTab, url: URL) -> some View {
+        switch action {
+        case .share:
+            ShareLink(item: url) { Image(systemName: action.symbol).frame(width: 40, height: 48) }
+                .foregroundStyle(.primary)
+        case .reload:
+            if tab.isLoading {
+                iconButton("xmark") { tab.webView.stopLoading() }
+            } else {
+                iconButton(action.symbol) { tab.reload() }
+                    .accessibilityLabel(action.name)
+            }
+        case .find:
+            iconButton(action.symbol) { tab.webView.findInteraction?.presentFindNavigator(showingReplace: false) }
+                .accessibilityLabel(action.name)
+        case .translate:
+            if tab.isTranslated {
+                iconButton("character.book.closed") { showOriginal(tab) }
+                    .accessibilityLabel("Show Original")
+            } else {
+                // Into the page menu's chosen language; a page already in it gets the menu's alert.
+                iconButton(action.symbol) {
+                    Task { await startTranslation(of: tab, to: PageTranslator.target(translateTarget)) }
+                }
+                .accessibilityLabel(action.name)
+            }
+        }
+    }
+
+    private func showOriginal(_ tab: BrowserTab) {
+        tab.isTranslated = false
+        Task { await PageTranslator.restore(tab.webView) }
+    }
 
     @ViewBuilder private func smartButtons(_ tab: BrowserTab) -> some View {
         if let download = DownloadManager.shared.active.first, download.id != dismissedDownload {
