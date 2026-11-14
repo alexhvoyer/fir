@@ -100,8 +100,8 @@ struct TabSwitcherView: View {
         }
         // A card joining or leaving a folder's stack moves slots: the deck follows the card it was on.
         .onChange(of: deckLayout.slot) { old, new in
-            // Only when a card joined or left a stack. A reorder (the selected tab moving to the end as the
-            // page shrinks) keeps the count, and following the old slot's card then landed on the wrong one.
+            // Only when a card joined or left a stack. A reorder keeps the count, and following the old
+            // slot's card then landed on the wrong one.
             // Under the page, centerSelected has already placed the deck for the new layout.
             guard hiddenTab == nil, Set(old.values).count != Set(new.values).count else { return }
             let focused = Int(progress.rounded())

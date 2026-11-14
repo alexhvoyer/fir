@@ -34,8 +34,6 @@ struct BrowserView: View {
     @State private var veil: UIImage?
     /// Whether a transition is running; the live page is hidden then, even without a snapshot.
     @State private var transitioning = false
-    /// Where the lifted tab stood before moving to the end of the deck.
-    @State private var liftOrigin: Int?
     /// The tab a committed swipe is sliding in, until it is in front.
     @State private var landing: BrowserTab?
     @State private var screen: CGRect = .zero
@@ -398,15 +396,9 @@ struct BrowserView: View {
         if !lifting {
             lifting = true
             transitionID += 1
-            liftOrigin = nil
         }
         beginTransition()
         let up = max(0, -translation.height)
-        // Only once it really rises; undone if the lift is called off.
-        if up > 0, liftOrigin == nil {
-            liftOrigin = browser.position(of: browser.selected)
-            bringSelectedToEnd()
-        }
         // Matched to a Safari recording: about 40% of the screen height of travel reaches card size,
         // and the page rises at half finger speed so its top stays on screen while it shrinks.
         withAnimation(.interactiveSpring) {
@@ -426,20 +418,11 @@ struct BrowserView: View {
         } else {
             // Retargeting the in-flight interactive spring keeps the finger's velocity.
             let id = transitionID
-            let origin = liftOrigin
-            let tab = browser.selected
             withAnimation(settle) { progress = 0; follow = .zero } completion: {
                 guard id == transitionID else { return }
-                // Under the full-screen page again, so the deck's reshuffle isn't seen.
-                if let origin {
-                    var instant = Transaction()
-                    instant.disablesAnimations = true
-                    withTransaction(instant) { browser.move(tab, to: origin) }
-                }
                 endTransition()
             }
         }
-        liftOrigin = nil
     }
 
     private func openPage() {
@@ -518,14 +501,11 @@ struct BrowserView: View {
 
     private func closePage() {
         FrameMeter.mark("close page")
-        let reordered = bringSelectedToEnd()
         beginTransition()
         transitionID += 1
         let id = transitionID
         let a = anchor ?? CGPoint(x: screen.midX, y: screen.midY)
         Task {
-            // A reordered deck must lay out first, so the page shrinks onto the card's new frame.
-            if reordered { await Task.yield() }
             withAnimation(settle) {
                 anchor = a
                 progress = 1
@@ -536,16 +516,6 @@ struct BrowserView: View {
                 endTransition()
             }
         }
-    }
-
-    /// Done under the full-screen page, so the deck's reshuffle is never seen.
-    @discardableResult private func bringSelectedToEnd() -> Bool {
-        let siblings = browser.tabs(in: browser.selected.spaceID)
-        guard siblings.last?.id != browser.selectedID else { return false }
-        var instant = Transaction()
-        instant.disablesAnimations = true
-        withTransaction(instant) { browser.moveToEnd(browser.selected) }
-        return true
     }
 
     private static func fallbackCard(in screen: CGRect) -> CGRect {

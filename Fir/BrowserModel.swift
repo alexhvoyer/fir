@@ -1025,24 +1025,6 @@ final class BrowserModel {
 
     var unloaded: Unloaded?
 
-    /// Makes the tab the last card of its workspace's deck, as in Yab: the deck opens on what you just
-    /// left, with older tabs stacked to its left.
-    func moveToEnd(_ tab: BrowserTab) {
-        guard let index = tabs.firstIndex(where: { $0.id == tab.id }), index != tabs.count - 1 else { return }
-        tabs.append(tabs.remove(at: index))
-        save()
-    }
-
-    /// Where a tab stands among all tabs, to put it back after a move that was called off.
-    func position(of tab: BrowserTab) -> Int? { tabs.firstIndex { $0.id == tab.id } }
-
-    func move(_ tab: BrowserTab, to position: Int) {
-        guard let index = tabs.firstIndex(where: { $0.id == tab.id }), index != position else { return }
-        tabs.remove(at: index)
-        tabs.insert(tab, at: min(position, tabs.count))
-        save()
-    }
-
     /// A pinned tab is never archived. It keeps its place in the deck like any other tab: held at the front,
     /// a page left from it shrank onto a card the next one covered.
     func setPinned(_ pinned: Bool, _ tab: BrowserTab) {
