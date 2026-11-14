@@ -55,6 +55,8 @@ Do not undo these. `fir-security-reviewer` checks a change against them.
 ## Behaviour worth knowing
 
 - `open(_:in: nil)` means this iPhone's tabs; `open(_:)` means the workspace on screen.
+- A new-tab search opens in the workspace its request carried (`NewTabView.Mode.newTab(space:)`), never the live
+  `browser.space`: Return hides the keyboard, which closes the sheet and resets the deck before the page opens.
 - Deck transitions carry `transitionID`; a completion from an older transition stands aside.
 - During a released swipe `swipeX` already holds its target. Anything derived from it sees the end value unless it
   animates: do not branch view structure on it.

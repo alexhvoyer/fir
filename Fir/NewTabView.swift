@@ -5,9 +5,13 @@ import UIKit.UIGestureRecognizerSubclass
 /// Search field with the engine's suggestions, and matches from open tabs here, in Zen, on other
 /// devices and in history.
 struct NewTabView: View {
-    enum Mode: String, Identifiable {
-        case newTab, edit
-        var id: Self { self }
+    /// A new tab carries the workspace it was asked for in. Read live instead, Return lost Private: it hides
+    /// the keyboard, which closes the sheet and resets the deck before the page opens.
+    enum Mode: Equatable, Identifiable {
+        case newTab(space: String?)
+        case edit
+        /// One id for every new-tab request, so a request while the sheet is up switches it in place.
+        var id: String { self == .edit ? "edit" : "newTab" }
     }
 
     let mode: Mode
@@ -33,6 +37,10 @@ struct NewTabView: View {
     @State private var expanded = false
     @State private var rising = false
     @State private var detent = Self.low
+
+    private var deckSpace: String? {
+        if case .newTab(let space) = mode { space } else { nil }
+    }
     private static let low = PresentationDetent.fraction(0.32)
     private static let tall = PresentationDetent.custom(TallDetent.self)
 
@@ -106,7 +114,7 @@ struct NewTabView: View {
 
     /// The Zen workspace a new tab opens in: the deck's, when it is one.
     private var zenSpace: String? {
-        guard mode == .newTab, let space = browser.space,
+        guard mode != .edit, let space = deckSpace,
               account.zenWorkspaces?.spaces.contains(where: { $0.id == space }) == true else { return nil }
         return space
     }
@@ -233,12 +241,12 @@ struct NewTabView: View {
     /// The workspace the page will open in, as `open` decides it.
     private var newTabSpace: String? {
         if mode == .edit { return browser.selected.spaceID }
-        return zenSpace ?? browser.space
+        return zenSpace ?? deckSpace
     }
 
     /// A new tab opens in the deck's workspace; editing keeps the current tab's.
     private var isPrivate: Bool {
-        mode == .edit ? browser.selected.isPrivate : browser.space == BrowserModel.privateSpace
+        mode == .edit ? browser.selected.isPrivate : deckSpace == BrowserModel.privateSpace
     }
 
     private var searchBar: some View {
@@ -365,7 +373,7 @@ struct NewTabView: View {
             browser.select(tab)
             onOpen()
             dismiss()
-        case .zen(let space, _) where mode == .newTab && !isPrivate:
+        case .zen(let space, _) where mode != .edit && !isPrivate:
             browser.open(match.url, in: space)
             onOpen()
             dismiss()
@@ -391,10 +399,8 @@ struct NewTabView: View {
         guard let url else { return }
         if mode == .edit {
             browser.selected.load(url)
-        } else if let zenSpace {
-            browser.open(url, in: zenSpace)
         } else {
-            browser.open(url)
+            browser.open(url, in: zenSpace ?? deckSpace)
         }
         onOpen()
         dismiss()

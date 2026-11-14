@@ -1092,9 +1092,14 @@ final class BrowserModel {
     /// In exactly that workspace; nil is this iPhone's own tabs, never "the current one", which was
     /// Private for links from other apps arriving while a private tab was in front.
     func open(_ url: URL?, in spaceID: String?) {
+        // A blank tab in front gives way to the page, as a pin's does; Close All left one beside it.
+        let current = selected
+        let blank = url != nil && current.url == nil && !current.isPinned && current.localPinID == nil
+            && current.spaceID == spaceID ? current : nil
         let tab = BrowserTab(url: url, spaceID: spaceID, dataStore: dataStore(for: spaceID))
         tabs.append(tab)
         select(tab)
+        if let blank { discard(blank) }
         save()
     }
 

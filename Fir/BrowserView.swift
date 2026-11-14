@@ -246,7 +246,7 @@ struct BrowserView: View {
         .onChange(of: browser.selectedID) { veil = nil }
         // On arrival only: a dismissed search stays down, leaving the deck and settings reachable.
         .onChange(of: blankShown, initial: true) {
-            if blankShown, search == nil, settings == nil { search = .newTab }
+            if blankShown, search == nil, settings == nil { search = .newTab(space: browser.space) }
         }
     }
 
@@ -273,7 +273,7 @@ struct BrowserView: View {
         } else if browser.space == BrowserModel.privateSpace {
             browser.space = browser.selected.isPrivate ? nil : browser.selected.spaceID
         }
-        search = .newTab
+        search = .newTab(space: browser.space)
     }
 
     // MARK: - Transition layer
@@ -470,7 +470,7 @@ struct BrowserView: View {
     /// it grows out of the front card's place, where its card goes; from a page it shows at once.
     private func startNewTab() {
         guard newTabStyle == .page else {
-            search = .newTab
+            search = .newTab(space: browser.space)
             return
         }
         let front = currentCard
@@ -590,7 +590,7 @@ struct BrowserView: View {
             }
             swipedToNewTab = true
             withAnimation(swipeCommit) { swipeX = -width }
-            search = .newTab
+            search = .newTab(space: browser.space)
             return
         }
         let id = transitionID
