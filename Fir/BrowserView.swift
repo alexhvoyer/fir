@@ -822,6 +822,12 @@ private struct Morphing<Content: View>: View, Animatable {
     var body: some View { content(progress, shrink, arrive) }
 }
 
+/// A measurement and the tab it belongs to, so a reused view reports it again for another tab.
+private struct TabValue<Value: Equatable>: Equatable {
+    let tab: BrowserTab.ID
+    let value: Value
+}
+
 /// A button beside the capsule as the bar collapses: gone by halfway, shrinking slightly where it is.
 private struct FadeInPlace: ViewModifier {
     let progress: CGFloat
@@ -1684,9 +1690,9 @@ private struct PageView: View {
                 .allowsHitTesting(compacting < 0.5)
             hostLabel(tab)
                 // Measured before the cap's frame, which takes all the width it is offered.
-                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
-                    labelWidths[tab.id] = width
-                    if live { pillWidth = width * Self.pillScale + 36 }
+                .onGeometryChange(for: TabValue<CGFloat>.self) { TabValue(tab: tab.id, value: $0.size.width) } action: { label in
+                    labelWidths[label.tab] = label.value
+                    if live { pillWidth = label.value * Self.pillScale + 36 }
                 }
                 .frame(maxWidth: max(0, hostSlots[tab.id] ?? frame.full - 168))
                 .scaleEffect(1 - (1 - Self.pillScale) * p)
@@ -1760,9 +1766,12 @@ private struct PageView: View {
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .contentShape(.rect)
                 .onTapGesture { if !justLongPressed { search = .edit } }
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.addressSpace)) } action: {
-                    hostOffsets[tab.id] = $0.midX - width / 2
-                    hostSlots[tab.id] = $0.width
+                // Keyed on the tab too: a new tab reuses this view, and an unchanged frame reported nothing for it.
+                .onGeometryChange(for: TabValue<CGRect>.self) {
+                    TabValue(tab: tab.id, value: $0.frame(in: .named(Self.addressSpace)))
+                } action: { slot in
+                    hostOffsets[slot.tab] = slot.value.midX - width / 2
+                    hostSlots[slot.tab] = slot.value.width
                 }
             // Smart buttons, as in Lens: shown only while the page needs them.
             // On a swipe neighbour too: they move the address, which landed in the wrong place without them.
