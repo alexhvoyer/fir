@@ -152,7 +152,7 @@ struct PageSheet: View {
                     .frame(width: 36, height: 40)
             }
             if let url = tab.pageURL {
-                ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
+                Button("Share", systemImage: "square.and.arrow.up") { PageShare.present(url, of: tab) }
                     .frame(width: 36, height: 40)
             }
             // The sheet stays open after both, so each answers with a haptic and its own symbol change.

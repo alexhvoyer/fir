@@ -1195,6 +1195,7 @@ private struct PageView: View {
             guard browser.privateLocked, tab.isPrivate else { return }
             reader = nil
             showPageSheet = false
+            PageShare.dismiss()
             intelligenceSearch = nil
             search = nil
             if browser.glances.first?.tab.isPrivate == true { browser.glances = [] }
@@ -1769,7 +1770,9 @@ private struct PageView: View {
     @ViewBuilder private func barButton(_ action: BarAction, tab: BrowserTab, url: URL) -> some View {
         switch action {
         case .share:
-            ShareLink(item: url) { Image(systemName: action.symbol).frame(width: 40, height: 48) }
+            Button(action.name, systemImage: action.symbol) { PageShare.present(url, of: tab) }
+                .labelStyle(.iconOnly)
+                .frame(width: 40, height: 48)
                 .foregroundStyle(.primary)
         case .reload:
             if tab.isLoading {

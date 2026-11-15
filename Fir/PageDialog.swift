@@ -1,4 +1,5 @@
 import UIKit
+import WebKit
 
 /// JavaScript alert, confirm and prompt as system alerts, titled with the page's host as Safari does.
 @MainActor
@@ -29,11 +30,31 @@ enum PageDialog {
         }
     }
 
-    private static func topViewController() -> UIViewController? {
+    fileprivate static func topViewController() -> UIViewController? {
         let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
         var top = scene?.keyWindow?.rootViewController
         while let presented = top?.presentedViewController, !presented.isBeingDismissed { top = presented }
         return top
+    }
+}
+
+/// The system share sheet for a page.
+@MainActor
+enum PageShare {
+    /// The web view makes iOS offer Add to Home Screen. Never for private tabs, and not while loading
+    /// another site: the icon could take the shown page's look and the loading address.
+    static func present(_ url: URL, of tab: BrowserTab) {
+        let page = !tab.isPrivate && BrowserTab.sameOrigin(tab.webView.url, tab.pageURL)
+        let items: [Any] = page ? [url, tab.webView] : [url]
+        PageDialog.topViewController()?.present(UIActivityViewController(activityItems: items, applicationActivities: nil),
+                                                animated: true)
+    }
+
+    /// Closes an open share sheet, which would keep showing a private page above its lock.
+    static func dismiss() {
+        if let sheet = PageDialog.topViewController() as? UIActivityViewController {
+            sheet.dismiss(animated: false)
+        }
     }
 }
 
