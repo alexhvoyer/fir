@@ -281,7 +281,8 @@ struct FeatureRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 16) {
+        // The icon sits by the title, not halfway down a detail that wraps to several lines.
+        HStack(alignment: .top, spacing: 16) {
             Image(systemName: symbol)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Palette.teal)

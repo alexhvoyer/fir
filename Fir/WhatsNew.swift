@@ -3,7 +3,7 @@ import SwiftUI
 /// The list shown once after an update. It has its own number: raise `list` and rewrite `items` only
 /// when an update has something to tell, so most builds pass quietly.
 enum WhatsNew {
-    static let list = 1
+    static let list = 2
 
     struct Item: Identifiable {
         let symbol: String
@@ -13,18 +13,12 @@ enum WhatsNew {
     }
 
     @MainActor static var items: [Item] {
-        var items = [
-            Item(symbol: "pin", title: "A Pinned list on this iPhone",
-                 detail: "Tabs you pin here move to a Pinned list, just like in Zen workspaces."),
-            Item(symbol: "ellipsis.circle", title: "Pin from the card",
-                 detail: "A card's menu can pin its tab or, in Zen workspaces, add it to Essentials."),
+        [
+            Item(symbol: "square.grid.2x2", title: "Tabs in a grid",
+                 detail: "See a workspace's tabs side by side: choose Grid in Settings > Tabs > Tab Overview. Swipe a tab left to close it."),
+            Item(symbol: "accessibility", title: "Follows Reduce Motion",
+                 detail: "With Reduce Motion on in iOS Settings, sheets slide up without the zoom and pages switch to your tabs at once."),
         ]
-        if IntelligenceSearch.isSupported {
-            items.insert(Item(symbol: "sparkles", title: "Intelligence Search",
-                              detail: "Ask a question and Fir reads the first results for you, then writes one answer with its sources."),
-                         at: 0)
-        }
-        return items
     }
 
     /// Onboarding has to be behind the user: a new install hears about everything there.
