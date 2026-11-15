@@ -15,6 +15,7 @@ final class ExtensionManager: NSObject {
         var isEnabled: Bool
         let context: WKWebExtensionContext
         var errors: [String] { context.errors.map(\.localizedDescription) }
+        var hasSettings: Bool { context.optionsPageURL != nil }
     }
 
     @ObservationIgnored let controller = WKWebExtensionController(configuration: .default())
@@ -114,6 +115,32 @@ final class ExtensionManager: NSObject {
         controller.didChangeTabProperties(properties, for: tab)
     }
 
+    /// The add-on's options page, in its sheet.
+    func openSettings(_ id: String) {
+        guard let context = installed.first(where: { $0.id == id && $0.isEnabled })?.context,
+              let url = context.optionsPageURL else { return }
+        Self.showPage(url, of: context)
+    }
+
+    /// An add-on's own page (options, welcome) in a sheet. Only a web view made from the add-on's
+    /// configuration loads its pages; a tab's failed with "resource unavailable".
+    private static func showPage(_ url: URL, of context: WKWebExtensionContext) {
+        guard let configuration = context.webViewConfiguration, let presenter = topViewController() else { return }
+        let page = ExtensionPageController(url: url, base: context.baseURL, configuration: configuration)
+        page.navigationItem.title = context.webExtension.displayName
+        let sheet = UINavigationController(rootViewController: page)
+        page.navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak sheet] _ in
+            sheet?.dismiss(animated: true)
+        })
+        presenter.present(sheet, animated: true)
+    }
+
+    private static func topViewController() -> UIViewController? {
+        var top = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        return top
+    }
+
     /// The toolbar action, as a menu entry: shows the extension's popup if it has one.
     func performAction(_ id: String) {
         guard let entry = installed.first(where: { $0.id == id }) else { return }
@@ -207,20 +234,68 @@ extension ExtensionManager: WKWebExtensionControllerDelegate {
     func webExtensionController(_ controller: WKWebExtensionController, openNewTabUsing configuration: WKWebExtension.TabConfiguration,
                                 for extensionContext: WKWebExtensionContext,
                                 completionHandler: @escaping ((any WKWebExtensionTab)?, (any Error)?) -> Void) {
+        // Its own pages can't load in a tab; they open in the add-on's sheet instead.
+        if let url = configuration.url, url.scheme == extensionContext.baseURL.scheme, url.host() == extensionContext.baseURL.host() {
+            Self.showPage(url, of: extensionContext)
+            completionHandler(nil, nil)
+            return
+        }
         browser?.open(configuration.url, in: nil)
         completionHandler(browser?.selected, nil)
     }
 
+    func webExtensionController(_ controller: WKWebExtensionController, openOptionsPageFor extensionContext: WKWebExtensionContext,
+                                completionHandler: @escaping ((any Error)?) -> Void) {
+        if let url = extensionContext.optionsPageURL { Self.showPage(url, of: extensionContext) }
+        completionHandler(nil)
+    }
+
     func webExtensionController(_ controller: WKWebExtensionController, presentActionPopup action: WKWebExtension.Action,
                                 for context: WKWebExtensionContext, completionHandler: @escaping ((any Error)?) -> Void) {
-        guard let popup = action.popupViewController,
-              let root = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController
-        else { completionHandler(nil); return }
-        var top = root
-        while let presented = top.presentedViewController { top = presented }
+        guard let popup = action.popupViewController, let top = Self.topViewController() else { completionHandler(nil); return }
         popup.modalPresentationStyle = .pageSheet
         top.present(popup, animated: true)
         completionHandler(nil)
+    }
+}
+
+/// Shows only its add-on's pages. A link out opens in a tab, which shows the address and applies
+/// HTTPS-only and the blocker; anything else is dropped.
+private final class ExtensionPageController: UIViewController, WKNavigationDelegate, WKUIDelegate {
+    private let base: URL
+    private let webView: WKWebView
+
+    init(url: URL, base: URL, configuration: WKWebViewConfiguration) {
+        self.base = base
+        webView = WKWebView(frame: .zero, configuration: configuration)
+        super.init(nibName: nil, bundle: nil)
+        webView.navigationDelegate = self
+        webView.uiDelegate = self
+        webView.load(URLRequest(url: url))
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func loadView() { view = webView }
+
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction) async -> WKNavigationActionPolicy {
+        guard let url = action.request.url else { return .cancel }
+        if url.scheme == base.scheme, url.host() == base.host() { return .allow }
+        // No target frame is a link to a new window, the usual kind on these pages.
+        if action.targetFrame?.isMainFrame ?? true, action.navigationType == .linkActivated { leave(to: url) }
+        return .cancel
+    }
+
+    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                 for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        if let url = action.request.url { leave(to: url) }
+        return nil
+    }
+
+    private func leave(to url: URL) {
+        guard ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
+        dismiss(animated: true)
+        ExtensionManager.shared.browser?.open(url, in: nil)
     }
 }
 
@@ -262,6 +337,16 @@ extension BrowserTab: WKWebExtensionTab {
 
     func loadURL(_ url: URL, for context: WKWebExtensionContext, completionHandler: @escaping ((any Error)?) -> Void) {
         load(url)
+        completionHandler(nil)
+    }
+
+    func activate(for context: WKWebExtensionContext, completionHandler: @escaping ((any Error)?) -> Void) {
+        ExtensionManager.shared.browser?.select(self)
+        completionHandler(nil)
+    }
+
+    func close(for context: WKWebExtensionContext, completionHandler: @escaping ((any Error)?) -> Void) {
+        ExtensionManager.shared.browser?.close(self)
         completionHandler(nil)
     }
 

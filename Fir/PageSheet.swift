@@ -7,7 +7,7 @@ import Translation
 struct PageSheet: View {
     enum Action {
         case find, reader, pin, essential, translate(Locale.Language), showOriginal, downloads, settings
-        case send(Device)
+        case send(Device), extensionSettings(String)
     }
 
     let tab: BrowserTab
@@ -53,7 +53,16 @@ struct PageSheet: View {
                     if !extensions.isEmpty, !tab.isPrivate {
                         Menu {
                             ForEach(extensions) { item in
-                                Button(item.name) { ExtensionManager.shared.performAction(item.id) }
+                                if item.hasSettings {
+                                    Menu(item.name) {
+                                        Button("Open", systemImage: "puzzlepiece.extension") {
+                                            ExtensionManager.shared.performAction(item.id)
+                                        }
+                                        Button("Settings", systemImage: "gearshape") { finish(.extensionSettings(item.id)) }
+                                    }
+                                } else {
+                                    Button(item.name) { ExtensionManager.shared.performAction(item.id) }
+                                }
                             }
                         } label: {
                             Label("Extensions", systemImage: "puzzlepiece.extension")

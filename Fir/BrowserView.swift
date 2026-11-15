@@ -1356,6 +1356,8 @@ private struct PageView: View {
         case .send(let device):
             guard let url = tab.pageURL else { return }
             Task { sendResult = await account.send(url, title: tab.title, to: device) ? .sent(device.displayName) : .failed }
+        case .extensionSettings(let id):
+            ExtensionManager.shared.openSettings(id)
         }
     }
 

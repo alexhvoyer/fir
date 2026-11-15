@@ -595,6 +595,8 @@ extension BrowserTab: WKNavigationDelegate {
               !["http", "https", "about", "data", "blob", "file", "javascript"].contains(scheme) else {
             return (.allow, preferences)
         }
+        // An add-on's pages open in its own sheet, never a tab, and no other app opens them.
+        if scheme == "webkit-extension" { return (.cancel, preferences) }
         // Like Safari: only the page itself may hand off, after asking; a tapped call or draft link
         // skips the question, since iOS confirms calls and drafts need a tap to send.
         // No target frame is a new window, decided for the frame that opened it.
