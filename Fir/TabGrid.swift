@@ -180,7 +180,8 @@ private struct GridPicture: View {
     }
 }
 
-/// One tab in the grid: its picture with a close button, and its title under it.
+/// One tab in the grid: its picture with a close button, and its title under it. Swiped left, as in
+/// Safari, it follows the finger and closes past a third of its width.
 private struct GridCell: View {
     let tab: BrowserTab
     let width: CGFloat
@@ -192,6 +193,10 @@ private struct GridCell: View {
     let space: ZenWorkspaces.Space?
     let onFrame: (CGRect) -> Void
     let onSelect: () -> Void
+    @State private var dragX: CGFloat = 0
+
+    /// A Zen folder's tab only unloads, so one never opened has nothing to swipe away.
+    private var swipes: Bool { tabMenu != nil && !hidden && (!tab.fromZenFolder || tab.wasOpened) }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -227,12 +232,67 @@ private struct GridCell: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(width: width)
+        .offset(x: dragX)
+        // Over the cell beside it while it slides.
+        .zIndex(dragX == 0 ? 0 : 1)
         .contentShape(.rect)
         .onTapGesture(perform: onSelect)
+        .gesture(LeftwardPan(enabled: swipes, changed: { dragX = $0 > 0 ? $0 / 4 : $0 }, ended: endSwipe))
         .contextMenu {
             if let tabMenu {
                 TabMenuItems(tab: tab, space: space, local: tab.spaceID == nil, menu: tabMenu)
             }
+        }
+    }
+
+    private func endSwipe(translation: CGFloat, velocity: CGFloat) {
+        // Flung back to the right, it stays, however far it got.
+        guard let tabMenu, (translation < -width / 3 && velocity < 300) || velocity < -800 else {
+            withAnimation(.snappy) { dragX = 0 }
+            return
+        }
+        withAnimation(.easeOut(duration: 0.2)) { dragX = -width * 3 } completion: {
+            tabMenu.close(tab)
+            // An unloaded Zen folder tab keeps its cell; it comes back.
+            if tab.fromZenFolder { withAnimation(.snappy) { dragX = 0 } }
+        }
+    }
+}
+
+/// A pan that starts only when the finger moves left, so the grid still scrolls up and down under it.
+private struct LeftwardPan: UIGestureRecognizerRepresentable {
+    let enabled: Bool
+    let changed: (CGFloat) -> Void
+    let ended: (_ translation: CGFloat, _ velocity: CGFloat) -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let pan = UIPanGestureRecognizer()
+        pan.delegate = context.coordinator
+        pan.isEnabled = enabled
+        return pan
+    }
+
+    func updateUIGestureRecognizer(_ pan: UIPanGestureRecognizer, context: Context) {
+        pan.isEnabled = enabled
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+    func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
+        let translation = pan.translation(in: pan.view).x
+        switch pan.state {
+        case .changed: changed(translation)
+        case .ended: ended(translation, pan.velocity(in: pan.view).x)
+        case .cancelled, .failed: ended(0, 0)
+        default: break
+        }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = recognizer as? UIPanGestureRecognizer else { return false }
+            let velocity = pan.velocity(in: pan.view)
+            return velocity.x < 0 && abs(velocity.x) > abs(velocity.y)
         }
     }
 }
