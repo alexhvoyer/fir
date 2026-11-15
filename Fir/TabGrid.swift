@@ -52,6 +52,7 @@ struct TabGrid: View {
                     .padding(.vertical, 20)
                 }
                 .scrollDisabled(!live)
+                .scrollEdgeEffectStyle(.soft, for: .bottom)
                 .onAppear { reveal(in: proxy) }
                 // Under the page the grid keeps the selected cell in view, so the page has a cell to land on.
                 .onChange(of: browser.selectedID) { if !holdsPosition { reveal(in: proxy) } }
@@ -194,6 +195,8 @@ private struct GridCell: View {
     let onFrame: (CGRect) -> Void
     let onSelect: () -> Void
     @State private var dragX: CGFloat = 0
+    /// Over its neighbours from the first move until it has slid back, not only while the finger is down.
+    @State private var lifted = false
 
     /// A Zen folder's tab only unloads, so one never opened has nothing to swipe away.
     private var swipes: Bool { tabMenu != nil && !hidden && (!tab.fromZenFolder || tab.wasOpened) }
@@ -230,14 +233,15 @@ private struct GridCell: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            // The title goes first: sliding over the next cell, the two titles ran into each other.
+            .opacity(max(0, 1 - abs(dragX) / 30))
         }
         .frame(width: width)
         .offset(x: dragX)
-        // Over the cell beside it while it slides.
-        .zIndex(dragX == 0 ? 0 : 1)
+        .zIndex(lifted ? 1 : 0)
         .contentShape(.rect)
         .onTapGesture(perform: onSelect)
-        .gesture(LeftwardPan(enabled: swipes, changed: { dragX = $0 > 0 ? $0 / 4 : $0 }, ended: endSwipe))
+        .gesture(LeftwardPan(enabled: swipes, changed: { lifted = true; dragX = $0 > 0 ? $0 / 4 : $0 }, ended: endSwipe))
         .contextMenu {
             if let tabMenu {
                 TabMenuItems(tab: tab, space: space, local: tab.spaceID == nil, menu: tabMenu)
@@ -248,13 +252,13 @@ private struct GridCell: View {
     private func endSwipe(translation: CGFloat, velocity: CGFloat) {
         // Flung back to the right, it stays, however far it got.
         guard let tabMenu, (translation < -width / 3 && velocity < 300) || velocity < -800 else {
-            withAnimation(.snappy) { dragX = 0 }
+            withAnimation(.snappy) { dragX = 0 } completion: { lifted = false }
             return
         }
         withAnimation(.easeOut(duration: 0.2)) { dragX = -width * 3 } completion: {
             tabMenu.close(tab)
             // An unloaded Zen folder tab keeps its cell; it comes back.
-            if tab.fromZenFolder { withAnimation(.snappy) { dragX = 0 } }
+            if tab.fromZenFolder { withAnimation(.snappy) { dragX = 0 } completion: { lifted = false } }
         }
     }
 }

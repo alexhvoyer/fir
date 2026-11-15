@@ -84,7 +84,8 @@ struct TabSwitcherView: View {
         } message: {
             Text(ZenFolderEditor.newFolderNote(for: folderFor))
         }
-        .safeAreaInset(edge: .bottom) { bottomBar }
+        // A bar, not an inset: grid titles scrolling under it are blurred instead of read through the glass.
+        .safeAreaBar(edge: .bottom) { bottomBar }
         .background(.regularMaterial)
         // Dark like Safari's private browsing, so it's never mistaken for regular tabs.
         .environment(\.colorScheme, browser.space == BrowserModel.privateSpace ? .dark : colorScheme)
