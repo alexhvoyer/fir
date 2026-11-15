@@ -351,12 +351,30 @@ struct BrowserView: View {
         browser.selected.stopScrolling()
         // A start page caught mid-glide: the copy shows where it is now, and the page stops there.
         if browser.selected.url == nil { browser.selected.startPageOffset = browser.selected.liveStartPageOffset }
+        Self.hideLeavingSheet()
         coverView = browser.selected.liveSnapshot()
         cover = browser.selected.snapshot
         // Always: a video, a dismissed sheet or an inner scroll changes the page without moving its scroll
         // view. A page still loading keeps its saved image.
         if browser.selected.snapshot == nil || browser.selected.hasPainted { browser.selected.refreshSnapshot() }
         transitioning = true
+    }
+
+    /// A sheet still zooming back into the bar, and its glass morph, floated over the deck's switcher
+    /// until they landed. Hidden for the rest of that transition.
+    private static func hideLeavingSheet() {
+        guard let root = UIApplication.shared.connectedScenes
+            .compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController,
+              let window = root.view.window else { return }
+        var controller = root
+        while let next = controller.presentedViewController, !next.isBeingDismissed { controller = next }
+        guard let leaving = controller.presentedViewController, let coordinator = leaving.transitionCoordinator
+        else { return }
+        // Whatever holds the app's own view stays: the rest is that transition's.
+        let layers = window.subviews.filter { !root.view.isDescendant(of: $0) && !controller.view.isDescendant(of: $0) }
+        // At once: the glass morph ignores an animated alpha, and the bar it replaces is gone within two frames.
+        layers.forEach { $0.isHidden = true }
+        coordinator.animate(alongsideTransition: nil) { _ in layers.forEach { $0.isHidden = false } }
     }
 
     private func endTransition() {
