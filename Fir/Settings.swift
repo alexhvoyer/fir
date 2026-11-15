@@ -112,6 +112,20 @@ enum NewTabStyle: String, CaseIterable, Identifiable {
     }
 }
 
+/// How the tab overview lays out a workspace's tabs.
+enum TabLayout: String, CaseIterable, Identifiable {
+    case deck, grid
+
+    var id: Self { self }
+
+    var name: String {
+        switch self {
+        case .deck: "Cards"
+        case .grid: "Grid"
+        }
+    }
+}
+
 /// A button the address bar can show right of the address, in the order the user put them.
 enum BarAction: String, CaseIterable, Identifiable {
     case share, reload, find, translate
@@ -167,6 +181,7 @@ enum SettingsKey {
     static let keyboardAtLaunch = "keyboardAtLaunch"
     static let swipeAnywhere = "swipeAnywhere"
     static let newTabStyle = "newTabStyle"
+    static let tabLayout = "tabLayout"
     static let barActions = "barActions"
     static let translateTarget = "translateTarget"
     static let intelligenceSearch = "intelligenceSearch"

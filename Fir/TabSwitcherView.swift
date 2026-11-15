@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Tab overview: an overlapping card deck (classic iOS app switcher style) of one workspace's tabs.
+/// Tab overview: an overlapping card deck (classic iOS app switcher style) of one workspace's tabs, or
+/// a grid of them.
 /// A switcher at the bottom flips between this iPhone's own tabs and each synced Zen workspace.
 struct TabSwitcherView: View {
     @Environment(BrowserModel.self) private var browser
@@ -40,6 +41,7 @@ struct TabSwitcherView: View {
     /// The card a new Zen folder is being named for.
     @State private var folderFor: BrowserTab?
     @State private var folderName = ""
+    @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
 
     private static let localSpace = "local"
 
@@ -123,6 +125,8 @@ struct TabSwitcherView: View {
             guard hiddenTab != nil else { return }
             device = nil
             browser.space = browser.selected.spaceID
+            // Its folder opens under the page: a grid draws only a closed folder's front tab.
+            centerSelected(animated: false)
         }
     }
 
@@ -168,7 +172,16 @@ struct TabSwitcherView: View {
                         ZenSpaceHeader(space: current, essentials: zen.essentials(in: current), onOpen: open)
                     }
                     Group {
-                        if live { deck } else { deckPreview(tabs) }
+                        if tabLayout == .grid {
+                            TabGrid(tabs: live ? browser.spaceTabs : tabs, live: live, hiddenTab: hiddenTab,
+                                    holdsPosition: holdsPosition, expandedFolder: $expandedFolder,
+                                    folderMenu: folderMenu, tabMenu: tabMenu, space: zenSpace(of:),
+                                    onCardFrame: onCardFrame, onOpen: onOpen)
+                        } else if live {
+                            deck
+                        } else {
+                            deckPreview(tabs)
+                        }
                     }
                     // Room for an open folder's name over its card's title.
                     .padding(.top, current == nil ? 0 : 24)
@@ -534,7 +547,7 @@ private struct TabCard: View {
         VStack(alignment: .leading, spacing: 12) {
             Group {
                 if case .stack(let folder, let count) = heading {
-                    folderLabel(folder, detail: "\(count)", font: .headline)
+                    FolderLabel(folder: folder, detail: "\(count)", font: .headline, folderMenu: folderMenu)
                 } else {
                     HStack(spacing: 8) {
                         SiteIcon(host: tab.url?.host(), size: 26, fetch: !tab.isPrivate)
@@ -556,7 +569,7 @@ private struct TabCard: View {
                     // A folder's card names its folder above the title, without moving the card.
                     .overlay(alignment: .topLeading) {
                         if case .member(let folder) = heading {
-                            folderLabel(folder, detail: nil, font: .footnote).offset(y: -24)
+                            FolderLabel(folder: folder, detail: nil, font: .footnote, folderMenu: folderMenu).offset(y: -24)
                         }
                     }
                 }
@@ -569,9 +582,16 @@ private struct TabCard: View {
         }
         .frame(width: width)
     }
+}
 
-    /// The folder's name with a chevron that opens what can be done with it.
-    private func folderLabel(_ folder: DeckFolder, detail: String?, font: Font) -> some View {
+/// The folder's name with a chevron that opens what can be done with it.
+struct FolderLabel: View {
+    let folder: DeckFolder
+    let detail: String?
+    let font: Font
+    let folderMenu: FolderMenu?
+
+    var body: some View {
         Menu {
             if let folderMenu {
                 if folderMenu.isExpanded(folder) {
@@ -632,33 +652,7 @@ private struct TitleMenu: ViewModifier {
     func body(content: Content) -> some View {
         if let menu {
             Menu {
-                if tab.url != nil, !tab.fromZenFolder {
-                    Button(tab.isPinned ? "Unpin Tab" : "Pin Tab", systemImage: tab.isPinned ? "pin.slash" : "pin") {
-                        menu.editor.togglePin(tab)
-                    }
-                    if menu.editor.offersEssentials(tab) {
-                        Button(tab.zenEssentialID == nil ? "Add to Essentials" : "Remove from Essentials",
-                               systemImage: tab.zenEssentialID == nil ? "star" : "star.slash") {
-                            menu.editor.toggleEssential(tab)
-                        }
-                    }
-                }
-                if let space {
-                    FolderMenuItems(tab: tab, space: space, editor: menu.editor) { menu.newFolder(tab) }
-                    Divider()
-                } else if local {
-                    LocalFolderMenuItems(tab: tab, browser: menu.editor.browser) { menu.newFolder(tab) }
-                    Divider()
-                }
-                if tab.fromZenFolder {
-                    if tab.wasOpened {
-                        Button("Unload Tab", systemImage: "moon.zzz") { menu.close(tab) }
-                    }
-                    // Out of Zen's folder too: the swipe only unloads, this is the way to get rid of it.
-                    Button("Close Tab", systemImage: "xmark", role: .destructive) { menu.editor.closeAndRemoveFromFolder(tab) }
-                } else {
-                    Button("Close Tab", systemImage: "xmark", role: .destructive) { menu.close(tab) }
-                }
+                TabMenuItems(tab: tab, space: space, local: local, menu: menu)
             } label: {
                 content
             }
@@ -666,6 +660,44 @@ private struct TitleMenu: ViewModifier {
             .buttonStyle(.plain)
         } else {
             content
+        }
+    }
+}
+
+/// What can be done with a tab: pins, folders, unloading and closing. Shared by the deck and the grid.
+struct TabMenuItems: View {
+    let tab: BrowserTab
+    let space: ZenWorkspaces.Space?
+    let local: Bool
+    let menu: TabMenu
+
+    var body: some View {
+        if tab.url != nil, !tab.fromZenFolder {
+            Button(tab.isPinned ? "Unpin Tab" : "Pin Tab", systemImage: tab.isPinned ? "pin.slash" : "pin") {
+                menu.editor.togglePin(tab)
+            }
+            if menu.editor.offersEssentials(tab) {
+                Button(tab.zenEssentialID == nil ? "Add to Essentials" : "Remove from Essentials",
+                       systemImage: tab.zenEssentialID == nil ? "star" : "star.slash") {
+                    menu.editor.toggleEssential(tab)
+                }
+            }
+        }
+        if let space {
+            FolderMenuItems(tab: tab, space: space, editor: menu.editor) { menu.newFolder(tab) }
+            Divider()
+        } else if local {
+            LocalFolderMenuItems(tab: tab, browser: menu.editor.browser) { menu.newFolder(tab) }
+            Divider()
+        }
+        if tab.fromZenFolder {
+            if tab.wasOpened {
+                Button("Unload Tab", systemImage: "moon.zzz") { menu.close(tab) }
+            }
+            // Out of Zen's folder too: the swipe only unloads, this is the way to get rid of it.
+            Button("Close Tab", systemImage: "xmark", role: .destructive) { menu.editor.closeAndRemoveFromFolder(tab) }
+        } else {
+            Button("Close Tab", systemImage: "xmark", role: .destructive) { menu.close(tab) }
         }
     }
 }
@@ -906,6 +938,7 @@ struct CardImage: View {
     let tab: BrowserTab
     let width: CGFloat
     let height: CGFloat
+    var radius: CGFloat = 34
 
     var body: some View {
         Group {
@@ -922,10 +955,10 @@ struct CardImage: View {
             }
         }
         .frame(width: width, height: height)
-        .clipShape(.rect(cornerRadius: 34, style: .continuous))
+        .clipShape(.rect(cornerRadius: radius, style: .continuous))
         // Shadow of a plain shape behind the card: on the clipped snapshot it was redrawn every frame.
         .background {
-            RoundedRectangle(cornerRadius: 34, style: .continuous)
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(.black)
                 .shadow(color: .black.opacity(0.25), radius: 18, x: -6, y: 8)
         }

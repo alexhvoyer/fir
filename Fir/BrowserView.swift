@@ -45,6 +45,7 @@ struct BrowserView: View {
     /// Where sheets grow out of: the bar's menu button and address capsule.
     @Namespace private var sheetSource
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
     /// A swipe past the last tab slid the new-tab page in; it slides back if the search is cancelled.
     @State private var swipedToNewTab = false
     /// A lift toward the deck is under way; the tab moves to the deck's end once per lift.
@@ -306,12 +307,14 @@ struct BrowserView: View {
                           blank: browser.selected.url == nil, space: browser.selected.spaceID,
                           offset: browser.selected.startPageOffset, failed: browser.selected)
                     .frame(width: screen.width, height: screen.height)
-                    .clipShape(PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k))
+                    .clipShape(PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k,
+                             cardRadius: cardRadius))
                     // The card's shadow, growing in as the page shrinks: without it the shadow blinked out
                     // while the page moved. Divided by the scale, so it lands at the card's size.
                     .background {
                         let scale = 1 + (k - 1) * progress
-                        PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k)
+                        PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k,
+                             cardRadius: cardRadius)
                             .fill(.black)
                             .shadow(color: .black.opacity(0.25 * progress), radius: 18 / scale, x: -6 / scale, y: 8 / scale)
                     }
@@ -402,6 +405,8 @@ struct BrowserView: View {
             .filter { $0.tab.id != browser.selectedID && $0.frame.minX > card.minX + 1 && $0.frame.minX < card.maxX }
             .prefix(4))
     }
+
+    private var cardRadius: CGFloat { tabLayout == .grid ? TabGrid.radius : 34 }
 
     private var currentCard: CGRect {
         heldCard ?? cardFrames[browser.selectedID ?? UUID()] ?? Self.fallbackCard(in: screen)
@@ -988,13 +993,14 @@ private struct PageMask: Shape {
         set { (progress, minRadius) = (newValue.first, newValue.second) }
     }
 
-    private static let cardRadius: CGFloat = 34
+    /// The card's own corner: the deck's, or the grid's smaller one.
+    let cardRadius: CGFloat
     /// The smallest screen corner of a Face ID iPhone, so at full size the corners hide behind the screen's.
     private static let screenRadius: CGFloat = 39
 
     func path(in rect: CGRect) -> Path {
         let height = rect.height + (cropHeight - rect.height) * progress
-        let onScreen = Self.screenRadius + (Self.cardRadius - Self.screenRadius) * progress
+        let onScreen = Self.screenRadius + (cardRadius - Self.screenRadius) * progress
         let radius = max(onScreen / (1 + (scale - 1) * progress), minRadius)
         return Path(roundedRect: CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: height),
                     cornerRadius: radius, style: .continuous)

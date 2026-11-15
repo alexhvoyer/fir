@@ -73,9 +73,17 @@ struct TabsSettingsView: View {
     @Environment(BrowserModel.self) private var browser
     @AppStorage(SettingsKey.archiveTabsAfter) private var archive = TabLifetime.week
     @AppStorage(SettingsKey.clearTabsAfter) private var clear = TabLifetime.never
+    @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
 
     var body: some View {
         List {
+            Section {
+                Picker("Tab Overview", selection: $tabLayout) {
+                    ForEach(TabLayout.allCases) { Text($0.name).tag($0) }
+                }
+            } footer: {
+                Text("Cards shows one tab at a time to swipe through. Grid shows a workspace's tabs side by side.")
+            }
             Section {
                 Picker("Archive Tabs After", selection: $archive) {
                     ForEach(TabLifetime.allCases) { Text($0.name).tag($0) }
