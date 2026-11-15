@@ -5,7 +5,7 @@
 <h1 align="center">Fir</h1>
 
 <p align="center">
-  A calm WebKit browser for iPhone that syncs with Zen Browser and Firefox through your Mozilla account.
+  An open-source WebKit browser for iPhone that syncs with Zen Browser and Firefox through your Mozilla account.
   <br>
   Fir is an independent app, not affiliated with Zen or Mozilla.
 </p>
