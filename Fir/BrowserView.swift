@@ -44,6 +44,7 @@ struct BrowserView: View {
     @State private var search: NewTabView.Mode?
     /// Where sheets grow out of: the bar's menu button and address capsule.
     @Namespace private var sheetSource
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// A swipe past the last tab slid the new-tab page in; it slides back if the search is cancelled.
     @State private var swipedToNewTab = false
     /// A lift toward the deck is under way; the tab moves to the deck's end once per lift.
@@ -75,6 +76,8 @@ struct BrowserView: View {
     // A fixed-duration ease felt even-paced.
     private let settle = Animation.spring(response: 0.34, dampingFraction: 0.88)
     private let swipeCommit = Animation.spring(response: 0.32, dampingFraction: 0.92)
+    /// Growing a page out of its card and shrinking it back; Reduce Motion cuts straight to the end.
+    private var cardMorph: Animation? { reduceMotion ? nil : settle }
     static let swipeGap: CGFloat = 10
     /// The bottom bar's height and a gap.
     private static let barClearance: CGFloat = 56
@@ -227,7 +230,7 @@ struct BrowserView: View {
             if pageShown { browser.space = browser.selected.spaceID }
             guard swipedToNewTab else { return }
             swipedToNewTab = false
-            withAnimation(settle) { swipeX = 0 } completion: { endTransition() }
+            withAnimation(cardMorph) { swipeX = 0 } completion: { endTransition() }
         }
         .onAppear {
             // The tab shown at launch is restored and still loading.
@@ -464,7 +467,7 @@ struct BrowserView: View {
         // Let the deck lay out the card first so the page grows out of its real frame.
         Task {
             await Task.yield()
-            withAnimation(settle) { progress = 0; follow = .zero } completion: {
+            withAnimation(cardMorph) { progress = 0; follow = .zero } completion: {
                 opening = false
                 if id == transitionID { reveal(browser.selected) }
             }
@@ -487,9 +490,9 @@ struct BrowserView: View {
     }
 
     /// Under the search sheet the screen steps back, like Lens. Not after a swipe to a new tab: that
-    /// page has already slid away.
+    /// page has already slid away. Not with Reduce Motion either.
     private func recede() {
-        guard pageShown, !swipedToNewTab else { return }
+        guard pageShown, !swipedToNewTab, !reduceMotion else { return }
         ScreenRecess.begin()
     }
 
@@ -528,7 +531,7 @@ struct BrowserView: View {
         let id = transitionID
         let a = anchor ?? CGPoint(x: screen.midX, y: screen.midY)
         Task {
-            withAnimation(settle) {
+            withAnimation(cardMorph) {
                 anchor = a
                 progress = 1
                 follow = followOntoCard(anchor: a)
@@ -839,13 +842,14 @@ private struct FadeInPlace: ViewModifier {
     }
 }
 
-/// The system zoom transition out of `id`, or the standard sheet when there is none.
+/// The system zoom transition out of `id`, or the standard sheet when there is none or with Reduce Motion.
 private struct ZoomFromSource: ViewModifier {
     let id: String?
     let namespace: Namespace.ID
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
-        if let id {
+        if let id, !reduceMotion {
             content.navigationTransition(.zoom(sourceID: id, in: namespace))
         } else {
             content
@@ -1249,7 +1253,7 @@ private struct PageView: View {
                       offersEssentials: folderEditor.offersEssentials(tab)) {
                 pageAction = $0
             }
-            .navigationTransition(.zoom(sourceID: pageSheetSource, in: sheetSource))
+            .modifier(ZoomFromSource(id: pageSheetSource, namespace: sheetSource))
         }
         .onChange(of: tab.readerRequest) {
             guard tab.readerRequest != nil else { return }
