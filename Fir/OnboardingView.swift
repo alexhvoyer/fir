@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Pages shown once, on the first launch: what Fir is, Zen sync, the gestures nothing on screen explains,
-/// Intelligence Search where this iPhone can run it, what new tabs show, and a few settings worth choosing up front.
+/// Intelligence Search where this iPhone can run it, what new tabs show, how the tab overview looks, and a few
+/// settings worth choosing up front.
 struct OnboardingView: View {
     let onFinish: () -> Void
     @Environment(AccountService.self) private var account
@@ -12,10 +13,11 @@ struct OnboardingView: View {
     @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearch = true
     @AppStorage(SettingsKey.whatsNew) private var whatsNew = true
     @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
+    @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
     @State private var blockAds = ContentBlocker.shared.isEnabled
     @State private var pageWidth: CGFloat = 0
 
-    private static let pageCount = IntelligenceSearch.isSupported ? 6 : 5
+    private static let pageCount = IntelligenceSearch.isSupported ? 7 : 6
 
     var body: some View {
         VStack(spacing: 0) {
@@ -33,7 +35,8 @@ struct OnboardingView: View {
                 sync.tag(1)
                 gestures.tag(2)
                 if IntelligenceSearch.isSupported { intelligence.tag(3) }
-                newTabs.tag(Self.pageCount - 2)
+                newTabs.tag(Self.pageCount - 3)
+                tabOverview.tag(Self.pageCount - 2)
                 setup.tag(Self.pageCount - 1)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -161,6 +164,39 @@ struct OnboardingView: View {
                 .foregroundStyle(.secondary)
         }
         .sensoryFeedback(.selection, trigger: newTabStyle)
+    }
+
+    private var tabOverview: some View {
+        OnboardingPage(title: "Your tabs",
+                       text: "Cards to swipe through one at a time, or a grid that shows them side by side.") {
+            HStack(spacing: 24) {
+                ForEach(TabLayout.allCases) { layout in
+                    let selected = tabLayout == layout
+                    Button {
+                        withAnimation(.spring(duration: 0.45, bounce: 0.35)) { tabLayout = layout }
+                    } label: {
+                        VStack(spacing: 12) {
+                            TabLayoutPreview(layout: layout, selected: selected)
+                                .frame(width: 120, height: 240)
+                                .scaleEffect(selected ? 1 : 0.92)
+                                .opacity(selected ? 1 : 0.7)
+                            Text(layout.name).font(.subheadline.weight(.medium))
+                            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                                .font(.title2)
+                                .foregroundStyle(selected ? Palette.teal : .secondary)
+                                .contentTransition(.symbolEffect(.replace))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
+        } footer: {
+            Text("You can change this later in Settings.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .sensoryFeedback(.selection, trigger: tabLayout)
     }
 
     /// The same settings as in Settings. Not a Form: inside the paged TabView its margins came out
@@ -308,6 +344,58 @@ private struct NewTabPreview: View {
             Circle().fill(Color(.systemGray4)).frame(width: 12, height: 12)
             Capsule().fill(Color(.systemGray4)).frame(height: 6)
         }
+    }
+}
+
+/// A phone sketch of each tab overview: overlapping cards that fan out when chosen, or a grid of tiles.
+private struct TabLayoutPreview: View {
+    let layout: TabLayout
+    let selected: Bool
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+        ZStack {
+            Color(.systemGray5)
+            if layout == .deck {
+                ForEach(0..<3, id: \.self) { index in
+                    let rel = CGFloat(index - 1)
+                    card(radius: 10)
+                        .frame(width: 56, height: 116)
+                        // Chosen, the cards fan out as the deck lays them.
+                        .offset(x: rel * (selected ? 28 : 10))
+                        .zIndex(Double(index))
+                }
+            } else {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible())], spacing: 8) {
+                    ForEach(0..<6, id: \.self) { index in
+                        card(radius: 7)
+                            .frame(height: 58)
+                            .scaleEffect(selected ? 1 : 0.7)
+                            .animation(.spring(duration: 0.4, bounce: 0.45).delay(Double(index) * 0.04), value: selected)
+                    }
+                }
+                .padding(12)
+            }
+        }
+        .clipShape(shape)
+        .overlay(shape.stroke(selected ? Palette.teal : Color(.separator), lineWidth: selected ? 3 : 1))
+    }
+
+    private func card(radius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .fill(Color(.systemBackground))
+            .overlay(alignment: .top) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Capsule().fill(Palette.teal.opacity(selected ? 0.6 : 0.3)).frame(height: 5)
+                    ForEach(0..<3, id: \.self) { _ in
+                        Capsule().fill(Color(.systemGray4)).frame(height: 4)
+                    }
+                }
+                .padding(7)
+            }
+            // Overlapping, same-coloured cards need their edges drawn to read as separate cards.
+            .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(Color(.systemGray3), lineWidth: 1))
+            .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
     }
 }
 

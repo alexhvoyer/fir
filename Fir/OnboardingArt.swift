@@ -14,6 +14,7 @@ struct OnboardingBackground: View {
         (Palette.pine, Color(light: 0x7FA34E, dark: 0x93BD5E)),
         (Palette.teal, Color(light: 0x7A62C9, dark: 0x9A84E6)),
         (Palette.teal, Palette.pine),
+        (Palette.teal, Color(light: 0x4E9C7A, dark: 0x67B892)),
         (Palette.pine, Color(light: 0xB8914A, dark: 0xCFA866)),
     ]
 
