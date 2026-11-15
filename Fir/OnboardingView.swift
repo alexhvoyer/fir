@@ -70,7 +70,7 @@ struct OnboardingView: View {
 
     private var welcome: some View {
         OnboardingPage(title: "Welcome to Fir",
-                       text: "A calm iPhone browser. Your Zen or Firefox tabs come along.") {
+                       text: "An open-source iPhone browser. Your Zen or Firefox tabs come along.") {
             GrowingSprig()
                 .frame(width: 150, height: 150)
                 .background {
