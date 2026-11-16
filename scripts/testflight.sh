@@ -12,6 +12,9 @@ if [ -n "${ASC_KEY_ID:-}" ]; then
     set -- -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 fi
 
+# The UI smoke tests go first: a build that breaks them never reaches testers. SKIP_UI_TESTS=1 skips them.
+if [ "${SKIP_UI_TESTS:-}" != 1 ]; then ./scripts/ui-tests.sh; fi
+
 build="$(date +%Y%m%d).$(date +%H%M)"
 xcodegen generate
 rm -rf build/Fir.xcarchive build/export

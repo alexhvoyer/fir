@@ -495,6 +495,7 @@ struct TabSwitcherView: View {
             .frame(width: 48, height: 48)
             .glassEffect(.regular.interactive(), in: .circle)
             .foregroundStyle(.primary)
+            .accessibilityIdentifier("overviewNewTab")
     }
 
     private var bottomBar: some View {
@@ -579,6 +580,10 @@ private struct TabCard: View {
             .opacity(titleOpacity)
             CardImage(tab: tab, width: width, height: height)
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { onFrame($0) }
+                .accessibilityElement()
+                .accessibilityLabel(tab.title)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityIdentifier("deckCard")
                 .opacity(imageHidden ? 0 : 1)
         }
         .frame(width: width)

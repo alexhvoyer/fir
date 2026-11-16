@@ -162,6 +162,7 @@ struct PageSheet: View {
             }
             if let url = tab.pageURL {
                 Button("Share", systemImage: "square.and.arrow.up") { PageShare.present(url, of: tab) }
+                    .accessibilityIdentifier("pageMenuShare")
                     .frame(width: 36, height: 40)
             }
             // The sheet stays open after both, so each answers with a haptic and its own symbol change.

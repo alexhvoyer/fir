@@ -14,6 +14,8 @@ targets:
   Fir:
     type: application
     platform: iOS
+    # Declared schemes for every target: once one is shared, Xcode stops making the others.
+    scheme: {}
     sources:
       - Fir
       - Shared
@@ -85,6 +87,8 @@ targets:
   FirTests:
     type: bundle.unit-test
     platform: iOS
+    scheme:
+      testTargets: [FirTests]
     sources:
       - FirTests
       - Fir/ZipExtractor.swift
@@ -93,9 +97,27 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser.Tests
         SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: YES
+  # The automated Smoke of docs/regression-checklist.md. scripts/ui-tests.sh runs it on an erased simulator of its own.
+  FirUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    scheme:
+      testTargets: [FirUITests]
+    sources:
+      - FirUITests
+    dependencies:
+      - target: Fir
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser.UITests
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Fir
+        TARGETED_DEVICE_FAMILY: "1"
   FirWidget:
     type: app-extension
     platform: iOS
+    scheme: {}
     sources:
       - FirWidget
       - Shared

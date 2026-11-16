@@ -247,6 +247,8 @@ private struct GridCell: View {
                 TabMenuItems(tab: tab, space: space, local: tab.spaceID == nil, menu: tabMenu)
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("gridCell")
     }
 
     private func endSwipe(translation: CGFloat, velocity: CGFloat) {

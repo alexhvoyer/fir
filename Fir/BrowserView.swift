@@ -1701,6 +1701,8 @@ private struct PageView: View {
                 .opacity(max(0, 1 - compacting * 2) * presence)
                 .allowsHitTesting(compacting < 0.5)
             hostLabel(tab)
+                // The Address element reads the host; this drawn copy would read it twice.
+                .accessibilityHidden(true)
                 // Measured before the cap's frame, which takes all the width it is offered.
                 .onGeometryChange(for: TabValue<CGFloat>.self) { TabValue(tab: tab.id, value: $0.size.width) } action: { label in
                     labelWidths[label.tab] = label.value
@@ -1778,6 +1780,11 @@ private struct PageView: View {
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .contentShape(.rect)
                 .onTapGesture { if !justLongPressed { search = .edit } }
+                .accessibilityElement()
+                .accessibilityLabel("Address")
+                .accessibilityValue(tab.url?.host() ?? "")
+                .accessibilityAddTraits(.isButton)
+                .accessibilityIdentifier("address")
                 // Keyed on the tab too: a new tab reuses this view, and an unchanged frame reported nothing for it.
                 .onGeometryChange(for: TabValue<CGRect>.self) {
                     TabValue(tab: tab.id, value: $0.frame(in: .named(Self.addressSpace)))
@@ -1930,6 +1937,9 @@ private struct PageView: View {
         } primaryAction: {
             onShowTabs()
         }
+        .accessibilityLabel("Tabs")
+        .accessibilityValue("\(browser.tabs(in: browser.selected.spaceID).count)")
+        .accessibilityIdentifier("tabs")
         .foregroundStyle(.primary)
     }
 

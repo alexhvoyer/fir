@@ -20,6 +20,7 @@ xcodebuild -project Fir.xcodeproj -scheme Fir -destination "id=<simulator>" -der
 xcrun simctl install <simulator> build/sim/Build/Products/Debug-iphonesimulator/Fir.app
 xcrun simctl launch --terminate-running-process <simulator> dev.khvoynitsky.browser
 xcodebuild test -project Fir.xcodeproj -scheme FirTests -destination "id=<simulator>" -derivedDataPath build/sim
+./scripts/ui-tests.sh   # FirUITests smoke on its own erased simulator; testflight.sh runs it first
 ```
 
 `/fir-install` builds for a phone or uploads to TestFlight. `/animation-check` measures an animation from a recording.
@@ -31,6 +32,9 @@ xcodebuild test -project Fir.xcodeproj -scheme FirTests -destination "id=<simula
 - Never commit, push, upload to TestFlight or install on a phone unless asked. Several ideas often share one build.
 - Every non-trivial change gets `/code-review` before it is reported done; each finding is fixed or answered.
   Trivial means copy, a constant or a one-line fix.
+- `docs/regression-checklist.md`: the sections a change touches are run by hand; its Smoke is automated in
+  `FirUITests`. A fixed bug gets a case there, and a UI test when one can see it.
+- UI tests never run on the signed-in simulator: closing tabs there reaches the real Zen account.
 - After a verification build, leave the final build on the simulator, not a control build.
 - Code, comments and docs are in English. A comment block is at most 30 words and explains why.
 - Temporary test code must contain `dbg` or `DBG`, so the commit hook can catch what was left behind.
