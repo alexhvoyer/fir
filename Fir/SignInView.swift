@@ -73,18 +73,23 @@ private struct SignInWebView: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "accountsCommandHandler")
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.load(URLRequest(url: url))
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {}
 
-    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
         let onLogin: @MainActor (String, String) -> Void
 
         init(onLogin: @escaping @MainActor (String, String) -> Void) {
             self.onLogin = onLogin
         }
+
+        /// The account page is not a tab: no camera or microphone.
+        func webView(_ webView: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin,
+                     initiatedBy frame: WKFrameInfo, type: WKMediaCaptureType) async -> WKPermissionDecision { .deny }
 
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
             let expected = AccountService.contentServer

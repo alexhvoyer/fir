@@ -292,6 +292,10 @@ private final class ExtensionPageController: UIViewController, WKNavigationDeleg
         return nil
     }
 
+    /// An add-on's own page is not a tab: no camera or microphone.
+    func webView(_ webView: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin,
+                 initiatedBy frame: WKFrameInfo, type: WKMediaCaptureType) async -> WKPermissionDecision { .deny }
+
     private func leave(to url: URL) {
         guard ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
         dismiss(animated: true)

@@ -306,9 +306,12 @@ final class BrowserTab: NSObject, Identifiable {
         upgradedFrom = nil
     }
 
-    /// Hidden tabs stay quiet, and a page gets a few dialogs per load: `while (true) alert(1)` traps the app.
+    /// Hidden and locked tabs stay quiet.
+    private var inFront: Bool { model?.selectedID == id && !(isPrivate && model?.privateLocked == true) }
+
+    /// A page gets a few dialogs per load: `while (true) alert(1)` traps the app.
     private func mayShowDialog() -> Bool {
-        guard model?.selectedID == id, dialogsThisPage < 5, !(isPrivate && model?.privateLocked == true) else { return false }
+        guard inFront, dialogsThisPage < 5 else { return false }
         dialogsThisPage += 1
         return true
     }
@@ -430,6 +433,12 @@ extension BrowserTab: WKUIDelegate {
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                  for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         model?.openPopup(from: self, configuration: configuration, bySubframe: !navigationAction.sourceFrame.isMainFrame)
+    }
+
+    /// Hidden and locked tabs get a no, the tab in front WebKit's prompt; a call's repeated asks spend no dialog budget.
+    func webView(_ webView: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin,
+                 initiatedBy frame: WKFrameInfo, type: WKMediaCaptureType) async -> WKPermissionDecision {
+        inFront ? .prompt : .deny
     }
 
     /// Safari's first two link actions, ahead of WebKit's own (open, copy, share).
@@ -759,6 +768,9 @@ final class BrowserModel {
             // Made here, not by the page view's update: its first observation writes observed state.
             _ = selected.webView
             for tab in tabs where tab.id == oldValue || tab.id == selectedID { tab.lastViewed = .now }
+            // Every tab out of sight, not only the one just left: a popup hop would skip its opener. A page's own
+            // popup leaves its call running.
+            stopMediaCapture(of: tabs.filter { $0.id != selectedID && $0.id != selected.openerID })
             ExtensionManager.shared.tabActivated(selected, previous: tabs.first { $0.id == oldValue })
         }
     }
@@ -1017,9 +1029,7 @@ final class BrowserModel {
         let index = siblings.firstIndex { $0.id == tab.id } ?? 0
         let fresh = BrowserTab(zenFolderTab: zenTab, url: url, spaceID: space, id: tab.id)
         tabs[position] = fresh
-        tab.stopUpgrade()
-        tab.existingWebView?.stopLoading()
-        tab.existingWebView?.removeFromSuperview()
+        detach(tab)
         if selectedID == tab.id {
             let others = siblings.filter { $0.id != tab.id }
             selectedID = inPlace || others.isEmpty ? fresh.id : others[min(index, others.count - 1)].id
@@ -1172,9 +1182,7 @@ final class BrowserModel {
         guard let index = siblings.firstIndex(where: { $0.id == tab.id }),
               let position = tabs.firstIndex(where: { $0.id == tab.id }) else { return }
         tabs.removeAll { $0.id == tab.id }
-        tab.stopUpgrade()
-        tab.existingWebView?.stopLoading()
-        tab.existingWebView?.removeFromSuperview()
+        detach(tab)
         var placeholder: BrowserTab.ID?
         // Closing a regular tab must not bring up a private one, so one regular tab always remains.
         if tabs.isEmpty || (!tab.isPrivate && tabs.allSatisfy(\.isPrivate)) {
@@ -1247,6 +1255,15 @@ final class BrowserModel {
         if Self.locksPrivateTabs, tabs.contains(where: \.isPrivate) {
             privateLocked = true
             pausePrivateMedia()
+            stopMediaCapture(of: tabs.filter(\.isPrivate))
+        }
+    }
+
+    /// Out of sight, a site keeps no camera or microphone: Fir shows no sign of it and may play audio in the background.
+    func stopMediaCapture(of tabs: [BrowserTab]) {
+        for case let webView? in tabs.map(\.existingWebView) {
+            if webView.cameraCaptureState != .none { webView.setCameraCaptureState(.none, completionHandler: nil) }
+            if webView.microphoneCaptureState != .none { webView.setMicrophoneCaptureState(.none, completionHandler: nil) }
         }
     }
 
@@ -1322,12 +1339,19 @@ final class BrowserModel {
     /// Takes a tab away without the undo capsule or its haptic: for tabs Fir closes on its own.
     private func discard(_ tab: BrowserTab) {
         tabs.removeAll { $0.id == tab.id }
-        tab.stopUpgrade()
-        tab.existingWebView?.stopLoading()
-        tab.existingWebView?.removeFromSuperview()
+        detach(tab)
         if tabs.isEmpty { tabs = [BrowserTab()] }
         endPrivateSessionIfDone()
         SessionStore.deleteSnapshot(for: tab.id)
+    }
+
+    /// A tab leaving the list. Undo, or anything else holding it, keeps the web view alive: a call in it must not
+    /// listen meanwhile.
+    private func detach(_ tab: BrowserTab) {
+        tab.stopUpgrade()
+        tab.existingWebView?.stopLoading()
+        stopMediaCapture(of: [tab])
+        tab.existingWebView?.removeFromSuperview()
     }
 
     /// Opens a closed tab again in its workspace and drops it from the list.
@@ -1596,6 +1620,10 @@ final class LinkPreviewController: UIViewController, WKNavigationDelegate, WKUID
     }
 
     func pauseMedia() { webView?.pauseAllMediaPlayback(completionHandler: nil) }
+
+    /// A peek or a glance is not a tab: a page asked for the microphone while only being previewed.
+    func webView(_ webView: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin,
+                 initiatedBy frame: WKFrameInfo, type: WKMediaCaptureType) async -> WKPermissionDecision { .deny }
 
     /// The tab's own link menu: WebKit's default opened a committed preview in Safari.
     func webView(_ webView: WKWebView, contextMenuConfigurationFor elementInfo: WKContextMenuElementInfo)

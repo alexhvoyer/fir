@@ -120,6 +120,7 @@ struct FirApp: App {
             case .background:
                 lock.lock()
                 browser.pausePrivateMedia()
+                browser.stopMediaCapture(of: browser.tabs)
                 // The app lock already asks on return; a second Face ID prompt for private tabs would race it.
                 if !AppLock.isEnabled { browser.lockPrivate() }
             case .active:

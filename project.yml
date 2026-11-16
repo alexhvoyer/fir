@@ -79,6 +79,10 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Fir
         INFOPLIST_KEY_NSFaceIDUsageDescription: Unlock Fir when the app lock is on.
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Save images from websites to your photo library.
+        INFOPLIST_KEY_NSCameraUsageDescription: Take photos for websites, and use the camera on sites you allow.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Record video for websites, and use the microphone on sites you allow.
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: Turn your speech into text on sites you allow.
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         MARKETING_VERSION: "0.1"

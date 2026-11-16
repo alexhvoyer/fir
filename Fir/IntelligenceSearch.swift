@@ -276,7 +276,7 @@ final class IntelligenceSearch {
 
 /// Loads one page off screen with no cookies of the user's and nothing kept, within a time limit.
 @MainActor
-private final class HiddenPageLoader: NSObject, WKNavigationDelegate {
+private final class HiddenPageLoader: NSObject, WKNavigationDelegate, WKUIDelegate {
     let webView: WKWebView
     private var finished: CheckedContinuation<Void, Never>?
 
@@ -287,7 +287,12 @@ private final class HiddenPageLoader: NSObject, WKNavigationDelegate {
         super.init()
         ContentBlocker.shared.attach(webView)
         webView.navigationDelegate = self
+        webView.uiDelegate = self
     }
+
+    /// Off screen and unseen: with no delegate, WebKit would put its camera or microphone prompt up for it.
+    func webView(_ webView: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin,
+                 initiatedBy frame: WKFrameInfo, type: WKMediaCaptureType) async -> WKPermissionDecision { .deny }
 
     func load(_ url: URL) async {
         await withCheckedContinuation { continuation in

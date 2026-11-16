@@ -146,6 +146,14 @@ timing, sync.
 - `sim` Reader opens on an article and closes back to the same scroll position on the page.
 - `sim` Translate a page in another language, then restore the original.
 - `sim` A download shows its progress and ends up in Downloads, where it can be opened and shared.
+- `sim` Long-press an image, with and without a link, and tap Save to Photos: iOS asks for access once, the image
+  lands in Photos, and Fir stays open.
+- `phone` On a site's photo upload (tinypng.com), Take Photo opens the camera and iOS asks for access; Fir stays
+  open. The simulator never asks, so only a phone shows this.
+- `sim` A page asking for the microphone, or starting speech recognition, in the tab in front gets WebKit's prompt. In a
+  long-press link preview, a hidden tab or a locked private tab it gets a refusal and no prompt.
+- `sim` A site holding the microphone loses it when its tab is switched away, private tabs lock, or Fir goes to the
+  background (its track ends).
 
 ## Add-ons
 
