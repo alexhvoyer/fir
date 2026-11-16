@@ -14,6 +14,12 @@
             "state" : "new",
             "value" : "\"%1$@\" will be able to read and change %2$@ and %3$lld more."
           }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%1$@» сможет читать и изменять %2$@ и ещё %3$lld."
+          }
         }
       }
     },
@@ -24,13 +30,55 @@
             "state" : "new",
             "value" : "\"%1$@\" will be able to read and change %2$@."
           }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%1$@» сможет читать и изменять %2$@."
+          }
         }
       }
     },
-    "\"%@\" will be able to read and change every website." : {},
-    "\"%@\" will be able to read and change no websites." : {},
-    "%@ Suggestions" : {},
-    "%@ rules" : {},
+    "\"%@\" will be able to read and change every website." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» сможет читать и изменять все сайты."
+          }
+        }
+      }
+    },
+    "\"%@\" will be able to read and change no websites." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» не получит доступа ни к одному сайту."
+          }
+        }
+      }
+    },
+    "%@ Suggestions" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подсказки %@"
+          }
+        }
+      }
+    },
+    "%@ rules" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Правил: %@"
+          }
+        }
+      }
+    },
     "%lld" : {
       "shouldTranslate" : false
     },
@@ -49,6 +97,36 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld Reported Problems"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld проблемы"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld проблем"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld проблема"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld проблемы"
                 }
               }
             }
@@ -75,6 +153,36 @@
               }
             }
           }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вкладки"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вкладок"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вкладка"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld вкладки"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -97,20 +205,149 @@
               }
             }
           }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$lld вкладки, обновлено %2$@"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$lld вкладок, обновлено %2$@"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$lld вкладка, обновлено %2$@"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$lld вкладки, обновлено %2$@"
+                }
+              }
+            }
+          }
         }
       }
     },
-    "1 Day" : {},
-    "1 Month" : {},
-    "1 Week" : {},
-    "12 Hours" : {},
-    "2 Weeks" : {},
-    "3 Days" : {},
-    "A demo of the tab gestures" : {},
-    "A result" : {},
-    "A short list of changes after a major update." : {},
-    "About" : {},
-    "Accent Color" : {},
+    "1 Day" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 день"
+          }
+        }
+      }
+    },
+    "1 Month" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 месяц"
+          }
+        }
+      }
+    },
+    "1 Week" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 неделя"
+          }
+        }
+      }
+    },
+    "12 Hours" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 часов"
+          }
+        }
+      }
+    },
+    "2 Weeks" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 недели"
+          }
+        }
+      }
+    },
+    "3 Days" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 дня"
+          }
+        }
+      }
+    },
+    "A demo of the tab gestures" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Демонстрация жестов для вкладок"
+          }
+        }
+      }
+    },
+    "A result" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Результат поиска"
+          }
+        }
+      }
+    },
+    "A short list of changes after a major update." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Короткий список изменений после крупного обновления."
+          }
+        }
+      }
+    },
+    "About" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "О программе"
+          }
+        }
+      }
+    },
+    "Accent Color" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цвет акцента"
+          }
+        }
+      }
+    },
     "Accent.System" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -119,53 +356,455 @@
             "state" : "new",
             "value" : "System"
           }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Системный"
+          }
         }
       }
     },
-    "Account" : {},
-    "Add" : {},
-    "Add %@" : {},
-    "Add to Essentials" : {},
-    "Add to Folder" : {},
-    "Add-on link or name, e.g. darkreader" : {},
-    "Address" : {},
-    "Address Bar Buttons" : {},
-    "Adds protection against malicious websites. Heavy sites run slower in private tabs. Applies from the next page load." : {},
-    "Ads and trackers load on every site." : {},
-    "Ads on English-language and international sites" : {},
-    "Already in Your Language" : {},
-    "Always Use Reader" : {},
-    "Always connects securely, and asks before opening a site that doesn't support it." : {},
-    "An open-source iPhone browser. Your Zen or Firefox tabs come along." : {},
-    "Annoyances are newsletter and open-in-app pop-ups, chat and notification prompts, and social buttons. To turn blocking off for one site, use the page menu." : {},
-    "App Icon" : {},
-    "Appearance" : {},
-    "Apple's translator on iPhone doesn't support this language yet." : {},
-    "Archive Tabs After" : {},
-    "Archived Tabs" : {},
-    "Archived tabs you haven't viewed in this long are deleted. It's always longer than archiving." : {},
-    "Ask a question and Fir reads the first results for you, then writes one answer with its sources. The answer is written on this iPhone." : {},
-    "Back" : {},
-    "Back to Page" : {},
-    "Block Ads & Trackers" : {},
-    "Block Ads and Trackers" : {},
-    "Bring your Zen browser along" : {},
-    "Can't Open This Page" : {},
-    "Can't Translate %@" : {},
-    "Cancel" : {},
-    "Cards" : {},
-    "Cards shows one tab at a time to swipe through. Grid shows a workspace's tabs side by side." : {},
-    "Cards to swipe through one at a time, or a grid that shows them side by side." : {},
-    "Certificate" : {},
-    "Certificate Chain" : {},
-    "Check the connection and try again." : {},
-    "Clear" : {},
-    "Clear History" : {},
-    "Clear Tabs After" : {},
-    "Clear Website Data" : {},
-    "Clear all history?" : {},
-    "Clear all website data?" : {},
-    "Close" : {},
+    "Account" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аккаунт"
+          }
+        }
+      }
+    },
+    "Add" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить"
+          }
+        }
+      }
+    },
+    "Add %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить «%@»"
+          }
+        }
+      }
+    },
+    "Add to Essentials" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить в основное"
+          }
+        }
+      }
+    },
+    "Add to Folder" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить в папку"
+          }
+        }
+      }
+    },
+    "Add-on link or name, e.g. darkreader" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ссылка или имя дополнения, например darkreader"
+          }
+        }
+      }
+    },
+    "Address" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адрес"
+          }
+        }
+      }
+    },
+    "Address Bar Buttons" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кнопки адресной строки"
+          }
+        }
+      }
+    },
+    "Adds protection against malicious websites. Heavy sites run slower in private tabs. Applies from the next page load." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавляет защиту от вредоносных сайтов. Тяжёлые сайты в частных вкладках работают медленнее. Действует со следующей загрузки страницы."
+          }
+        }
+      }
+    },
+    "Ads and trackers load on every site." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Реклама и трекеры загружаются на всех сайтах."
+          }
+        }
+      }
+    },
+    "Ads on English-language and international sites" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Реклама на англоязычных и международных сайтах"
+          }
+        }
+      }
+    },
+    "Already in Your Language" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уже на вашем языке"
+          }
+        }
+      }
+    },
+    "Always Use Reader" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всегда в режиме чтения"
+          }
+        }
+      }
+    },
+    "Always connects securely, and asks before opening a site that doesn't support it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всегда подключается по защищённому соединению и спрашивает, прежде чем открыть сайт, который его не поддерживает."
+          }
+        }
+      }
+    },
+    "An open-source iPhone browser. Your Zen or Firefox tabs come along." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Браузер для iPhone с открытым кодом. Вкладки из Zen или Firefox — с вами."
+          }
+        }
+      }
+    },
+    "Annoyances are newsletter and open-in-app pop-ups, chat and notification prompts, and social buttons. To turn blocking off for one site, use the page menu." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Раздражители — это окна подписок и предложения открыть приложение, чаты, запросы уведомлений и кнопки соцсетей. Чтобы выключить блокировку на одном сайте, воспользуйтесь меню страницы."
+          }
+        }
+      }
+    },
+    "App Icon" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Значок приложения"
+          }
+        }
+      }
+    },
+    "Appearance" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оформление"
+          }
+        }
+      }
+    },
+    "Apple's translator on iPhone doesn't support this language yet." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переводчик Apple на iPhone пока не поддерживает этот язык."
+          }
+        }
+      }
+    },
+    "Archive Tabs After" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Архивировать вкладки через"
+          }
+        }
+      }
+    },
+    "Archived Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Архив вкладок"
+          }
+        }
+      }
+    },
+    "Archived tabs you haven't viewed in this long are deleted. It's always longer than archiving." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки из архива, которые вы не открывали столько времени, удаляются. Этот срок всегда дольше срока архивации."
+          }
+        }
+      }
+    },
+    "Ask a question and Fir reads the first results for you, then writes one answer with its sources. The answer is written on this iPhone." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задайте вопрос — Fir прочитает первые результаты и напишет один ответ с источниками. Ответ создаётся прямо на этом iPhone."
+          }
+        }
+      }
+    },
+    "Back" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Назад"
+          }
+        }
+      }
+    },
+    "Back to Page" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вернуться к странице"
+          }
+        }
+      }
+    },
+    "Block Ads & Trackers" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировать рекламу и трекеры"
+          }
+        }
+      }
+    },
+    "Block Ads and Trackers" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировать рекламу и трекеры"
+          }
+        }
+      }
+    },
+    "Bring your Zen browser along" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Возьмите с собой Zen"
+          }
+        }
+      }
+    },
+    "Can't Open This Page" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удаётся открыть страницу"
+          }
+        }
+      }
+    },
+    "Can't Translate %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Невозможно перевести с языка «%@»"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить"
+          }
+        }
+      }
+    },
+    "Cards" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карточки"
+          }
+        }
+      }
+    },
+    "Cards shows one tab at a time to swipe through. Grid shows a workspace's tabs side by side." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карточки показывают по одной вкладке, их листают свайпом. Сетка показывает вкладки пространства рядом друг с другом."
+          }
+        }
+      }
+    },
+    "Cards to swipe through one at a time, or a grid that shows them side by side." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Карточки, которые листаются по одной, или сетка, где вкладки видны рядом."
+          }
+        }
+      }
+    },
+    "Certificate" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сертификат"
+          }
+        }
+      }
+    },
+    "Certificate Chain" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цепочка сертификатов"
+          }
+        }
+      }
+    },
+    "Check the connection and try again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверьте подключение и попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "Clear" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить"
+          }
+        }
+      }
+    },
+    "Clear History" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить историю"
+          }
+        }
+      }
+    },
+    "Clear Tabs After" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалять вкладки через"
+          }
+        }
+      }
+    },
+    "Clear Website Data" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить данные сайтов"
+          }
+        }
+      }
+    },
+    "Clear all history?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить всю историю?"
+          }
+        }
+      }
+    },
+    "Clear all website data?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить все данные сайтов?"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть"
+          }
+        }
+      }
+    },
     "Close All %lld Tabs" : {
       "localizations" : {
         "en" : {
@@ -185,342 +824,3369 @@
               }
             }
           }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Закрыть все %lld вкладки"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Закрыть все %lld вкладок"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Закрыть %lld вкладку"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Закрыть все %lld вкладки"
+                }
+              }
+            }
+          }
         }
       }
     },
-    "Close Tab" : {},
-    "Close Tabs" : {},
-    "Collapse" : {},
-    "Collapse Toolbar on Scroll" : {},
-    "Connection Is Not Secure" : {},
-    "Connection Is Secure" : {},
-    "Connection Security" : {},
-    "Continue" : {},
-    "Cookie consent pop-ups" : {},
-    "Copy" : {},
-    "Copy Link" : {},
-    "Copy Password" : {},
-    "Couldn't Reach Mozilla" : {},
-    "Couldn't Reach Zen" : {},
-    "Couldn't Send the Tab" : {},
-    "Couldn't Translate the Page" : {},
-    "Couldn't finish signing in. Try again." : {},
-    "Couldn't reach Zen's sync server. Try again." : {},
-    "Create" : {},
-    "Dark" : {},
-    "Default Browser" : {},
-    "Delete" : {},
-    "Delete %@?" : {},
-    "Delete All" : {},
-    "Delete Folder?" : {},
-    "Delete Folder…" : {},
-    "Delete Password" : {},
-    "Delete Workspace" : {},
-    "Delete Workspace?" : {},
-    "Delete all archived tabs?" : {},
-    "Delete this password? It is deleted from Zen too." : {},
-    "Devices" : {},
-    "Do you want to download \"%@\"?" : {},
-    "Do you want to download this file?" : {},
-    "Download" : {},
-    "Downloads" : {},
-    "Edit Workspace" : {},
-    "Edit Workspaces…" : {},
-    "Emoji" : {},
-    "Enabled" : {},
-    "Essential" : {},
-    "Essentials" : {},
-    "Expand" : {},
-    "Experimental" : {},
-    "Experimental. Installs Firefox add-ons from addons.mozilla.org through WebKit's extension support; many work, some don't. Permissions the add-on asks for are granted. Not available in private tabs." : {},
-    "Expires" : {},
-    "Extension" : {},
-    "Extension Settings" : {},
-    "Extensions" : {},
-    "Face ID" : {},
-    "Failed" : {},
-    "Files you download appear here and in the Files app, under On My iPhone › Fir." : {},
-    "Fill your password" : {},
-    "Filter Lists" : {},
-    "Find" : {},
-    "Find on Page" : {},
-    "Fir couldn't read the results. If the search asks you to prove you're human, answer it there and try again." : {},
-    "Fir is Locked" : {},
-    "Fir is an independent app, not affiliated with Zen or Mozilla." : {},
-    "Fir is an independent app, not affiliated with Zen or Mozilla. Sync uses Mozilla application-services (MPL-2.0)." : {},
-    "Fir on %@" : {},
-    "Fir opens ready to type. The page you were reading stays behind the search." : {},
-    "Fir shows a short list of changes after a major update. It stays in Settings under About." : {},
-    "Folder" : {},
-    "Follows Reduce Motion" : {},
-    "For %@." : {},
-    "For this site." : {},
-    "Forget" : {},
-    "Forget %@?" : {},
-    "Forget This Website" : {},
-    "Forget this website?" : {},
-    "Frequently Visited" : {},
-    "From %@" : {},
-    "General" : {},
-    "General lists miss many ads on sites in other languages. Turn on the lists for the languages you read." : {},
-    "Global Privacy Control" : {},
-    "Go to Tabs" : {},
-    "Green" : {},
-    "Grid" : {},
-    "HTTPS-Only Mode" : {},
-    "Haptics" : {},
-    "Harden Private Tabs" : {},
-    "Hide" : {},
-    "Hide Annoyances" : {},
-    "Hide Cookie Pop-ups" : {},
-    "History" : {},
-    "History and Tabs" : {},
-    "In iOS Settings, choose Fir under Apps > Default Apps > Browser App. Links from other apps then open here." : {},
-    "Install" : {},
-    "Install Add-on?" : {},
-    "Installed" : {},
-    "Installing…" : {},
-    "Intelligence Search" : {},
-    "Intermediate" : {},
-    "Issued By" : {},
-    "Issued To" : {},
-    "It syncs to Zen." : {},
-    "It will also see the addresses of your open tabs." : {},
-    "Its cookies and data on this iPhone are removed, so you're signed out of it." : {},
-    "Its tabs close in Zen on your computers too. Ones open here stay, outside the folder." : {},
-    "Its tabs close." : {},
-    "Larger Text" : {},
-    "Last Error" : {},
-    "Light" : {},
-    "Lists update weekly. Changes apply from the next page load." : {},
-    "Lock Fir" : {},
-    "Lock Private Tabs" : {},
-    "Looking at the results" : {},
-    "Make it yours" : {},
-    "Messages the add-on reported. Many are harmless; if it doesn't work, the reason is usually here." : {},
-    "More Buttons" : {},
-    "Move to Workspace" : {},
-    "Mozilla Account" : {},
-    "Name" : {},
-    "Never" : {},
-    "New Folder" : {},
-    "New Folder…" : {},
-    "New Private Tab" : {},
-    "New Tab" : {},
-    "New Workspace" : {},
-    "New tabs" : {},
-    "Newsletter and open-in-app pop-ups, chat and notification prompts, social buttons" : {},
-    "Night" : {},
-    "No Archived Tabs" : {},
-    "No History" : {},
-    "No open tabs on this device." : {},
-    "No pinned tabs or folders in this space. Tabs you open here stay in it, on this iPhone only." : {},
-    "No saved passwords yet. Passwords saved in Zen appear here after sync." : {},
-    "No saved passwords yet. Sign in to Sync to bring your passwords from Zen." : {},
-    "No such add-on on addons.mozilla.org." : {},
-    "No username" : {},
-    "None of the first results had text to answer from." : {},
-    "Not Fir" : {},
-    "Not Now" : {},
-    "Not Trusted" : {},
-    "Not synced yet" : {},
-    "OK" : {},
-    "Off" : {},
-    "Offers to read a search's first results and write one answer with its sources, on this iPhone. Answers can get things wrong." : {},
-    "On" : {},
-    "Only on this iPhone. Move it into a Zen workspace later from its menu." : {},
-    "Open" : {},
-    "Open Search at Launch" : {},
-    "Open Tab" : {},
-    "Open Tabs" : {},
-    "Open iOS Settings" : {},
-    "Open in New Tab" : {},
-    "Open in Private Tab" : {},
-    "Open this page in another app?" : {},
-    "Organization" : {},
-    "Other Tabs" : {},
-    "Page Menu" : {},
-    "Page Zoom" : {},
-    "Pages from History" : {},
-    "Pages you open here aren't saved, and their cookies and site data are gone when you close the last private tab." : {},
-    "Password" : {},
-    "Passwords" : {},
-    "Passwords Are Locked" : {},
-    "Passwords and history are removed from this iPhone. What has synced stays in your Mozilla account." : {},
-    "Pin" : {},
-    "Pin Tab" : {},
-    "Pine" : {},
-    "Pink" : {},
-    "Pinned" : {},
-    "Privacy" : {},
-    "Privacy & Security" : {},
-    "Private" : {},
-    "Private Browsing" : {},
-    "Private Browsing: pages you open here aren't saved." : {},
-    "Private Tabs Are Locked" : {},
-    "Private tabs leave nothing behind. You can also lock Fir with Face ID in Settings." : {},
-    "Private tabs lock when you leave Private or Fir. Locking Fir asks when you open it, and hides the page in the app switcher." : {},
-    "Purple" : {},
-    "Reader" : {},
-    "Reader Available" : {},
-    "Reader Isn't Available" : {},
-    "Reading" : {},
-    "Reading %lld of 3" : {},
-    "Recently Closed" : {},
-    "Recently Visited" : {},
-    "Regional" : {},
-    "Reload" : {},
-    "Remove" : {},
-    "Remove Extension" : {},
-    "Remove from Essentials" : {},
-    "Remove from Folder" : {},
-    "Removes cookies, cache and site storage. You will be signed out of websites." : {},
-    "Request Desktop Site" : {},
-    "Root" : {},
-    "Save" : {},
-    "Save password for %@?" : {},
-    "Saved password" : {},
-    "Search" : {},
-    "Search Engine" : {},
-    "Search Engine Suggestions" : {},
-    "Search Passwords" : {},
-    "Search Sheet" : {},
-    "Search Sheet opens search at once. Start Page shows your pinned and frequent sites and history; tap the address bar to search, and the keyboard comes up right away." : {},
-    "Search Suggestions" : {},
-    "Search or enter address" : {},
-    "Search or type an address below." : {},
-    "Search right away, or a start page with your pinned and frequent sites and history." : {},
-    "See a workspace's tabs side by side: choose Grid in Settings > Tabs > Tab Overview. Swipe a tab left to close it." : {},
-    "Send" : {},
-    "Sent to %@" : {},
-    "Set up Face ID or a passcode on this iPhone to lock Fir." : {},
-    "Settings" : {},
-    "Settings for This Site" : {},
-    "Share" : {},
-    "Show Onboarding" : {},
-    "Show Original" : {},
-    "Show private tabs" : {},
-    "Show saved passwords" : {},
-    "Shown" : {},
-    "Sign In" : {},
-    "Sign In to Mozilla Account" : {},
-    "Sign In with Mozilla" : {},
-    "Sign Out" : {},
-    "Sign in to see tabs from Zen" : {},
-    "Sign in with the Mozilla account from Zen or Firefox. Workspaces, tabs, history and passwords come along." : {},
-    "Sign in with the account you use in Zen to get its tabs, history and workspaces here." : {},
-    "Sign in with your Mozilla account to see your workspaces, pinned sites, open tabs and history from Zen." : {},
-    "Sign out?" : {},
-    "Signed in" : {},
-    "Simmer it for about three minutes" : {},
-    "Skip" : {},
-    "Smaller Text" : {},
-    "Snow" : {},
-    "Some lists couldn't be updated: %@" : {},
-    "Sources" : {},
-    "Space" : {},
-    "Spruce" : {},
-    "Start Browsing" : {},
-    "Start Page" : {},
-    "Status" : {},
-    "Suggestions send what you type to the search engine." : {},
-    "Suggestions send what you type to the search engine. History matches stay on this device." : {},
-    "Swipe Anywhere to Navigate" : {},
-    "Swipe left past the last tab for a new one. Long-press the tabs button for a private tab." : {},
-    "Swipe sideways anywhere on a page to go back or forward, not only from the edge. Some sites with sliders may react to it too." : {},
-    "Swipe the bar sideways to switch tabs, or up to see them all." : {},
-    "Swipe through tabs" : {},
-    "Sync" : {},
-    "Sync Now" : {},
-    "Sync on This iPhone" : {},
-    "Synced %@" : {},
-    "System" : {},
-    "Tab Overview" : {},
-    "Tabs" : {},
-    "Tabs from your other devices show in the switcher, beside the workspaces. A device that hasn't synced for two weeks stays hidden even when switched on." : {},
-    "Tabs in a grid" : {},
-    "Tabs you haven't viewed in this long close. They stay in Recently Closed." : {},
-    "Tabs you haven't viewed in this long move to the archive, where you can reopen them. Private tabs close instead." : {},
-    "Tap the password to show it; touch and hold a field to copy it." : {},
-    "Teal" : {},
-    "Tells websites not to sell or share your data. Where the law requires it, they must comply." : {},
-    "The change didn't reach Zen's sync server, so nothing changed. Try again." : {},
-    "The filter lists didn't compile." : {},
-    "The folder appears in Zen too, with this page in it." : {},
-    "The model couldn't answer: %@" : {},
-    "The model couldn't read the pages: %@" : {},
-    "The page may already be in your language, or its language isn't available for translation." : {},
-    "Theme" : {},
-    "These are your Zen workspaces. Changes here reach Zen on your computers too." : {},
-    "This add-on" : {},
-    "This form will be sent over an insecure connection. Anything in it could be seen by others on the network." : {},
-    "This page has no article to show on its own." : {},
-    "This page is already in the language it would be translated into." : {},
-    "This site doesn't support a secure connection." : {},
-    "This site doesn't support a secure connection. Anything you send could be seen by others on the network." : {},
-    "Today" : {},
-    "Trackers and analytics" : {},
-    "Translate" : {},
-    "Translate To" : {},
-    "Translate to %@" : {},
-    "Translating…" : {},
-    "Try Again" : {},
-    "Turn off the Fir lock" : {},
-    "Turn off the private tabs lock" : {},
-    "Turn on Apple Intelligence in iOS Settings to use it." : {},
-    "Turn on Zen Workspaces under Sync to see and edit them here." : {},
-    "Turn on the Fir lock" : {},
-    "Turning one off stops it on this iPhone only; Zen keeps syncing it. Which devices' tabs show is under Workspaces." : {},
-    "Undo Close Tab" : {},
-    "Ungroup" : {},
-    "Unknown" : {},
-    "Unload Opened Tabs" : {},
-    "Unload Tab" : {},
-    "Unloaded, still in %@" : {},
-    "Unloaded, still in its folder" : {},
-    "Unlock" : {},
-    "Unlock Fir" : {},
-    "Unpin" : {},
-    "Unpin Tab" : {},
-    "Untitled" : {},
-    "Up to three. While Back and Forward are shown, only the last one stays, to leave room for the address." : {},
-    "Update" : {},
-    "Update Filter Lists" : {},
-    "Update password for %@?" : {},
-    "Updated %@." : {},
-    "Updating…" : {},
-    "Use %@" : {},
-    "Username" : {},
-    "Valid" : {},
-    "Version" : {},
-    "Version %@" : {},
-    "Website" : {},
-    "Website data cleared." : {},
-    "Welcome to Fir" : {},
-    "What's New" : {},
-    "What's New After Updates" : {},
-    "With Reduce Motion on in iOS Settings, sheets slide up without the zoom and pages switch to your tabs at once." : {},
-    "With history sync on, this can also clear it in Zen." : {},
-    "Work" : {},
-    "Workspaces" : {},
-    "Workspaces Error" : {},
-    "Writing the answer" : {},
-    "Written on this iPhone from the pages below. It can get things wrong." : {},
-    "Yesterday" : {},
-    "You can change these later in Settings." : {},
-    "You can change this later in Settings." : {},
-    "Your connection to %@ is encrypted, but some of this page's content isn't." : {},
-    "Your connection to %@ is encrypted. What you send stays private on the way there." : {},
-    "Your connection to %@ isn't encrypted. Don't enter passwords or card numbers here." : {},
-    "Your tabs" : {},
-    "Your tabs, everywhere" : {},
-    "Zen Workspaces" : {},
-    "Zen asks you to confirm on your computer, then closes the workspace's tabs there." : {},
-    "how to poach an egg" : {},
-    "iPhone Language" : {},
-    "⏱ Lift it out with a slotted spoon [3]" : {},
-    "🍳 Add a splash of vinegar [1]" : {},
-    "🥄 Slide it in from a small bowl [2]" : {}
+    "Close Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть вкладку"
+          }
+        }
+      }
+    },
+    "Close Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрывать вкладки"
+          }
+        }
+      }
+    },
+    "Collapse" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свернуть"
+          }
+        }
+      }
+    },
+    "Collapse Toolbar on Scroll" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сворачивать панель при прокрутке"
+          }
+        }
+      }
+    },
+    "Connection Is Not Secure" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Соединение не защищено"
+          }
+        }
+      }
+    },
+    "Connection Is Secure" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Соединение защищено"
+          }
+        }
+      }
+    },
+    "Connection Security" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита соединения"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжить"
+          }
+        }
+      }
+    },
+    "Cookie consent pop-ups" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Окна согласия на cookie"
+          }
+        }
+      }
+    },
+    "Copy" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать"
+          }
+        }
+      }
+    },
+    "Copy Link" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать ссылку"
+          }
+        }
+      }
+    },
+    "Copy Password" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать пароль"
+          }
+        }
+      }
+    },
+    "Couldn't Reach Mozilla" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось связаться с Mozilla"
+          }
+        }
+      }
+    },
+    "Couldn't Reach Zen" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось связаться с Zen"
+          }
+        }
+      }
+    },
+    "Couldn't Send the Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось отправить вкладку"
+          }
+        }
+      }
+    },
+    "Couldn't Translate the Page" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось перевести страницу"
+          }
+        }
+      }
+    },
+    "Couldn't finish signing in. Try again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось завершить вход. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "Couldn't reach Zen's sync server. Try again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось связаться с сервером синхронизации Zen. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "Create" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать"
+          }
+        }
+      }
+    },
+    "Dark" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тёмная"
+          }
+        }
+      }
+    },
+    "Default Browser" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Браузер по умолчанию"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить"
+          }
+        }
+      }
+    },
+    "Delete %@?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить «%@»?"
+          }
+        }
+      }
+    },
+    "Delete All" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить все"
+          }
+        }
+      }
+    },
+    "Delete Folder?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить папку?"
+          }
+        }
+      }
+    },
+    "Delete Folder…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить папку…"
+          }
+        }
+      }
+    },
+    "Delete Password" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить пароль"
+          }
+        }
+      }
+    },
+    "Delete Workspace" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить пространство"
+          }
+        }
+      }
+    },
+    "Delete Workspace?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить пространство?"
+          }
+        }
+      }
+    },
+    "Delete all archived tabs?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить все вкладки из архива?"
+          }
+        }
+      }
+    },
+    "Delete this password? It is deleted from Zen too." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить этот пароль? Он удалится и в Zen."
+          }
+        }
+      }
+    },
+    "Devices" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Устройства"
+          }
+        }
+      }
+    },
+    "Do you want to download \"%@\"?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузить «%@»?"
+          }
+        }
+      }
+    },
+    "Do you want to download this file?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузить этот файл?"
+          }
+        }
+      }
+    },
+    "Download" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузить"
+          }
+        }
+      }
+    },
+    "Downloads" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузки"
+          }
+        }
+      }
+    },
+    "Edit Workspace" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить пространство"
+          }
+        }
+      }
+    },
+    "Edit Workspaces…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить пространства…"
+          }
+        }
+      }
+    },
+    "Emoji" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эмодзи"
+          }
+        }
+      }
+    },
+    "Enabled" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включено"
+          }
+        }
+      }
+    },
+    "Essential" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Основное"
+          }
+        }
+      }
+    },
+    "Essentials" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Основное"
+          }
+        }
+      }
+    },
+    "Expand" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Развернуть"
+          }
+        }
+      }
+    },
+    "Experimental" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспериментальные"
+          }
+        }
+      }
+    },
+    "Experimental. Installs Firefox add-ons from addons.mozilla.org through WebKit's extension support; many work, some don't. Permissions the add-on asks for are granted. Not available in private tabs." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспериментальная функция. Устанавливает дополнения Firefox с addons.mozilla.org через поддержку расширений в WebKit; многие работают, некоторые нет. Дополнение получает все разрешения, которые запрашивает. Недоступно в частных вкладках."
+          }
+        }
+      }
+    },
+    "Expires" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Действует до"
+          }
+        }
+      }
+    },
+    "Extension" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расширение"
+          }
+        }
+      }
+    },
+    "Extension Settings" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки расширения"
+          }
+        }
+      }
+    },
+    "Extensions" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расширения"
+          }
+        }
+      }
+    },
+    "Face ID" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Face ID"
+          }
+        }
+      }
+    },
+    "Failed" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка"
+          }
+        }
+      }
+    },
+    "Files you download appear here and in the Files app, under On My iPhone › Fir." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загруженные файлы появляются здесь и в приложении «Файлы» в разделе «На iPhone › Fir»."
+          }
+        }
+      }
+    },
+    "Fill your password" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подставить пароль"
+          }
+        }
+      }
+    },
+    "Filter Lists" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Списки фильтров"
+          }
+        }
+      }
+    },
+    "Find" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найти"
+          }
+        }
+      }
+    },
+    "Find on Page" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найти на странице"
+          }
+        }
+      }
+    },
+    "Fir couldn't read the results. If the search asks you to prove you're human, answer it there and try again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir не удалось прочитать результаты. Если поисковик просит подтвердить, что вы человек, ответьте там и попробуйте снова."
+          }
+        }
+      }
+    },
+    "Fir is Locked" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir заблокирован"
+          }
+        }
+      }
+    },
+    "Fir is an independent app, not affiliated with Zen or Mozilla." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir — независимое приложение, не связанное с Zen и Mozilla."
+          }
+        }
+      }
+    },
+    "Fir is an independent app, not affiliated with Zen or Mozilla. Sync uses Mozilla application-services (MPL-2.0)." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir — независимое приложение, не связанное с Zen и Mozilla. Синхронизация использует Mozilla application-services (MPL-2.0)."
+          }
+        }
+      }
+    },
+    "Fir on %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir на %@"
+          }
+        }
+      }
+    },
+    "Fir opens ready to type. The page you were reading stays behind the search." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir открывается сразу с полем ввода. Страница, которую вы читали, остаётся под поиском."
+          }
+        }
+      }
+    },
+    "Fir shows a short list of changes after a major update. It stays in Settings under About." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "После крупного обновления Fir показывает короткий список изменений. Он остаётся в настройках в разделе «О программе»."
+          }
+        }
+      }
+    },
+    "Folder" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Папка"
+          }
+        }
+      }
+    },
+    "Follows Reduce Motion" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Учитывает «Уменьшение движения»"
+          }
+        }
+      }
+    },
+    "For %@." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для %@."
+          }
+        }
+      }
+    },
+    "For this site." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для этого сайта."
+          }
+        }
+      }
+    },
+    "Forget" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыть"
+          }
+        }
+      }
+    },
+    "Forget %@?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыть %@?"
+          }
+        }
+      }
+    },
+    "Forget This Website" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыть этот сайт"
+          }
+        }
+      }
+    },
+    "Forget this website?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Забыть этот сайт?"
+          }
+        }
+      }
+    },
+    "Frequently Visited" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Часто посещаемые"
+          }
+        }
+      }
+    },
+    "From %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "С устройства %@"
+          }
+        }
+      }
+    },
+    "General" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Основные"
+          }
+        }
+      }
+    },
+    "General lists miss many ads on sites in other languages. Turn on the lists for the languages you read." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Общие списки пропускают много рекламы на сайтах на других языках. Включите списки для языков, на которых вы читаете."
+          }
+        }
+      }
+    },
+    "Global Privacy Control" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Global Privacy Control"
+          }
+        }
+      }
+    },
+    "Go to Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "К вкладкам"
+          }
+        }
+      }
+    },
+    "Green" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зелёный"
+          }
+        }
+      }
+    },
+    "Grid" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сетка"
+          }
+        }
+      }
+    },
+    "HTTPS-Only Mode" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим «Только HTTPS»"
+          }
+        }
+      }
+    },
+    "Haptics" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тактильный отклик"
+          }
+        }
+      }
+    },
+    "Harden Private Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Усиленная защита частных вкладок"
+          }
+        }
+      }
+    },
+    "Hide" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть"
+          }
+        }
+      }
+    },
+    "Hide Annoyances" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрывать раздражители"
+          }
+        }
+      }
+    },
+    "Hide Cookie Pop-ups" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрывать окна cookie"
+          }
+        }
+      }
+    },
+    "History" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История"
+          }
+        }
+      }
+    },
+    "History and Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История и вкладки"
+          }
+        }
+      }
+    },
+    "In iOS Settings, choose Fir under Apps > Default Apps > Browser App. Links from other apps then open here." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В настройках iOS выберите Fir в разделе «Приложения» > «Приложения по умолчанию» > «Браузер». Тогда ссылки из других приложений будут открываться здесь."
+          }
+        }
+      }
+    },
+    "Install" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установить"
+          }
+        }
+      }
+    },
+    "Install Add-on?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установить дополнение?"
+          }
+        }
+      }
+    },
+    "Installed" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установленные"
+          }
+        }
+      }
+    },
+    "Installing…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установка…"
+          }
+        }
+      }
+    },
+    "Intelligence Search" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intelligence Search"
+          }
+        }
+      }
+    },
+    "Intermediate" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Промежуточный"
+          }
+        }
+      }
+    },
+    "Issued By" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кем выдан"
+          }
+        }
+      }
+    },
+    "Issued To" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кому выдан"
+          }
+        }
+      }
+    },
+    "It syncs to Zen." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он синхронизируется с Zen."
+          }
+        }
+      }
+    },
+    "It will also see the addresses of your open tabs." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оно также будет видеть адреса открытых вкладок."
+          }
+        }
+      }
+    },
+    "Its cookies and data on this iPhone are removed, so you're signed out of it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Его cookie и данные на этом iPhone удалятся, и вы выйдете из аккаунта на нём."
+          }
+        }
+      }
+    },
+    "Its tabs close in Zen on your computers too. Ones open here stay, outside the folder." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Её вкладки закроются и в Zen на ваших компьютерах. Открытые здесь останутся, но вне папки."
+          }
+        }
+      }
+    },
+    "Its tabs close." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Её вкладки закроются."
+          }
+        }
+      }
+    },
+    "Larger Text" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Крупнее"
+          }
+        }
+      }
+    },
+    "Last Error" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последняя ошибка"
+          }
+        }
+      }
+    },
+    "Light" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Светлая"
+          }
+        }
+      }
+    },
+    "Lists update weekly. Changes apply from the next page load." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Списки обновляются раз в неделю. Изменения действуют со следующей загрузки страницы."
+          }
+        }
+      }
+    },
+    "Lock Fir" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировать Fir"
+          }
+        }
+      }
+    },
+    "Lock Private Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировать частные вкладки"
+          }
+        }
+      }
+    },
+    "Looking at the results" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смотрю результаты"
+          }
+        }
+      }
+    },
+    "Make it yours" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройте под себя"
+          }
+        }
+      }
+    },
+    "Messages the add-on reported. Many are harmless; if it doesn't work, the reason is usually here." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сообщения, которые оставило дополнение. Многие безобидны; если оно не работает, причина обычно здесь."
+          }
+        }
+      }
+    },
+    "More Buttons" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другие кнопки"
+          }
+        }
+      }
+    },
+    "Move to Workspace" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переместить в пространство"
+          }
+        }
+      }
+    },
+    "Mozilla Account" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аккаунт Mozilla"
+          }
+        }
+      }
+    },
+    "Name" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название"
+          }
+        }
+      }
+    },
+    "Never" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Никогда"
+          }
+        }
+      }
+    },
+    "New Folder" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая папка"
+          }
+        }
+      }
+    },
+    "New Folder…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая папка…"
+          }
+        }
+      }
+    },
+    "New Private Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая частная вкладка"
+          }
+        }
+      }
+    },
+    "New Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая вкладка"
+          }
+        }
+      }
+    },
+    "New Workspace" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новое пространство"
+          }
+        }
+      }
+    },
+    "New tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые вкладки"
+          }
+        }
+      }
+    },
+    "Newsletter and open-in-app pop-ups, chat and notification prompts, social buttons" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Окна подписок и предложения открыть приложение, чаты, запросы уведомлений, кнопки соцсетей"
+          }
+        }
+      }
+    },
+    "Night" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ночь"
+          }
+        }
+      }
+    },
+    "No Archived Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В архиве нет вкладок"
+          }
+        }
+      }
+    },
+    "No History" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Истории нет"
+          }
+        }
+      }
+    },
+    "No open tabs on this device." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На этом устройстве нет открытых вкладок."
+          }
+        }
+      }
+    },
+    "No pinned tabs or folders in this space. Tabs you open here stay in it, on this iPhone only." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В этом пространстве нет закреплённых вкладок и папок. Вкладки, открытые здесь, остаются в нём, только на этом iPhone."
+          }
+        }
+      }
+    },
+    "No saved passwords yet. Passwords saved in Zen appear here after sync." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранённых паролей пока нет. Пароли из Zen появятся здесь после синхронизации."
+          }
+        }
+      }
+    },
+    "No saved passwords yet. Sign in to Sync to bring your passwords from Zen." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранённых паролей пока нет. Войдите в синхронизацию, чтобы перенести пароли из Zen."
+          }
+        }
+      }
+    },
+    "No such add-on on addons.mozilla.org." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На addons.mozilla.org нет такого дополнения."
+          }
+        }
+      }
+    },
+    "No username" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без имени пользователя"
+          }
+        }
+      }
+    },
+    "None of the first results had text to answer from." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ни в одном из первых результатов не нашлось текста для ответа."
+          }
+        }
+      }
+    },
+    "Not Fir" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не Fir"
+          }
+        }
+      }
+    },
+    "Not Now" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не сейчас"
+          }
+        }
+      }
+    },
+    "Not Trusted" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не доверенный"
+          }
+        }
+      }
+    },
+    "Not synced yet" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ещё не синхронизировано"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ОК"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выкл."
+          }
+        }
+      }
+    },
+    "Offers to read a search's first results and write one answer with its sources, on this iPhone. Answers can get things wrong." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предлагает прочитать первые результаты поиска и написать один ответ с источниками прямо на этом iPhone. Ответы могут содержать ошибки."
+          }
+        }
+      }
+    },
+    "On" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкл."
+          }
+        }
+      }
+    },
+    "Only on this iPhone. Move it into a Zen workspace later from its menu." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Только на этом iPhone. Позже её можно переместить в пространство Zen через её меню."
+          }
+        }
+      }
+    },
+    "Open" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть"
+          }
+        }
+      }
+    },
+    "Open Search at Launch" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск при запуске"
+          }
+        }
+      }
+    },
+    "Open Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открытая вкладка"
+          }
+        }
+      }
+    },
+    "Open Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открытые вкладки"
+          }
+        }
+      }
+    },
+    "Open iOS Settings" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки iOS"
+          }
+        }
+      }
+    },
+    "Open in New Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть в новой вкладке"
+          }
+        }
+      }
+    },
+    "Open in Private Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть в частной вкладке"
+          }
+        }
+      }
+    },
+    "Open this page in another app?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть эту страницу в другом приложении?"
+          }
+        }
+      }
+    },
+    "Organization" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Организация"
+          }
+        }
+      }
+    },
+    "Other Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другие вкладки"
+          }
+        }
+      }
+    },
+    "Page Menu" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Меню страницы"
+          }
+        }
+      }
+    },
+    "Page Zoom" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Масштаб страницы"
+          }
+        }
+      }
+    },
+    "Pages from History" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страницы из истории"
+          }
+        }
+      }
+    },
+    "Pages you open here aren't saved, and their cookies and site data are gone when you close the last private tab." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открытые здесь страницы не сохраняются, а их cookie и данные сайтов исчезают, когда закрывается последняя частная вкладка."
+          }
+        }
+      }
+    },
+    "Password" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароль"
+          }
+        }
+      }
+    },
+    "Passwords" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароли"
+          }
+        }
+      }
+    },
+    "Passwords Are Locked" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароли заблокированы"
+          }
+        }
+      }
+    },
+    "Passwords and history are removed from this iPhone. What has synced stays in your Mozilla account." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароли и история удалятся с этого iPhone. Всё, что уже синхронизировано, останется в аккаунте Mozilla."
+          }
+        }
+      }
+    },
+    "Pin" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрепить"
+          }
+        }
+      }
+    },
+    "Pin Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрепить вкладку"
+          }
+        }
+      }
+    },
+    "Pine" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хвоя"
+          }
+        }
+      }
+    },
+    "Pink" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Розовый"
+          }
+        }
+      }
+    },
+    "Pinned" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закреплённые"
+          }
+        }
+      }
+    },
+    "Privacy" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Конфиденциальность"
+          }
+        }
+      }
+    },
+    "Privacy & Security" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Конфиденциальность"
+          }
+        }
+      }
+    },
+    "Private" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частные"
+          }
+        }
+      }
+    },
+    "Private Browsing" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частный доступ"
+          }
+        }
+      }
+    },
+    "Private Browsing: pages you open here aren't saved." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частный доступ: открытые здесь страницы не сохраняются."
+          }
+        }
+      }
+    },
+    "Private Tabs Are Locked" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частные вкладки заблокированы"
+          }
+        }
+      }
+    },
+    "Private tabs leave nothing behind. You can also lock Fir with Face ID in Settings." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частные вкладки не оставляют следов. В настройках можно также блокировать Fir с помощью Face ID."
+          }
+        }
+      }
+    },
+    "Private tabs lock when you leave Private or Fir. Locking Fir asks when you open it, and hides the page in the app switcher." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частные вкладки блокируются, когда вы уходите из частного доступа или из Fir. Блокировка Fir спрашивает при открытии и скрывает страницу в переключателе приложений."
+          }
+        }
+      }
+    },
+    "Purple" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фиолетовый"
+          }
+        }
+      }
+    },
+    "Reader" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим чтения"
+          }
+        }
+      }
+    },
+    "Reader Available" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступен режим чтения"
+          }
+        }
+      }
+    },
+    "Reader Isn't Available" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим чтения недоступен"
+          }
+        }
+      }
+    },
+    "Reading" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтение"
+          }
+        }
+      }
+    },
+    "Reading %lld of 3" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читаю %lld из 3"
+          }
+        }
+      }
+    },
+    "Recently Closed" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недавно закрытые"
+          }
+        }
+      }
+    },
+    "Recently Visited" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недавно посещённые"
+          }
+        }
+      }
+    },
+    "Regional" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Региональные"
+          }
+        }
+      }
+    },
+    "Reload" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить"
+          }
+        }
+      }
+    },
+    "Remove" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убрать"
+          }
+        }
+      }
+    },
+    "Remove Extension" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить расширение"
+          }
+        }
+      }
+    },
+    "Remove from Essentials" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убрать из основного"
+          }
+        }
+      }
+    },
+    "Remove from Folder" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убрать из папки"
+          }
+        }
+      }
+    },
+    "Removes cookies, cache and site storage. You will be signed out of websites." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удаляет cookie, кэш и хранилища сайтов. Вы выйдете из аккаунтов на сайтах."
+          }
+        }
+      }
+    },
+    "Request Desktop Site" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Полная версия сайта"
+          }
+        }
+      }
+    },
+    "Root" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Корневой"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить"
+          }
+        }
+      }
+    },
+    "Save password for %@?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить пароль для %@?"
+          }
+        }
+      }
+    },
+    "Saved password" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранённый пароль"
+          }
+        }
+      }
+    },
+    "Search" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск"
+          }
+        }
+      }
+    },
+    "Search Engine" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поисковая система"
+          }
+        }
+      }
+    },
+    "Search Engine Suggestions" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подсказки поисковой системы"
+          }
+        }
+      }
+    },
+    "Search Passwords" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск паролей"
+          }
+        }
+      }
+    },
+    "Search Sheet" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Шторка поиска"
+          }
+        }
+      }
+    },
+    "Search Sheet opens search at once. Start Page shows your pinned and frequent sites and history; tap the address bar to search, and the keyboard comes up right away." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Шторка поиска сразу открывает поиск. Стартовая страница показывает закреплённые и частые сайты и историю; чтобы искать, коснитесь адресной строки — клавиатура появится сразу."
+          }
+        }
+      }
+    },
+    "Search Suggestions" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поисковые подсказки"
+          }
+        }
+      }
+    },
+    "Search or enter address" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск или адрес"
+          }
+        }
+      }
+    },
+    "Search or type an address below." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите запрос или адрес внизу."
+          }
+        }
+      }
+    },
+    "Search right away, or a start page with your pinned and frequent sites and history." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сразу поиск или стартовая страница с закреплёнными и частыми сайтами и историей."
+          }
+        }
+      }
+    },
+    "See a workspace's tabs side by side: choose Grid in Settings > Tabs > Tab Overview. Swipe a tab left to close it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки пространства рядом друг с другом: выберите «Сетка» в «Настройки» > «Вкладки» > «Обзор вкладок». Чтобы закрыть вкладку, смахните её влево."
+          }
+        }
+      }
+    },
+    "Send" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить"
+          }
+        }
+      }
+    },
+    "Sent to %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправлено на %@"
+          }
+        }
+      }
+    },
+    "Set up Face ID or a passcode on this iPhone to lock Fir." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы блокировать Fir, настройте на этом iPhone Face ID или код-пароль."
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки"
+          }
+        }
+      }
+    },
+    "Settings for This Site" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки для этого сайта"
+          }
+        }
+      }
+    },
+    "Share" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поделиться"
+          }
+        }
+      }
+    },
+    "Show Onboarding" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать знакомство"
+          }
+        }
+      }
+    },
+    "Show Original" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать оригинал"
+          }
+        }
+      }
+    },
+    "Show private tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать частные вкладки"
+          }
+        }
+      }
+    },
+    "Show saved passwords" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать сохранённые пароли"
+          }
+        }
+      }
+    },
+    "Shown" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показаны"
+          }
+        }
+      }
+    },
+    "Sign In" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войти"
+          }
+        }
+      }
+    },
+    "Sign In to Mozilla Account" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войти в аккаунт Mozilla"
+          }
+        }
+      }
+    },
+    "Sign In with Mozilla" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войти через Mozilla"
+          }
+        }
+      }
+    },
+    "Sign Out" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выйти"
+          }
+        }
+      }
+    },
+    "Sign in to see tabs from Zen" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войдите, чтобы видеть вкладки из Zen"
+          }
+        }
+      }
+    },
+    "Sign in with the Mozilla account from Zen or Firefox. Workspaces, tabs, history and passwords come along." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войдите в аккаунт Mozilla, которым пользуетесь в Zen или Firefox. Пространства, вкладки, история и пароли появятся здесь."
+          }
+        }
+      }
+    },
+    "Sign in with the account you use in Zen to get its tabs, history and workspaces here." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войдите в аккаунт, которым пользуетесь в Zen, чтобы получить здесь его вкладки, историю и пространства."
+          }
+        }
+      }
+    },
+    "Sign in with your Mozilla account to see your workspaces, pinned sites, open tabs and history from Zen." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войдите в аккаунт Mozilla, чтобы видеть пространства, закреплённые сайты, открытые вкладки и историю из Zen."
+          }
+        }
+      }
+    },
+    "Sign out?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выйти?"
+          }
+        }
+      }
+    },
+    "Signed in" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вход выполнен"
+          }
+        }
+      }
+    },
+    "Simmer it for about three minutes" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Варите на слабом огне около трёх минут"
+          }
+        }
+      }
+    },
+    "Skip" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пропустить"
+          }
+        }
+      }
+    },
+    "Smaller Text" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мельче"
+          }
+        }
+      }
+    },
+    "Snow" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Снег"
+          }
+        }
+      }
+    },
+    "Some lists couldn't be updated: %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обновить некоторые списки: %@"
+          }
+        }
+      }
+    },
+    "Sources" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Источники"
+          }
+        }
+      }
+    },
+    "Space" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пространство"
+          }
+        }
+      }
+    },
+    "Spruce" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ель"
+          }
+        }
+      }
+    },
+    "Start Browsing" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать"
+          }
+        }
+      }
+    },
+    "Start Page" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стартовая страница"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Статус"
+          }
+        }
+      }
+    },
+    "Suggestions send what you type to the search engine." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для подсказок введённый текст отправляется в поисковую систему."
+          }
+        }
+      }
+    },
+    "Suggestions send what you type to the search engine. History matches stay on this device." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для подсказок введённый текст отправляется в поисковую систему. Совпадения из истории остаются на этом устройстве."
+          }
+        }
+      }
+    },
+    "Swipe Anywhere to Navigate" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Навигация свайпом по странице"
+          }
+        }
+      }
+    },
+    "Swipe left past the last tab for a new one. Long-press the tabs button for a private tab." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смахните влево за последнюю вкладку, чтобы открыть новую. Для частной вкладки нажмите и удерживайте кнопку вкладок."
+          }
+        }
+      }
+    },
+    "Swipe sideways anywhere on a page to go back or forward, not only from the edge. Some sites with sliders may react to it too." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свайп в любом месте страницы переходит назад или вперёд, а не только от края. Некоторые сайты со слайдерами тоже могут на него реагировать."
+          }
+        }
+      }
+    },
+    "Swipe the bar sideways to switch tabs, or up to see them all." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смахните строку вбок, чтобы переключить вкладку, или вверх, чтобы увидеть все."
+          }
+        }
+      }
+    },
+    "Swipe through tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Листайте вкладки"
+          }
+        }
+      }
+    },
+    "Sync" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация"
+          }
+        }
+      }
+    },
+    "Sync Now" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать"
+          }
+        }
+      }
+    },
+    "Sync on This iPhone" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация на этом iPhone"
+          }
+        }
+      }
+    },
+    "Synced %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновлено %@"
+          }
+        }
+      }
+    },
+    "System" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Системная"
+          }
+        }
+      }
+    },
+    "Tab Overview" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обзор вкладок"
+          }
+        }
+      }
+    },
+    "Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки"
+          }
+        }
+      }
+    },
+    "Tabs from your other devices show in the switcher, beside the workspaces. A device that hasn't synced for two weeks stays hidden even when switched on." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки с других ваших устройств показываются в переключателе рядом с пространствами. Устройство, которое не синхронизировалось две недели, скрыто, даже если оно включено."
+          }
+        }
+      }
+    },
+    "Tabs in a grid" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки сеткой"
+          }
+        }
+      }
+    },
+    "Tabs you haven't viewed in this long close. They stay in Recently Closed." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки, которые вы не открывали столько времени, закрываются. Они остаются в недавно закрытых."
+          }
+        }
+      }
+    },
+    "Tabs you haven't viewed in this long move to the archive, where you can reopen them. Private tabs close instead." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки, которые вы не открывали столько времени, уходят в архив, откуда их можно открыть снова. Частные вкладки вместо этого закрываются."
+          }
+        }
+      }
+    },
+    "Tap the password to show it; touch and hold a field to copy it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коснитесь пароля, чтобы показать его; чтобы скопировать поле, нажмите и удерживайте его."
+          }
+        }
+      }
+    },
+    "Teal" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бирюзовый"
+          }
+        }
+      }
+    },
+    "Tells websites not to sell or share your data. Where the law requires it, they must comply." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просит сайты не продавать и не передавать ваши данные. Там, где этого требует закон, они обязаны подчиниться."
+          }
+        }
+      }
+    },
+    "The change didn't reach Zen's sync server, so nothing changed. Try again." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменение не дошло до сервера синхронизации Zen, поэтому ничего не изменилось. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "The filter lists didn't compile." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось собрать списки фильтров."
+          }
+        }
+      }
+    },
+    "The folder appears in Zen too, with this page in it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Папка появится и в Zen, вместе с этой страницей."
+          }
+        }
+      }
+    },
+    "The model couldn't answer: %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Модели не удалось ответить: %@"
+          }
+        }
+      }
+    },
+    "The model couldn't read the pages: %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Модели не удалось прочитать страницы: %@"
+          }
+        }
+      }
+    },
+    "The page may already be in your language, or its language isn't available for translation." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Возможно, страница уже на вашем языке или её язык недоступен для перевода."
+          }
+        }
+      }
+    },
+    "Theme" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тема"
+          }
+        }
+      }
+    },
+    "These are your Zen workspaces. Changes here reach Zen on your computers too." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это ваши пространства Zen. Изменения здесь попадут и в Zen на ваших компьютерах."
+          }
+        }
+      }
+    },
+    "This add-on" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это дополнение"
+          }
+        }
+      }
+    },
+    "This form will be sent over an insecure connection. Anything in it could be seen by others on the network." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта форма будет отправлена по незащищённому соединению. Её содержимое могут увидеть другие в сети."
+          }
+        }
+      }
+    },
+    "This page has no article to show on its own." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На этой странице нет статьи, которую можно показать отдельно."
+          }
+        }
+      }
+    },
+    "This page is already in the language it would be translated into." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта страница уже на языке, на который её нужно перевести."
+          }
+        }
+      }
+    },
+    "This site doesn't support a secure connection." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот сайт не поддерживает защищённое соединение."
+          }
+        }
+      }
+    },
+    "This site doesn't support a secure connection. Anything you send could be seen by others on the network." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот сайт не поддерживает защищённое соединение. Всё, что вы отправляете, могут увидеть другие в сети."
+          }
+        }
+      }
+    },
+    "Today" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сегодня"
+          }
+        }
+      }
+    },
+    "Trackers and analytics" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Трекеры и аналитика"
+          }
+        }
+      }
+    },
+    "Translate" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перевести"
+          }
+        }
+      }
+    },
+    "Translate To" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перевести на"
+          }
+        }
+      }
+    },
+    "Translate to %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перевести на %@"
+          }
+        }
+      }
+    },
+    "Translating…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перевод…"
+          }
+        }
+      }
+    },
+    "Try Again" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повторить"
+          }
+        }
+      }
+    },
+    "Turn off the Fir lock" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выключить блокировку Fir"
+          }
+        }
+      }
+    },
+    "Turn off the private tabs lock" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выключить блокировку частных вкладок"
+          }
+        }
+      }
+    },
+    "Turn on Apple Intelligence in iOS Settings to use it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы пользоваться этим, включите Apple Intelligence в настройках iOS."
+          }
+        }
+      }
+    },
+    "Turn on Zen Workspaces under Sync to see and edit them here." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включите «Пространства Zen» в разделе «Синхронизация», чтобы видеть и изменять их здесь."
+          }
+        }
+      }
+    },
+    "Turn on the Fir lock" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включить блокировку Fir"
+          }
+        }
+      }
+    },
+    "Turning one off stops it on this iPhone only; Zen keeps syncing it. Which devices' tabs show is under Workspaces." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выключение действует только на этом iPhone; Zen продолжит синхронизацию. Вкладки каких устройств показывать, настраивается в разделе «Пространства»."
+          }
+        }
+      }
+    },
+    "Undo Close Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вернуть вкладку"
+          }
+        }
+      }
+    },
+    "Ungroup" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разгруппировать"
+          }
+        }
+      }
+    },
+    "Unknown" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неизвестно"
+          }
+        }
+      }
+    },
+    "Unload Opened Tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выгрузить открытые вкладки"
+          }
+        }
+      }
+    },
+    "Unload Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выгрузить вкладку"
+          }
+        }
+      }
+    },
+    "Unloaded, still in %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выгружена, по-прежнему в папке «%@»"
+          }
+        }
+      }
+    },
+    "Unloaded, still in its folder" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выгружена, по-прежнему в своей папке"
+          }
+        }
+      }
+    },
+    "Unlock" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разблокировать"
+          }
+        }
+      }
+    },
+    "Unlock Fir" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разблокировать Fir"
+          }
+        }
+      }
+    },
+    "Unpin" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открепить"
+          }
+        }
+      }
+    },
+    "Unpin Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открепить вкладку"
+          }
+        }
+      }
+    },
+    "Untitled" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без названия"
+          }
+        }
+      }
+    },
+    "Up to three. While Back and Forward are shown, only the last one stays, to leave room for the address." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "До трёх. Пока показаны кнопки «Назад» и «Вперёд», остаётся только последняя, чтобы хватило места для адреса."
+          }
+        }
+      }
+    },
+    "Update" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить"
+          }
+        }
+      }
+    },
+    "Update Filter Lists" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить списки фильтров"
+          }
+        }
+      }
+    },
+    "Update password for %@?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить пароль для %@?"
+          }
+        }
+      }
+    },
+    "Updated %@." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновлено %@."
+          }
+        }
+      }
+    },
+    "Updating…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновление…"
+          }
+        }
+      }
+    },
+    "Use %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подставить «%@»"
+          }
+        }
+      }
+    },
+    "Username" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя пользователя"
+          }
+        }
+      }
+    },
+    "Valid" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Действителен"
+          }
+        }
+      }
+    },
+    "Version" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Версия"
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Версия %@"
+          }
+        }
+      }
+    },
+    "Website" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сайт"
+          }
+        }
+      }
+    },
+    "Website data cleared." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Данные сайтов очищены."
+          }
+        }
+      }
+    },
+    "Welcome to Fir" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добро пожаловать в Fir"
+          }
+        }
+      }
+    },
+    "What's New" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что нового"
+          }
+        }
+      }
+    },
+    "What's New After Updates" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Что нового» после обновлений"
+          }
+        }
+      }
+    },
+    "With Reduce Motion on in iOS Settings, sheets slide up without the zoom and pages switch to your tabs at once." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если в настройках iOS включено «Уменьшение движения», шторки выезжают без увеличения, а страницы сразу переключаются к вкладкам."
+          }
+        }
+      }
+    },
+    "With history sync on, this can also clear it in Zen." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если история синхронизируется, она может очиститься и в Zen."
+          }
+        }
+      }
+    },
+    "Work" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Работа"
+          }
+        }
+      }
+    },
+    "Workspaces" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пространства"
+          }
+        }
+      }
+    },
+    "Workspaces Error" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка пространств"
+          }
+        }
+      }
+    },
+    "Writing the answer" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пишу ответ"
+          }
+        }
+      }
+    },
+    "Written on this iPhone from the pages below. It can get things wrong." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Написано на этом iPhone по страницам ниже. Может содержать ошибки."
+          }
+        }
+      }
+    },
+    "Yesterday" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вчера"
+          }
+        }
+      }
+    },
+    "You can change these later in Settings." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это можно изменить позже в настройках."
+          }
+        }
+      }
+    },
+    "You can change this later in Settings." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это можно изменить позже в настройках."
+          }
+        }
+      }
+    },
+    "Your connection to %@ is encrypted, but some of this page's content isn't." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Соединение с %@ зашифровано, но часть содержимого страницы — нет."
+          }
+        }
+      }
+    },
+    "Your connection to %@ is encrypted. What you send stays private on the way there." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Соединение с %@ зашифровано. То, что вы отправляете, по пути никто не увидит."
+          }
+        }
+      }
+    },
+    "Your connection to %@ isn't encrypted. Don't enter passwords or card numbers here." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Соединение с %@ не зашифровано. Не вводите здесь пароли и номера карт."
+          }
+        }
+      }
+    },
+    "Your tabs" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши вкладки"
+          }
+        }
+      }
+    },
+    "Your tabs, everywhere" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши вкладки повсюду"
+          }
+        }
+      }
+    },
+    "Zen Workspaces" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пространства Zen"
+          }
+        }
+      }
+    },
+    "Zen asks you to confirm on your computer, then closes the workspace's tabs there." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zen попросит подтвердить на компьютере, а затем закроет там вкладки этого пространства."
+          }
+        }
+      }
+    },
+    "how to poach an egg" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "как сварить яйцо пашот"
+          }
+        }
+      }
+    },
+    "iPhone Language" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Язык iPhone"
+          }
+        }
+      }
+    },
+    "⏱ Lift it out with a slotted spoon [3]" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⏱ Достаньте шумовкой [3]"
+          }
+        }
+      }
+    },
+    "🍳 Add a splash of vinegar [1]" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🍳 Добавьте немного уксуса [1]"
+          }
+        }
+      }
+    },
+    "🥄 Slide it in from a small bowl [2]" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🥄 Влейте яйцо из пиалы [2]"
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }

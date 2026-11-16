@@ -9,6 +9,12 @@
             "state" : "new",
             "value" : "Unlock Fir when the app lock is on."
           }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разблокировка Fir, когда включена блокировка приложения."
+          }
         }
       }
     },
@@ -19,6 +25,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Save images from websites to your photo library."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранение изображений с сайтов в медиатеку."
           }
         }
       }
@@ -31,6 +43,12 @@
             "state" : "new",
             "value" : "Take photos for websites, and use the camera on sites you allow."
           }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото для сайтов и камера на сайтах, которым вы это разрешите."
+          }
         }
       }
     },
@@ -41,6 +59,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Record video for websites, and use the microphone on sites you allow."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видео для сайтов и микрофон на сайтах, которым вы это разрешите."
           }
         }
       }
@@ -53,6 +77,12 @@
             "state" : "new",
             "value" : "Turn your speech into text on sites you allow."
           }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Распознавание речи на сайтах, которым вы это разрешите."
+          }
         }
       }
     },
@@ -64,6 +94,12 @@
             "state" : "new",
             "value" : "New Tab"
           }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая вкладка"
+          }
         }
       }
     },
@@ -74,6 +110,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "New Private Tab"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая частная вкладка"
           }
         }
       }

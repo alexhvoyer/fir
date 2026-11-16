@@ -1,17 +1,140 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%lld downloads" : {},
-    "Download failed" : {},
-    "Download finished" : {},
-    "Downloading" : {},
-    "New Private Tab" : {},
-    "New Tab" : {},
-    "Open Fir to continue" : {},
-    "Search" : {},
-    "Search or enter address" : {},
-    "Start a private search in Fir." : {},
-    "Start a search in Fir." : {}
+    "%lld downloads" : {
+      "localizations" : {
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld загрузка"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld загрузки"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld загрузок"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld загрузки"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Download failed" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка загрузки"
+          }
+        }
+      }
+    },
+    "Download finished" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузка завершена"
+          }
+        }
+      }
+    },
+    "Downloading" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузка"
+          }
+        }
+      }
+    },
+    "New Private Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая частная вкладка"
+          }
+        }
+      }
+    },
+    "New Tab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая вкладка"
+          }
+        }
+      }
+    },
+    "Open Fir to continue" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте Fir, чтобы продолжить"
+          }
+        }
+      }
+    },
+    "Search" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск"
+          }
+        }
+      }
+    },
+    "Search or enter address" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск или адрес"
+          }
+        }
+      }
+    },
+    "Start a private search in Fir." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать частный поиск в Fir."
+          }
+        }
+      }
+    },
+    "Start a search in Fir." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать поиск в Fir."
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }
