@@ -72,10 +72,10 @@ struct NewTabView: View {
 
         var place: String {
             switch kind {
-            case .tab: "Open Tab"
+            case .tab: String(localized: "Open Tab")
             case .zen(_, let name): name
             case .device(let name, _): name
-            case .history: "History"
+            case .history: String(localized: "History")
             }
         }
     }
@@ -225,7 +225,7 @@ struct NewTabView: View {
             }
             if offersIntelligenceSearch {
                 Button(action: startIntelligenceSearch) {
-                    ResultRow(symbol: "sparkles", title: "Intelligence Search", detail: query)
+                    ResultRow(symbol: "sparkles", title: String(localized: "Intelligence Search"), detail: query)
                 }
                 .foregroundStyle(.primary)
                 .listRowBackground(Color.clear)
@@ -280,7 +280,7 @@ struct NewTabView: View {
     }
 
     /// A row, not a section header: a plain list pins headers, and over the clear sheet they overlapped rows.
-    private func header(_ title: String) -> some View {
+    private func header(_ title: LocalizedStringKey) -> some View {
         Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
@@ -555,7 +555,7 @@ private struct ResultRow: View {
                 .frame(width: 30, height: 30)
                 .background(.quaternary, in: .rect(cornerRadius: 8))
             VStack(alignment: .leading, spacing: 2) {
-                Text(title.isEmpty ? "Untitled" : title).lineLimit(1)
+                Text(title.isEmpty ? String(localized: "Untitled") : title).lineLimit(1)
                 if let detail, !detail.isEmpty {
                     Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }

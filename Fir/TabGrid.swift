@@ -253,7 +253,7 @@ private struct GridCell: View {
                 }
             HStack(spacing: 6) {
                 SiteIcon(host: tab.url?.host(), size: 16, fetch: !tab.isPrivate)
-                Text(tab.title.isEmpty ? tab.url?.host() ?? "New Tab" : tab.title)
+                Text(tab.title.isEmpty ? tab.url?.host() ?? String(localized: "New Tab") : tab.title)
                     .font(.footnote)
                     .lineLimit(1)
                 if tab.isPinned, !tab.fromZenFolder {

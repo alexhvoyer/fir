@@ -71,13 +71,23 @@ final class ExtensionManager: NSObject {
     private static func confirm(_ webExtension: WKWebExtension) async -> Bool {
         let patterns = webExtension.allRequestedMatchPatterns
         let hosts = patterns.compactMap(\.host).filter { !$0.isEmpty }.sorted()
-        let reach = patterns.contains(where: \.matchesAllHosts) || hosts.contains("*") ? "every website"
-            : hosts.isEmpty ? "no websites" : hosts.prefix(5).joined(separator: ", ") + (hosts.count > 5 ? " and \(hosts.count - 5) more" : "")
-        let tabs = webExtension.requestedPermissions.contains(.tabs) ? " It will also see the addresses of your open tabs." : ""
         // The add-on's own text: one short line, so it can't push the rest out of view.
-        let name = String((webExtension.displayName ?? "This add-on").prefix { !$0.isNewline }.prefix(40))
-        return await PageDialog.present("\"\(name)\" will be able to read and change \(reach).\(tabs)",
-                                        host: "Install Add-on?", cancel: "Cancel", confirm: "Install") != nil
+        let name = String((webExtension.displayName ?? String(localized: "This add-on")).prefix { !$0.isNewline }.prefix(40))
+        // Whole sentences, so each language can order them its own way.
+        var message = if patterns.contains(where: \.matchesAllHosts) || hosts.contains("*") {
+            String(localized: "\"\(name)\" will be able to read and change every website.")
+        } else if hosts.isEmpty {
+            String(localized: "\"\(name)\" will be able to read and change no websites.")
+        } else if hosts.count > 5 {
+            String(localized: "\"\(name)\" will be able to read and change \(hosts.prefix(5).joined(separator: ", ")) and \(hosts.count - 5) more.")
+        } else {
+            String(localized: "\"\(name)\" will be able to read and change \(hosts.formatted(.list(type: .and))).")
+        }
+        if webExtension.requestedPermissions.contains(.tabs) {
+            message += " " + String(localized: "It will also see the addresses of your open tabs.")
+        }
+        return await PageDialog.present(message, host: String(localized: "Install Add-on?"), cancel: String(localized: "Cancel"),
+                                        confirm: String(localized: "Install")) != nil
     }
 
     func setEnabled(_ enabled: Bool, for id: String) {
@@ -161,7 +171,7 @@ final class ExtensionManager: NSObject {
         if enabled { try controller.load(context) }
         installed.append(Installed(
             id: id,
-            name: webExtension.displayName ?? "Extension",
+            name: webExtension.displayName ?? String(localized: "Extension"),
             version: webExtension.version ?? "",
             isEnabled: enabled,
             context: context
@@ -216,7 +226,7 @@ final class ExtensionManager: NSObject {
 
     enum InstallError: LocalizedError {
         case notFound
-        var errorDescription: String? { "No such add-on on addons.mozilla.org." }
+        var errorDescription: String? { String(localized: "No such add-on on addons.mozilla.org.") }
     }
 }
 

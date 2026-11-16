@@ -101,7 +101,7 @@ struct ZenWorkspaces {
                 .sorted()
             for child in ordered + pointing {
                 if byId[child]?.kind == "folder" {
-                    let name = byId[child]?.data["name"] as? String ?? "Folder"
+                    let name = byId[child]?.data["name"] as? String ?? String(localized: "Folder")
                     // A tab another device put in the folder names it before the folder's list catches up.
                     let listed = tabs(under: child)
                     let joined = byId
@@ -115,7 +115,7 @@ struct ZenWorkspaces {
             }
             return Space(
                 id: uuid,
-                name: (data["name"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "Space",
+                name: (data["name"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Space"),
                 icon: Self.emojiIcon(data["icon"]),
                 color: Self.themeColor(data["theme"]),
                 tabs: looseTabs,

@@ -73,7 +73,7 @@ struct PrivacySettingsView: View {
             guard new != AppLock.isEnabled else { return }
             Task {
                 // On: proves the check works, so it can't lock you out. Off: only the owner may.
-                if !(await AppLock.authenticate(reason: new ? "Turn on the Fir lock" : "Turn off the Fir lock")) {
+                if !(await AppLock.authenticate(reason: new ? String(localized: "Turn on the Fir lock") : String(localized: "Turn off the Fir lock"))) {
                     lockApp = old
                     return
                 }
@@ -84,7 +84,7 @@ struct PrivacySettingsView: View {
             guard new != UserDefaults.standard.bool(forKey: SettingsKey.lockPrivateTabs) else { return }
             Task {
                 // Written only after the check: quitting during the prompt mustn't leave the lock off.
-                if old, AppLock.isAvailable, !(await AppLock.authenticate(reason: "Turn off the private tabs lock")) {
+                if old, AppLock.isAvailable, !(await AppLock.authenticate(reason: String(localized: "Turn off the private tabs lock"))) {
                     lockPrivateTabs = old
                     return
                 }
@@ -102,7 +102,7 @@ struct PrivacySettingsView: View {
         }
     }
 
-    private func listToggle(_ title: String, id: String) -> some View {
+    private func listToggle(_ title: LocalizedStringKey, id: String) -> some View {
         let list = FilterList.catalog.first { $0.id == id }!
         return Toggle(title, isOn: Binding(
             get: { blocker.isSelected(list) },
@@ -112,9 +112,9 @@ struct PrivacySettingsView: View {
 
     private var blockerStatus: String {
         switch blocker.state {
-        case .off: "Off"
-        case .loading: "Updating…"
-        case .ready(let rules): "\(rules.formatted()) rules"
+        case .off: String(localized: "Off")
+        case .loading: String(localized: "Updating…")
+        case .ready(let rules): String(localized: "\(rules.formatted()) rules")
         case .failed(let message): message
         }
     }
@@ -159,8 +159,9 @@ private struct FilterListsView: View {
     }
 
     private var footer: String {
-        let updated = blocker.updated.map { "Updated \($0.formatted(.relative(presentation: .named)))." } ?? ""
-        let failed = blocker.lastFailure.map { "Some lists couldn't be updated: \($0)" } ?? ""
-        return "Lists update weekly. Changes apply from the next page load. \(updated) \(failed)"
+        let updated = blocker.updated.map { String(localized: "Updated \($0.formatted(.relative(presentation: .named))).") } ?? ""
+        let failed = blocker.lastFailure.map { String(localized: "Some lists couldn't be updated: \($0)") } ?? ""
+        return [String(localized: "Lists update weekly. Changes apply from the next page load."), updated, failed]
+            .filter { !$0.isEmpty }.joined(separator: " ")
     }
 }

@@ -66,7 +66,7 @@ struct SearchWidgetView: View {
         }
     }
 
-    private func searchCapsule(label: String) -> some View {
+    private func searchCapsule(label: LocalizedStringKey) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
             Text(label).lineLimit(1)

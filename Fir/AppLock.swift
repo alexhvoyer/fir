@@ -28,7 +28,7 @@ final class AppLock {
         guard Self.isAvailable else { isLocked = false; return }
         authenticating = true
         defer { authenticating = false }
-        if await Self.authenticate(reason: "Unlock Fir") { isLocked = false }
+        if await Self.authenticate(reason: String(localized: "Unlock Fir")) { isLocked = false }
     }
 
     static func authenticate(reason: String) async -> Bool {

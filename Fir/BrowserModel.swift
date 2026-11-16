@@ -290,7 +290,7 @@ final class BrowserTab: NSObject, Identifiable {
     var title: String {
         if !pageTitle.isEmpty { return pageTitle }
         if pageURL == nil, let restoredTitle, !restoredTitle.isEmpty { return restoredTitle }
-        return url?.host() ?? "New Tab"
+        return url?.host() ?? String(localized: "New Tab")
     }
 
     /// Addresses only a page may reach: from a tab of Zen's or a link in Reader they would run as a page.
@@ -457,10 +457,10 @@ extension BrowserTab: WKUIDelegate {
 
     /// A link's two openers, on the page and inside a glance alike.
     static func openers(_ url: URL, in spaceID: String?, model: BrowserModel) -> [UIMenuElement] {
-        [UIAction(title: "Open in New Tab", image: UIImage(systemName: "plus.square.on.square")) { _ in
+        [UIAction(title: String(localized: "Open in New Tab"), image: UIImage(systemName: "plus.square.on.square")) { _ in
             model.openInBackground(url, in: spaceID)
         },
-         UIAction(title: "Open in Private Tab", image: UIImage(systemName: "eyes")) { _ in
+         UIAction(title: String(localized: "Open in Private Tab"), image: UIImage(systemName: "eyes")) { _ in
             model.openInBackground(url, in: BrowserModel.privateSpace)
         }]
     }
@@ -507,13 +507,13 @@ extension BrowserTab: WKUIDelegate {
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String,
                  initiatedByFrame frame: WKFrameInfo) async -> Bool {
         guard mayShowDialog() else { return false }
-        return await PageDialog.present(message, host: dialogHost(frame), cancel: "Cancel") != nil
+        return await PageDialog.present(message, host: dialogHost(frame), cancel: String(localized: "Cancel")) != nil
     }
 
     func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?,
                  initiatedByFrame frame: WKFrameInfo) async -> String? {
         guard mayShowDialog() else { return nil }
-        return await PageDialog.present(prompt, host: dialogHost(frame), cancel: "Cancel", field: defaultText ?? "")
+        return await PageDialog.present(prompt, host: dialogHost(frame), cancel: String(localized: "Cancel"), field: defaultText ?? "")
     }
 }
 
@@ -593,8 +593,8 @@ extension BrowserTab: WKNavigationDelegate {
             // A form's data can't be sent again from here, so the original goes through or not at all.
             if navigationAction.request.httpMethod != "GET" {
                 guard mayShowDialog(), await PageDialog.present(
-                    "This form will be sent over an insecure connection. Anything in it could be seen by others on the network.",
-                    host: url.host() ?? "", cancel: "Cancel", confirm: "Send") != nil else { return (.cancel, preferences) }
+                    String(localized: "This form will be sent over an insecure connection. Anything in it could be seen by others on the network."),
+                    host: url.host() ?? "", cancel: String(localized: "Cancel"), confirm: String(localized: "Send")) != nil else { return (.cancel, preferences) }
                 return (.allow, preferences)
             }
             upgradedFrom = url
@@ -626,8 +626,8 @@ extension BrowserTab: WKNavigationDelegate {
         let quiet = ["tel", "facetime", "facetime-audio", "mailto", "sms"].contains(scheme)
         // WebKit reports a scripted click as a link click too, so a real tap is checked as well.
         if !(quiet && navigationAction.navigationType == .linkActivated && Date.now.timeIntervalSince(lastTap) < 1) {
-            guard mayShowDialog(), await PageDialog.present("Open this page in another app?", host: pageURL?.host() ?? scheme,
-                                           cancel: "Cancel", confirm: "Open") != nil else { return (.cancel, preferences) }
+            guard mayShowDialog(), await PageDialog.present(String(localized: "Open this page in another app?"), host: pageURL?.host() ?? scheme,
+                                           cancel: String(localized: "Cancel"), confirm: String(localized: "Open")) != nil else { return (.cancel, preferences) }
         }
         await UIApplication.shared.open(url)
         return (.cancel, preferences)
@@ -660,8 +660,10 @@ extension BrowserTab: WKNavigationDelegate {
 
     private func askToDownload(_ name: String?) async -> Bool {
         guard mayShowDialog() else { return false }
-        return await PageDialog.present("Do you want to download \"\(name ?? "this file")\"?", host: pageURL?.host() ?? "",
-                                        cancel: "Cancel", confirm: "Download") != nil
+        return await PageDialog.present(name.map { String(localized: "Do you want to download \"\($0)\"?") }
+                                            ?? String(localized: "Do you want to download this file?"),
+                                        host: pageURL?.host() ?? "", cancel: String(localized: "Cancel"),
+                                        confirm: String(localized: "Download")) != nil
     }
 
     func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
@@ -730,9 +732,9 @@ extension BrowserTab: WKNavigationDelegate {
     private func offerInsecure(_ url: URL, remember: Bool = true) async {
         upgradedFrom = nil
         guard let host = url.host(), await PageDialog.present(
-            "This site doesn't support a secure connection. Anything you send could be seen by others on the network.",
-            host: host, cancel: "Cancel", confirm: "Continue") != nil else {
-            loadFailure = LoadFailure(url: url, message: "This site doesn't support a secure connection.")
+            String(localized: "This site doesn't support a secure connection. Anything you send could be seen by others on the network."),
+            host: host, cancel: String(localized: "Cancel"), confirm: String(localized: "Continue")) != nil else {
+            loadFailure = LoadFailure(url: url, message: String(localized: "This site doesn't support a secure connection."))
             return
         }
         HTTPSOnly.allow(host, permanently: remember && !isPrivate)
@@ -889,7 +891,7 @@ final class BrowserModel {
         pruneLocalFolders()
         let session = SessionStore.Session(
             tabs: tabs.filter { !$0.isPrivate }.map {
-                SessionStore.Tab(id: $0.id, url: $0.url, title: $0.title, spaceID: $0.spaceID, lastViewed: $0.lastViewed,
+                SessionStore.Tab(id: $0.id, url: $0.url, title: $0.url == nil ? "" : $0.title, spaceID: $0.spaceID, lastViewed: $0.lastViewed,
                                  pinned: $0.isPinned, zenPinID: $0.zenPinID,
                                  zenEssentialID: $0.zenEssentialID, zenFolder: $0.fromZenFolder ? true : nil,
                                  localFolder: $0.localFolderID, localPin: $0.localPinID)
@@ -1038,13 +1040,13 @@ final class BrowserModel {
         }
         SessionStore.deleteSnapshot(for: tab.id)
         save()
-        unloaded = Unloaded(folder: zenFolder(of: fresh)?.name ?? "its folder")
+        unloaded = Unloaded(folder: zenFolder(of: fresh)?.name)
     }
 
     /// Says a folder's tab was unloaded, not closed: its card stays in the folder, so "closed" would mislead.
     struct Unloaded: Equatable {
         var id = UUID()
-        let folder: String
+        let folder: String?
     }
 
     var unloaded: Unloaded?
@@ -1278,7 +1280,7 @@ final class BrowserModel {
         guard AppLock.isAvailable else { privateLocked = false; return }
         unlockingPrivate = true
         defer { unlockingPrivate = false }
-        if await AppLock.authenticate(reason: "Show private tabs") { privateLocked = false }
+        if await AppLock.authenticate(reason: String(localized: "Show private tabs")) { privateLocked = false }
     }
 
     /// Off a locked private page to this iPhone's newest tab, or a new one.
@@ -1634,7 +1636,7 @@ final class LinkPreviewController: UIViewController, WKNavigationDelegate, WKUID
         return UIContextMenuConfiguration(identifier: nil, previewProvider: {
             LinkPreviewController(url: url, dataStore: store)
         }) { _ in
-            let copy = UIAction(title: "Copy Link", image: UIImage(systemName: "link")) { _ in UIPasteboard.general.url = url }
+            let copy = UIAction(title: String(localized: "Copy Link"), image: UIImage(systemName: "link")) { _ in UIPasteboard.general.url = url }
             return UIMenu(children: [UIMenu(options: .displayInline, children: openers), copy])
         }
     }

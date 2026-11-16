@@ -133,8 +133,8 @@ struct BrowserView: View {
             }
             Button("Not Now", role: .cancel) {}
         } message: { prompt in
-            let sync = account.isSignedIn ? " It syncs to Zen." : ""
-            Text(prompt.username.isEmpty ? "For this site.\(sync)" : "For \(prompt.username).\(sync)")
+            let site = prompt.username.isEmpty ? String(localized: "For this site.") : String(localized: "For \(prompt.username).")
+            Text(account.isSignedIn ? site + " " + String(localized: "It syncs to Zen.") : site)
         }
         .sheet(isPresented: $showDownloads) { NavigationStack { DownloadsView() } }
         .haptic(.selection, trigger: swipeCommits)
@@ -159,7 +159,8 @@ struct BrowserView: View {
     private var savePromptTitle: String {
         guard let prompt = PasswordAutofill.shared.savePrompt else { return "" }
         let host = PasswordStore.host(prompt.origin)
-        return prompt.existing == nil ? "Save password for \(host)?" : "Update password for \(host)?"
+        return prompt.existing == nil ? String(localized: "Save password for \(host)?")
+            : String(localized: "Update password for \(host)?")
     }
 
     private func content(safeInsets: EdgeInsets) -> some View {
@@ -688,7 +689,7 @@ private struct TabChip: View {
                     .foregroundStyle(.secondary)
             }
             SiteIcon(host: tab.url?.host(), size: 16, fetch: !tab.isPrivate)
-            Text(tab.title.isEmpty ? tab.url?.host() ?? "New Tab" : tab.title)
+            Text(tab.title.isEmpty ? tab.url?.host() ?? String(localized: "New Tab") : tab.title)
                 .lineLimit(1)
         }
         .font(.footnote.weight(selected ? .semibold : .regular))
@@ -809,7 +810,8 @@ private struct UndoCloseCapsule: View {
                     browser.dropUndo()
                 }
             } else if let unloaded = browser.unloaded {
-                Label("Unloaded, still in \(unloaded.folder)", systemImage: "moon.zzz")
+                Label(unloaded.folder.map { String(localized: "Unloaded, still in \($0)") } ?? String(localized: "Unloaded, still in its folder"),
+                      systemImage: "moon.zzz")
                     .font(.subheadline.weight(.medium))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
@@ -1796,7 +1798,7 @@ private struct PageView: View {
                 .transition(.blurReplace)
             } else {
                 if tab.isPrivate { PrivateMark() }
-                Text(tab.url?.host() ?? "Search or enter address")
+                Text(tab.url?.host() ?? String(localized: "Search or enter address"))
                     .minimumScaleFactor(0.8)
                     .foregroundStyle(tab.url == nil ? .secondary : .primary)
                     .transition(.blurReplace)

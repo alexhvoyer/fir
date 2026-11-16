@@ -41,10 +41,10 @@ struct DownloadLiveActivity: Widget {
 
     private func title(_ state: DownloadAttributes.ContentState) -> String {
         switch state.phase {
-        case .running: state.count > 1 ? "\(state.count) downloads" : "Downloading"
-        case .paused: "Open Fir to continue"
-        case .finished: "Download finished"
-        case .failed: "Download failed"
+        case .running: state.count > 1 ? String(localized: "\(state.count) downloads") : String(localized: "Downloading")
+        case .paused: String(localized: "Open Fir to continue")
+        case .finished: String(localized: "Download finished")
+        case .failed: String(localized: "Download failed")
         }
     }
 

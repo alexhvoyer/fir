@@ -65,7 +65,7 @@ final class AccountService {
         let manager = FxAccountManager(
             config: FxAConfig(server: .release, clientId: Self.clientID, redirectUri: Self.redirectURI),
             deviceConfig: DeviceConfig(
-                name: "Fir on \(UIDevice.current.name)",
+                name: String(localized: "Fir on \(UIDevice.current.name)"),
                 deviceType: .mobile,
                 // Lets Zen list this iPhone under "Send Tab to Device".
                 capabilities: [.sendTab]
@@ -119,7 +119,7 @@ final class AccountService {
         if case .failure(let error) = result { lastError = "\(error)"; return }
         // Success only means the step ran: a failed code exchange reports it too.
         guard manager.hasAccount() else {
-            lastError = "Couldn't finish signing in. Try again."
+            lastError = String(localized: "Couldn't finish signing in. Try again.")
             return
         }
         isSignedIn = true

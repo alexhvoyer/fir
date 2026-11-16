@@ -7,6 +7,9 @@ settings:
   base:
     DEVELOPMENT_TEAM: 28MK6UC4T4
     CODE_SIGN_STYLE: Automatic
+    # Interface strings go to each target's Localizable.xcstrings; translations are added there.
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
 packages:
   MozillaRustComponents:
     path: Packages/MozillaRustComponents

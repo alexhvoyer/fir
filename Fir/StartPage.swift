@@ -112,7 +112,7 @@ struct StartPage: View {
                 if !essentials.isEmpty {
                     section("Essentials") {
                         PinGrid(urls: essentials.map { ($0.id, $0.url) },
-                                removeTitle: { _ in "Remove from Essentials" }, onOpen: onOpen)
+                                removeTitle: { _ in String(localized: "Remove from Essentials") }, onOpen: onOpen)
                     }
                 }
                 if let space { pinned(space) }
@@ -171,7 +171,7 @@ struct StartPage: View {
         ForEach(space.folders) { folder in
             let tabs = folder.tabs.compactMap { tab in tab.url.map { (tab.title, $0) } }
             if !tabs.isEmpty {
-                section(folder.name) { rows(tabs, onSelect: onOpen) }
+                section(Text(verbatim: folder.name)) { rows(tabs, onSelect: onOpen) }
             }
         }
     }
@@ -237,9 +237,13 @@ struct StartPage: View {
         }
     }
 
-    private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+    private func section(_ title: LocalizedStringKey, @ViewBuilder content: () -> some View) -> some View {
+        section(Text(title), content: content)
+    }
+
+    private func section(_ title: Text, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title).font(.brandHeading(.title3))
+            title.font(.brandHeading(.title3))
             content()
         }
     }

@@ -57,7 +57,7 @@ struct TabSwitcherView: View {
         }
         .safeAreaInset(edge: .top) { topBar }
 
-        .alert("Delete \(deletingFolder?.name ?? "Folder")?", isPresented: Binding(
+        .alert(deletingFolder.map { String(localized: "Delete \($0.name)?") } ?? String(localized: "Delete Folder?"), isPresented: Binding(
             get: { deletingFolder != nil }, set: { if !$0 { deletingFolder = nil } }
         ), presenting: deletingFolder) { folder in
             Button("Delete", role: .destructive) {
@@ -455,8 +455,8 @@ struct TabSwitcherView: View {
     }
 
     private var switcherItems: [SpaceSwitcher.Item] {
-        let incognito = SpaceSwitcher.Item(id: BrowserModel.privateSpace, title: "Private")
-        let local = SpaceSwitcher.Item(id: Self.localSpace, title: browser.tabs(in: nil).count == 1 ? "1 Tab" : "\(browser.tabs(in: nil).count) Tabs")
+        let incognito = SpaceSwitcher.Item(id: BrowserModel.privateSpace, title: String(localized: "Private"))
+        let local = SpaceSwitcher.Item(id: Self.localSpace, title: String(localized: "\(browser.tabs(in: nil).count) Tabs"))
         let zen = (account.zenWorkspaces?.spaces ?? []).map {
             SpaceSwitcher.Item(id: $0.id, title: [$0.icon, $0.name].compactMap { $0 }.joined(separator: " "))
         }
@@ -467,7 +467,7 @@ struct TabSwitcherView: View {
         var items = [incognito, local] + zen + devices
         // A workspace Zen no longer lists (sync off, signed out, deleted there) keeps its tabs reachable.
         let orphans = Set(browser.tabs.compactMap(\.spaceID)).subtracting(items.map(\.id)).sorted()
-        items += orphans.map { SpaceSwitcher.Item(id: $0, title: "Other Tabs") }
+        items += orphans.map { SpaceSwitcher.Item(id: $0, title: String(localized: "Other Tabs")) }
         return items
     }
 

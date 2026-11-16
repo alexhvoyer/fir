@@ -120,7 +120,8 @@ struct PageSheet: View {
                     Button("Settings", systemImage: "gear") { finish(.settings) }
                 }
             }
-            .confirmationDialog("Forget \(SiteSettings.site(tab.pageURL) ?? "this website")?",
+            .confirmationDialog(SiteSettings.site(tab.pageURL).map { String(localized: "Forget \($0)?") }
+                                    ?? String(localized: "Forget this website?"),
                                 isPresented: $confirmForget, titleVisibility: .visible) {
                 Button("Forget", role: .destructive) {
                     Task {
@@ -236,11 +237,11 @@ struct PageSheet: View {
         .listRowInsets(EdgeInsets())
     }
 
-    private func action(_ title: String, _ symbol: String, perform: @escaping () -> Void) -> some View {
+    private func action(_ title: LocalizedStringKey, _ symbol: String, perform: @escaping () -> Void) -> some View {
         Button(action: perform) { tile(title, symbol) }.buttonStyle(.bordered)
     }
 
-    private func tile(_ title: String, _ symbol: String) -> some View {
+    private func tile(_ title: LocalizedStringKey, _ symbol: String) -> some View {
         VStack(spacing: 6) {
             Image(systemName: symbol).font(.title3)
             Text(title).font(.caption)

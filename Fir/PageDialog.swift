@@ -6,7 +6,7 @@ import WebKit
 enum PageDialog {
     /// Returns nil when cancelled, or when iOS drops or removes the alert: the page waits on the answer.
     static func present(_ message: String, host: String, cancel: String?, field: String? = nil,
-                        confirm: String = "OK") async -> String? {
+                        confirm: String = String(localized: "OK")) async -> String? {
         guard let presenter = topViewController() else { return nil }
         return await withCheckedContinuation { continuation in
             var answered = false

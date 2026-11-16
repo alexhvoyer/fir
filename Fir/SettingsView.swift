@@ -30,7 +30,7 @@ struct SettingsView: View {
                 }
                 Section {
                     link("Sync", icon: "arrow.triangle.2.circlepath", color: .orange,
-                         detail: account.email ?? (account.isSignedIn ? "Signed in" : "Off")) { SyncSettingsView() }
+                         detail: account.email ?? (account.isSignedIn ? String(localized: "Signed in") : String(localized: "Off"))) { SyncSettingsView() }
                     if account.isSignedIn {
                         link("Workspaces", icon: "square.grid.2x2.fill", color: .mint,
                              detail: account.zenWorkspaces.map { "\($0.spaces.count)" }) { WorkspacesSettingsView() }
@@ -73,7 +73,7 @@ struct SettingsView: View {
         }
     }
 
-    private func link(_ title: String, icon: String, color: Color, detail: String? = nil,
+    private func link(_ title: LocalizedStringKey, icon: String, color: Color, detail: String? = nil,
                       @ViewBuilder destination: () -> some View) -> some View {
         NavigationLink(destination: destination) {
             Label {
@@ -100,7 +100,7 @@ private struct GeneralSettingsView: View {
     var body: some View {
         List {
             Section {
-                LabeledContent("Default Browser", value: isDefault == true ? "Fir" : "Not Fir")
+                LabeledContent("Default Browser", value: isDefault == true ? "Fir" : String(localized: "Not Fir"))
                 Button("Open iOS Settings") {
                     UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
                 }
@@ -184,9 +184,9 @@ private struct AppearanceSettingsView: View {
     @State private var icon = UIApplication.shared.alternateIconName
 
     private static let icons: [(name: String?, title: String, preview: String)] = [
-        (nil, "Snow", "IconPreview-Default"),
-        ("AppIcon-Night", "Night", "IconPreview-Night"),
-        ("AppIcon-Spruce", "Spruce", "IconPreview-Spruce"),
+        (nil, String(localized: "Snow"), "IconPreview-Default"),
+        ("AppIcon-Night", String(localized: "Night"), "IconPreview-Night"),
+        ("AppIcon-Spruce", String(localized: "Spruce"), "IconPreview-Spruce"),
     ]
 
     var body: some View {

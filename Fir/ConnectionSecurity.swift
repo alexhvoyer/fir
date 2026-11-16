@@ -85,17 +85,17 @@ struct ConnectionSecurityView: View {
     /// The certificate's facts that the site has; optional ones are left out rather than blank.
     private static func details(of report: ConnectionReport) -> [(String, String)] {
         guard let site = report.chain.first else { return [] }
-        var rows = [("Issued To", site.name)]
-        if let organization = site.organization { rows.append(("Organization", organization)) }
-        if report.chain.count > 1 { rows.append(("Issued By", report.chain[1].name)) }
+        var rows = [(String(localized: "Issued To"), site.name)]
+        if let organization = site.organization { rows.append((String(localized: "Organization"), organization)) }
+        if report.chain.count > 1 { rows.append((String(localized: "Issued By"), report.chain[1].name)) }
         if let expires = site.expires {
-            rows.append(("Expires", expires.formatted(date: .abbreviated, time: .omitted)))
+            rows.append((String(localized: "Expires"), expires.formatted(date: .abbreviated, time: .omitted)))
         }
         return rows
     }
 
     private static func role(_ index: Int, of count: Int) -> String {
-        index == 0 ? "Website" : index == count - 1 ? "Root" : "Intermediate"
+        index == 0 ? String(localized: "Website") : index == count - 1 ? String(localized: "Root") : String(localized: "Intermediate")
     }
 }
 
@@ -117,12 +117,12 @@ struct ConnectionReport {
 
     var summary: String {
         if !secure {
-            return "Your connection to \(host) isn't encrypted. Don't enter passwords or card numbers here."
+            return String(localized: "Your connection to \(host) isn't encrypted. Don't enter passwords or card numbers here.")
         }
         if mixed {
-            return "Your connection to \(host) is encrypted, but some of this page's content isn't."
+            return String(localized: "Your connection to \(host) is encrypted, but some of this page's content isn't.")
         }
-        return "Your connection to \(host) is encrypted. What you send stays private on the way there."
+        return String(localized: "Your connection to \(host) is encrypted. What you send stays private on the way there.")
     }
 
     @MainActor
@@ -149,7 +149,7 @@ extension ConnectionReport.Certificate {
     init(_ certificate: SecCertificate) {
         var commonName: CFString?
         SecCertificateCopyCommonName(certificate, &commonName)
-        name = (commonName as String?) ?? (SecCertificateCopySubjectSummary(certificate) as String?) ?? "Unknown"
+        name = (commonName as String?) ?? (SecCertificateCopySubjectSummary(certificate) as String?) ?? String(localized: "Unknown")
         organization = DER.subjectOrganization(SecCertificateCopyData(certificate) as Data)
         expires = SecCertificateCopyNotValidAfterDate(certificate) as Date?
     }

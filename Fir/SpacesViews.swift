@@ -263,7 +263,7 @@ struct ZenSpacePage: View {
                         .lineLimit(1)
                     if !essentials.isEmpty {
                         PinGrid(urls: essentials.map { ($0.id, $0.url) },
-                                removeTitle: { _ in "Remove from Essentials" }, onOpen: onOpen)
+                                removeTitle: { _ in String(localized: "Remove from Essentials") }, onOpen: onOpen)
                     }
                 }
                 if !space.tabs.isEmpty { section(title: nil, tabs: space.tabs) }
@@ -295,7 +295,7 @@ struct ZenSpacePage: View {
                         HStack(spacing: 12) {
                             SiteIcon(host: tab.url?.host(), size: 32)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(tab.title.isEmpty ? "Untitled" : tab.title).lineLimit(1)
+                                Text(tab.title.isEmpty ? String(localized: "Untitled") : tab.title).lineLimit(1)
                                 if let host = tab.url?.host() {
                                     Text(host).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                                 }
@@ -338,7 +338,7 @@ struct RemoteTabsPage: View {
                                 HStack(spacing: 12) {
                                     SiteIcon(host: url?.host(), size: 32)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(tab.title.isEmpty ? "Untitled" : tab.title).lineLimit(1)
+                                        Text(tab.title.isEmpty ? String(localized: "Untitled") : tab.title).lineLimit(1)
                                         if let host = url?.host() {
                                             Text(host).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                                         }
@@ -380,7 +380,7 @@ struct ZenSpaceHeader: View {
             // On its side the deck has no height to spare for the pins.
             if !pins.isEmpty, !landscape {
                 PinGrid(urls: pins.map { ($0.id, $0.url) }, removeTitle: { id in
-                    essentials.contains { $0.id == id } ? "Remove from Essentials" : "Unpin"
+                    essentials.contains { $0.id == id } ? String(localized: "Remove from Essentials") : String(localized: "Unpin")
                 }, pinnedIDs: Set(pins.dropFirst(essentials.count).map(\.id)), singleRow: true, onOpen: onOpen)
             }
         }
@@ -470,7 +470,7 @@ struct ZenFolderEditor {
         withAnimation(.snappy) { tab.joinZenFolder(as: tabID) }
         browser.save()
         Task {
-            let created = await account.createZenFolder(id: AccountService.newRecordID(), named: trimmed.isEmpty ? "Folder" : trimmed,
+            let created = await account.createZenFolder(id: AccountService.newRecordID(), named: trimmed.isEmpty ? String(localized: "Folder") : trimmed,
                                                         in: space, tabs: [(tabID, url, tab.title)])
             if created {
                 if let oldPin { await account.removeFromZen(oldPin) }
@@ -501,14 +501,14 @@ struct ZenFolderEditor {
             createFolder(named: name, with: tab, in: space)
         } else if tab.spaceID == nil {
             let trimmed = name.trimmingCharacters(in: .whitespaces)
-            withAnimation(.snappy) { browser.createLocalFolder(named: trimmed.isEmpty ? "Folder" : trimmed, with: tab) }
+            withAnimation(.snappy) { browser.createLocalFolder(named: trimmed.isEmpty ? String(localized: "Folder") : trimmed, with: tab) }
         }
     }
 
     /// What the New Folder alert says about where the folder lives.
     static func newFolderNote(for tab: BrowserTab?) -> String {
-        tab?.spaceID == nil ? "Only on this iPhone. Move it into a Zen workspace later from its menu."
-            : "The folder appears in Zen too, with this page in it."
+        tab?.spaceID == nil ? String(localized: "Only on this iPhone. Move it into a Zen workspace later from its menu.")
+            : String(localized: "The folder appears in Zen too, with this page in it.")
     }
 
     /// A folder of this iPhone's tabs becomes a Zen folder in `space`, its tabs moving with it. Back as it
@@ -722,7 +722,7 @@ struct WorkspacesSettingsView: View {
         .sheet(item: $editing) { target in
             WorkspaceEditor(target: target) { deleting = $0 }
         }
-        .alert("Delete \(deleting?.name ?? "Workspace")?", isPresented: Binding(
+        .alert(deleting.map { String(localized: "Delete \($0.name)?") } ?? String(localized: "Delete Workspace?"), isPresented: Binding(
             get: { deleting != nil }, set: { if !$0 { deleting = nil } }
         ), presenting: deleting) { space in
             Button("Delete", role: .destructive) {
@@ -858,7 +858,7 @@ private struct DevicesSection: View {
             } header: {
                 Text("Devices")
             } footer: {
-                Text("Tabs open on your other devices, beside the workspaces in the switcher. Devices not synced in two weeks are hidden anyway.")
+                Text("Tabs from your other devices show in the switcher, beside the workspaces. A device that hasn't synced for two weeks stays hidden even when switched on.")
             }
         }
     }

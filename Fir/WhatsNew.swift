@@ -14,10 +14,10 @@ enum WhatsNew {
 
     @MainActor static var items: [Item] {
         [
-            Item(symbol: "square.grid.2x2", title: "Tabs in a grid",
-                 detail: "See a workspace's tabs side by side: choose Grid in Settings > Tabs > Tab Overview. Swipe a tab left to close it."),
-            Item(symbol: "accessibility", title: "Follows Reduce Motion",
-                 detail: "With Reduce Motion on in iOS Settings, sheets slide up without the zoom and pages switch to your tabs at once."),
+            Item(symbol: "square.grid.2x2", title: String(localized: "Tabs in a grid"),
+                 detail: String(localized: "See a workspace's tabs side by side: choose Grid in Settings > Tabs > Tab Overview. Swipe a tab left to close it.")),
+            Item(symbol: "accessibility", title: String(localized: "Follows Reduce Motion"),
+                 detail: String(localized: "With Reduce Motion on in iOS Settings, sheets slide up without the zoom and pages switch to your tabs at once.")),
         ]
     }
 

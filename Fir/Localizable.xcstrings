@@ -1,0 +1,526 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+      "shouldTranslate" : false
+    },
+    " — %@" : {
+      "shouldTranslate" : false
+    },
+    "\"%@\" will be able to read and change %@ and %lld more." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"%1$@\" will be able to read and change %2$@ and %3$lld more."
+          }
+        }
+      }
+    },
+    "\"%@\" will be able to read and change %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"%1$@\" will be able to read and change %2$@."
+          }
+        }
+      }
+    },
+    "\"%@\" will be able to read and change every website." : {},
+    "\"%@\" will be able to read and change no websites." : {},
+    "%@ Suggestions" : {},
+    "%@ rules" : {},
+    "%lld" : {
+      "shouldTranslate" : false
+    },
+    "%lld Reported Problems" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Reported Problem"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Reported Problems"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld Tabs" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Tab"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Tabs"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld tabs, synced %@" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tab, synced %@"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tabs, synced %@"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "1 Day" : {},
+    "1 Month" : {},
+    "1 Week" : {},
+    "12 Hours" : {},
+    "2 Weeks" : {},
+    "3 Days" : {},
+    "A demo of the tab gestures" : {},
+    "A result" : {},
+    "A short list of changes after a major update." : {},
+    "About" : {},
+    "Accent Color" : {},
+    "Accent.System" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System"
+          }
+        }
+      }
+    },
+    "Account" : {},
+    "Add" : {},
+    "Add %@" : {},
+    "Add to Essentials" : {},
+    "Add to Folder" : {},
+    "Add-on link or name, e.g. darkreader" : {},
+    "Address" : {},
+    "Address Bar Buttons" : {},
+    "Adds protection against malicious websites. Heavy sites run slower in private tabs. Applies from the next page load." : {},
+    "Ads and trackers load on every site." : {},
+    "Ads on English-language and international sites" : {},
+    "Already in Your Language" : {},
+    "Always Use Reader" : {},
+    "Always connects securely, and asks before opening a site that doesn't support it." : {},
+    "An open-source iPhone browser. Your Zen or Firefox tabs come along." : {},
+    "Annoyances are newsletter and open-in-app pop-ups, chat and notification prompts, and social buttons. To turn blocking off for one site, use the page menu." : {},
+    "App Icon" : {},
+    "Appearance" : {},
+    "Apple's translator on iPhone doesn't support this language yet." : {},
+    "Archive Tabs After" : {},
+    "Archived Tabs" : {},
+    "Archived tabs you haven't viewed in this long are deleted. It's always longer than archiving." : {},
+    "Ask a question and Fir reads the first results for you, then writes one answer with its sources. The answer is written on this iPhone." : {},
+    "Back" : {},
+    "Back to Page" : {},
+    "Block Ads & Trackers" : {},
+    "Block Ads and Trackers" : {},
+    "Bring your Zen browser along" : {},
+    "Can't Open This Page" : {},
+    "Can't Translate %@" : {},
+    "Cancel" : {},
+    "Cards" : {},
+    "Cards shows one tab at a time to swipe through. Grid shows a workspace's tabs side by side." : {},
+    "Cards to swipe through one at a time, or a grid that shows them side by side." : {},
+    "Certificate" : {},
+    "Certificate Chain" : {},
+    "Check the connection and try again." : {},
+    "Clear" : {},
+    "Clear History" : {},
+    "Clear Tabs After" : {},
+    "Clear Website Data" : {},
+    "Clear all history?" : {},
+    "Clear all website data?" : {},
+    "Close" : {},
+    "Close All %lld Tabs" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Close %lld Tab"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Close All %lld Tabs"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Close Tab" : {},
+    "Close Tabs" : {},
+    "Collapse" : {},
+    "Collapse Toolbar on Scroll" : {},
+    "Connection Is Not Secure" : {},
+    "Connection Is Secure" : {},
+    "Connection Security" : {},
+    "Continue" : {},
+    "Cookie consent pop-ups" : {},
+    "Copy" : {},
+    "Copy Link" : {},
+    "Copy Password" : {},
+    "Couldn't Reach Mozilla" : {},
+    "Couldn't Reach Zen" : {},
+    "Couldn't Send the Tab" : {},
+    "Couldn't Translate the Page" : {},
+    "Couldn't finish signing in. Try again." : {},
+    "Couldn't reach Zen's sync server. Try again." : {},
+    "Create" : {},
+    "Dark" : {},
+    "Default Browser" : {},
+    "Delete" : {},
+    "Delete %@?" : {},
+    "Delete All" : {},
+    "Delete Folder?" : {},
+    "Delete Folder…" : {},
+    "Delete Password" : {},
+    "Delete Workspace" : {},
+    "Delete Workspace?" : {},
+    "Delete all archived tabs?" : {},
+    "Delete this password? It is deleted from Zen too." : {},
+    "Devices" : {},
+    "Do you want to download \"%@\"?" : {},
+    "Do you want to download this file?" : {},
+    "Download" : {},
+    "Downloads" : {},
+    "Edit Workspace" : {},
+    "Edit Workspaces…" : {},
+    "Emoji" : {},
+    "Enabled" : {},
+    "Essential" : {},
+    "Essentials" : {},
+    "Expand" : {},
+    "Experimental" : {},
+    "Experimental. Installs Firefox add-ons from addons.mozilla.org through WebKit's extension support; many work, some don't. Permissions the add-on asks for are granted. Not available in private tabs." : {},
+    "Expires" : {},
+    "Extension" : {},
+    "Extension Settings" : {},
+    "Extensions" : {},
+    "Face ID" : {},
+    "Failed" : {},
+    "Files you download appear here and in the Files app, under On My iPhone › Fir." : {},
+    "Fill your password" : {},
+    "Filter Lists" : {},
+    "Find" : {},
+    "Find on Page" : {},
+    "Fir couldn't read the results. If the search asks you to prove you're human, answer it there and try again." : {},
+    "Fir is Locked" : {},
+    "Fir is an independent app, not affiliated with Zen or Mozilla." : {},
+    "Fir is an independent app, not affiliated with Zen or Mozilla. Sync uses Mozilla application-services (MPL-2.0)." : {},
+    "Fir on %@" : {},
+    "Fir opens ready to type. The page you were reading stays behind the search." : {},
+    "Fir shows a short list of changes after a major update. It stays in Settings under About." : {},
+    "Folder" : {},
+    "Follows Reduce Motion" : {},
+    "For %@." : {},
+    "For this site." : {},
+    "Forget" : {},
+    "Forget %@?" : {},
+    "Forget This Website" : {},
+    "Forget this website?" : {},
+    "Frequently Visited" : {},
+    "From %@" : {},
+    "General" : {},
+    "General lists miss many ads on sites in other languages. Turn on the lists for the languages you read." : {},
+    "Global Privacy Control" : {},
+    "Go to Tabs" : {},
+    "Green" : {},
+    "Grid" : {},
+    "HTTPS-Only Mode" : {},
+    "Haptics" : {},
+    "Harden Private Tabs" : {},
+    "Hide" : {},
+    "Hide Annoyances" : {},
+    "Hide Cookie Pop-ups" : {},
+    "History" : {},
+    "History and Tabs" : {},
+    "In iOS Settings, choose Fir under Apps > Default Apps > Browser App. Links from other apps then open here." : {},
+    "Install" : {},
+    "Install Add-on?" : {},
+    "Installed" : {},
+    "Installing…" : {},
+    "Intelligence Search" : {},
+    "Intermediate" : {},
+    "Issued By" : {},
+    "Issued To" : {},
+    "It syncs to Zen." : {},
+    "It will also see the addresses of your open tabs." : {},
+    "Its cookies and data on this iPhone are removed, so you're signed out of it." : {},
+    "Its tabs close in Zen on your computers too. Ones open here stay, outside the folder." : {},
+    "Its tabs close." : {},
+    "Larger Text" : {},
+    "Last Error" : {},
+    "Light" : {},
+    "Lists update weekly. Changes apply from the next page load." : {},
+    "Lock Fir" : {},
+    "Lock Private Tabs" : {},
+    "Looking at the results" : {},
+    "Make it yours" : {},
+    "Messages the add-on reported. Many are harmless; if it doesn't work, the reason is usually here." : {},
+    "More Buttons" : {},
+    "Move to Workspace" : {},
+    "Mozilla Account" : {},
+    "Name" : {},
+    "Never" : {},
+    "New Folder" : {},
+    "New Folder…" : {},
+    "New Private Tab" : {},
+    "New Tab" : {},
+    "New Workspace" : {},
+    "New tabs" : {},
+    "Newsletter and open-in-app pop-ups, chat and notification prompts, social buttons" : {},
+    "Night" : {},
+    "No Archived Tabs" : {},
+    "No History" : {},
+    "No open tabs on this device." : {},
+    "No pinned tabs or folders in this space. Tabs you open here stay in it, on this iPhone only." : {},
+    "No saved passwords yet. Passwords saved in Zen appear here after sync." : {},
+    "No saved passwords yet. Sign in to Sync to bring your passwords from Zen." : {},
+    "No such add-on on addons.mozilla.org." : {},
+    "No username" : {},
+    "None of the first results had text to answer from." : {},
+    "Not Fir" : {},
+    "Not Now" : {},
+    "Not Trusted" : {},
+    "Not synced yet" : {},
+    "OK" : {},
+    "Off" : {},
+    "Offers to read a search's first results and write one answer with its sources, on this iPhone. Answers can get things wrong." : {},
+    "On" : {},
+    "Only on this iPhone. Move it into a Zen workspace later from its menu." : {},
+    "Open" : {},
+    "Open Search at Launch" : {},
+    "Open Tab" : {},
+    "Open Tabs" : {},
+    "Open iOS Settings" : {},
+    "Open in New Tab" : {},
+    "Open in Private Tab" : {},
+    "Open this page in another app?" : {},
+    "Organization" : {},
+    "Other Tabs" : {},
+    "Page Menu" : {},
+    "Page Zoom" : {},
+    "Pages from History" : {},
+    "Pages you open here aren't saved, and their cookies and site data are gone when you close the last private tab." : {},
+    "Password" : {},
+    "Passwords" : {},
+    "Passwords Are Locked" : {},
+    "Passwords and history are removed from this iPhone. What has synced stays in your Mozilla account." : {},
+    "Pin" : {},
+    "Pin Tab" : {},
+    "Pine" : {},
+    "Pink" : {},
+    "Pinned" : {},
+    "Privacy" : {},
+    "Privacy & Security" : {},
+    "Private" : {},
+    "Private Browsing" : {},
+    "Private Browsing: pages you open here aren't saved." : {},
+    "Private Tabs Are Locked" : {},
+    "Private tabs leave nothing behind. You can also lock Fir with Face ID in Settings." : {},
+    "Private tabs lock when you leave Private or Fir. Locking Fir asks when you open it, and hides the page in the app switcher." : {},
+    "Purple" : {},
+    "Reader" : {},
+    "Reader Available" : {},
+    "Reader Isn't Available" : {},
+    "Reading" : {},
+    "Reading %lld of 3" : {},
+    "Recently Closed" : {},
+    "Recently Visited" : {},
+    "Regional" : {},
+    "Reload" : {},
+    "Remove" : {},
+    "Remove Extension" : {},
+    "Remove from Essentials" : {},
+    "Remove from Folder" : {},
+    "Removes cookies, cache and site storage. You will be signed out of websites." : {},
+    "Request Desktop Site" : {},
+    "Root" : {},
+    "Save" : {},
+    "Save password for %@?" : {},
+    "Saved password" : {},
+    "Search" : {},
+    "Search Engine" : {},
+    "Search Engine Suggestions" : {},
+    "Search Passwords" : {},
+    "Search Sheet" : {},
+    "Search Sheet opens search at once. Start Page shows your pinned and frequent sites and history; tap the address bar to search, and the keyboard comes up right away." : {},
+    "Search Suggestions" : {},
+    "Search or enter address" : {},
+    "Search or type an address below." : {},
+    "Search right away, or a start page with your pinned and frequent sites and history." : {},
+    "See a workspace's tabs side by side: choose Grid in Settings > Tabs > Tab Overview. Swipe a tab left to close it." : {},
+    "Send" : {},
+    "Sent to %@" : {},
+    "Set up Face ID or a passcode on this iPhone to lock Fir." : {},
+    "Settings" : {},
+    "Settings for This Site" : {},
+    "Share" : {},
+    "Show Onboarding" : {},
+    "Show Original" : {},
+    "Show private tabs" : {},
+    "Show saved passwords" : {},
+    "Shown" : {},
+    "Sign In" : {},
+    "Sign In to Mozilla Account" : {},
+    "Sign In with Mozilla" : {},
+    "Sign Out" : {},
+    "Sign in to see tabs from Zen" : {},
+    "Sign in with the Mozilla account from Zen or Firefox. Workspaces, tabs, history and passwords come along." : {},
+    "Sign in with the account you use in Zen to get its tabs, history and workspaces here." : {},
+    "Sign in with your Mozilla account to see your workspaces, pinned sites, open tabs and history from Zen." : {},
+    "Sign out?" : {},
+    "Signed in" : {},
+    "Simmer it for about three minutes" : {},
+    "Skip" : {},
+    "Smaller Text" : {},
+    "Snow" : {},
+    "Some lists couldn't be updated: %@" : {},
+    "Sources" : {},
+    "Space" : {},
+    "Spruce" : {},
+    "Start Browsing" : {},
+    "Start Page" : {},
+    "Status" : {},
+    "Suggestions send what you type to the search engine." : {},
+    "Suggestions send what you type to the search engine. History matches stay on this device." : {},
+    "Swipe Anywhere to Navigate" : {},
+    "Swipe left past the last tab for a new one. Long-press the tabs button for a private tab." : {},
+    "Swipe sideways anywhere on a page to go back or forward, not only from the edge. Some sites with sliders may react to it too." : {},
+    "Swipe the bar sideways to switch tabs, or up to see them all." : {},
+    "Swipe through tabs" : {},
+    "Sync" : {},
+    "Sync Now" : {},
+    "Sync on This iPhone" : {},
+    "Synced %@" : {},
+    "System" : {},
+    "Tab Overview" : {},
+    "Tabs" : {},
+    "Tabs from your other devices show in the switcher, beside the workspaces. A device that hasn't synced for two weeks stays hidden even when switched on." : {},
+    "Tabs in a grid" : {},
+    "Tabs you haven't viewed in this long close. They stay in Recently Closed." : {},
+    "Tabs you haven't viewed in this long move to the archive, where you can reopen them. Private tabs close instead." : {},
+    "Tap the password to show it; touch and hold a field to copy it." : {},
+    "Teal" : {},
+    "Tells websites not to sell or share your data. Where the law requires it, they must comply." : {},
+    "The change didn't reach Zen's sync server, so nothing changed. Try again." : {},
+    "The filter lists didn't compile." : {},
+    "The folder appears in Zen too, with this page in it." : {},
+    "The model couldn't answer: %@" : {},
+    "The model couldn't read the pages: %@" : {},
+    "The page may already be in your language, or its language isn't available for translation." : {},
+    "Theme" : {},
+    "These are your Zen workspaces. Changes here reach Zen on your computers too." : {},
+    "This add-on" : {},
+    "This form will be sent over an insecure connection. Anything in it could be seen by others on the network." : {},
+    "This page has no article to show on its own." : {},
+    "This page is already in the language it would be translated into." : {},
+    "This site doesn't support a secure connection." : {},
+    "This site doesn't support a secure connection. Anything you send could be seen by others on the network." : {},
+    "Today" : {},
+    "Trackers and analytics" : {},
+    "Translate" : {},
+    "Translate To" : {},
+    "Translate to %@" : {},
+    "Translating…" : {},
+    "Try Again" : {},
+    "Turn off the Fir lock" : {},
+    "Turn off the private tabs lock" : {},
+    "Turn on Apple Intelligence in iOS Settings to use it." : {},
+    "Turn on Zen Workspaces under Sync to see and edit them here." : {},
+    "Turn on the Fir lock" : {},
+    "Turning one off stops it on this iPhone only; Zen keeps syncing it. Which devices' tabs show is under Workspaces." : {},
+    "Undo Close Tab" : {},
+    "Ungroup" : {},
+    "Unknown" : {},
+    "Unload Opened Tabs" : {},
+    "Unload Tab" : {},
+    "Unloaded, still in %@" : {},
+    "Unloaded, still in its folder" : {},
+    "Unlock" : {},
+    "Unlock Fir" : {},
+    "Unpin" : {},
+    "Unpin Tab" : {},
+    "Untitled" : {},
+    "Up to three. While Back and Forward are shown, only the last one stays, to leave room for the address." : {},
+    "Update" : {},
+    "Update Filter Lists" : {},
+    "Update password for %@?" : {},
+    "Updated %@." : {},
+    "Updating…" : {},
+    "Use %@" : {},
+    "Username" : {},
+    "Valid" : {},
+    "Version" : {},
+    "Version %@" : {},
+    "Website" : {},
+    "Website data cleared." : {},
+    "Welcome to Fir" : {},
+    "What's New" : {},
+    "What's New After Updates" : {},
+    "With Reduce Motion on in iOS Settings, sheets slide up without the zoom and pages switch to your tabs at once." : {},
+    "With history sync on, this can also clear it in Zen." : {},
+    "Work" : {},
+    "Workspaces" : {},
+    "Workspaces Error" : {},
+    "Writing the answer" : {},
+    "Written on this iPhone from the pages below. It can get things wrong." : {},
+    "Yesterday" : {},
+    "You can change these later in Settings." : {},
+    "You can change this later in Settings." : {},
+    "Your connection to %@ is encrypted, but some of this page's content isn't." : {},
+    "Your connection to %@ is encrypted. What you send stays private on the way there." : {},
+    "Your connection to %@ isn't encrypted. Don't enter passwords or card numbers here." : {},
+    "Your tabs" : {},
+    "Your tabs, everywhere" : {},
+    "Zen Workspaces" : {},
+    "Zen asks you to confirm on your computer, then closes the workspace's tabs there." : {},
+    "how to poach an egg" : {},
+    "iPhone Language" : {},
+    "⏱ Lift it out with a slotted spoon [3]" : {},
+    "🍳 Add a splash of vinegar [1]" : {},
+    "🥄 Slide it in from a small bowl [2]" : {}
+  },
+  "version" : "1.0"
+}

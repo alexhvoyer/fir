@@ -15,13 +15,13 @@ enum TabLifetime: Int, CaseIterable, Identifiable {
 
     var name: String {
         switch self {
-        case .never: "Never"
-        case .halfDay: "12 Hours"
-        case .day: "1 Day"
-        case .threeDays: "3 Days"
-        case .week: "1 Week"
-        case .twoWeeks: "2 Weeks"
-        case .month: "1 Month"
+        case .never: String(localized: "Never")
+        case .halfDay: String(localized: "12 Hours")
+        case .day: String(localized: "1 Day")
+        case .threeDays: String(localized: "3 Days")
+        case .week: String(localized: "1 Week")
+        case .twoWeeks: String(localized: "2 Weeks")
+        case .month: String(localized: "1 Month")
         }
     }
 

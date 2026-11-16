@@ -17,7 +17,7 @@ struct ExtensionsSettingsView: View {
                 Button(installing ? "Installing…" : "Install", action: install)
                     .disabled(installing || source.trimmingCharacters(in: .whitespaces).isEmpty)
             } footer: {
-                Text(error ?? "Experimental. Installs Firefox add-ons from addons.mozilla.org through WebKit's extension support; many work, some don't. Permissions the add-on asks for are granted. Not available in private tabs.")
+                Text(error ?? String(localized: "Experimental. Installs Firefox add-ons from addons.mozilla.org through WebKit's extension support; many work, some don't. Permissions the add-on asks for are granted. Not available in private tabs."))
                     .foregroundStyle(error == nil ? Color.secondary : .red)
             }
             if !manager.installed.isEmpty {
@@ -79,7 +79,7 @@ private struct ExtensionDetailView: View {
                 }
                 if !item.errors.isEmpty {
                     Section {
-                        DisclosureGroup("\(item.errors.count) Reported \(item.errors.count == 1 ? "Problem" : "Problems")") {
+                        DisclosureGroup("\(item.errors.count) Reported Problems") {
                             ForEach(item.errors, id: \.self) {
                                 Text($0).font(.caption).foregroundStyle(.secondary).lineLimit(4).textSelection(.enabled)
                             }

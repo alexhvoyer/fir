@@ -48,7 +48,7 @@ final class PasswordAutofill: NSObject {
     /// Fills the chosen login into the frame that asked, after Face ID or the passcode.
     func fill(_ login: Login) async {
         guard let offer, let webView = offer.webView else { return }
-        if AppLock.isAvailable, !(await AppLock.authenticate(reason: "Fill your password")) { return }
+        if AppLock.isAvailable, !(await AppLock.authenticate(reason: String(localized: "Fill your password"))) { return }
         // Checked in the same call: a frame keeps its identity when its page navigates to another site.
         _ = try? await webView.callAsyncJavaScript(
             "if (location.origin === origin) window.__zenFill(username, password)",
@@ -217,7 +217,7 @@ struct PasswordFillBar: View {
                 Image(systemName: "key.fill").foregroundStyle(.secondary)
                 Button { Task { await autofill.fill(first) } } label: {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(first.username.isEmpty ? "Saved password" : first.username).lineLimit(1)
+                        Text(first.username.isEmpty ? String(localized: "Saved password") : first.username).lineLimit(1)
                         Text(offer.host).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -225,7 +225,7 @@ struct PasswordFillBar: View {
                 if offer.logins.count > 1 {
                     Menu {
                         ForEach(offer.logins, id: \.id) { login in
-                            Button(login.username.isEmpty ? "Saved password" : login.username) {
+                            Button(login.username.isEmpty ? String(localized: "Saved password") : login.username) {
                                 Task { await autofill.fill(login) }
                             }
                         }

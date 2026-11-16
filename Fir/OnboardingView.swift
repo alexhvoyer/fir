@@ -89,7 +89,7 @@ struct OnboardingView: View {
             SyncOrbit()
         } footer: {
             if account.isSignedIn {
-                Label(account.email ?? "Signed in", systemImage: "checkmark.circle.fill")
+                Label(account.email ?? String(localized: "Signed in"), systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
                 Button("Sign In with Mozilla") { showSignIn = true }

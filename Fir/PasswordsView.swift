@@ -51,7 +51,7 @@ struct PasswordsView: View {
                         SiteIcon(host: PasswordStore.host(login.origin), size: 30)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(PasswordStore.host(login.origin)).lineLimit(1)
-                            Text(login.username.isEmpty ? "No username" : login.username)
+                            Text(login.username.isEmpty ? String(localized: "No username") : login.username)
                                 .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         }
                     }
@@ -64,7 +64,7 @@ struct PasswordsView: View {
     private func unlock() async {
         guard !unlocked else { return }
         guard AppLock.isAvailable else { unlocked = true; reload(); return }
-        if await AppLock.authenticate(reason: "Show saved passwords") {
+        if await AppLock.authenticate(reason: String(localized: "Show saved passwords")) {
             unlocked = true
             reload()
         }

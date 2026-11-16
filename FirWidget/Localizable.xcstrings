@@ -1,0 +1,17 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld downloads" : {},
+    "Download failed" : {},
+    "Download finished" : {},
+    "Downloading" : {},
+    "New Private Tab" : {},
+    "New Tab" : {},
+    "Open Fir to continue" : {},
+    "Search" : {},
+    "Search or enter address" : {},
+    "Start a private search in Fir." : {},
+    "Start a search in Fir." : {}
+  },
+  "version" : "1.0"
+}

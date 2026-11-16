@@ -22,52 +22,54 @@ struct FilterList: Identifiable, Hashable {
 
 extension FilterList {
     static let catalog: [FilterList] = [
-        FilterList(id: "easylist", name: "EasyList", detail: "Ads on English-language and international sites",
+        FilterList(id: "easylist", name: "EasyList", detail: String(localized: "Ads on English-language and international sites"),
                    group: .ads, url: URL(string: "https://easylist.to/easylist/easylist.txt")!),
-        FilterList(id: "easyprivacy", name: "EasyPrivacy", detail: "Trackers and analytics",
+        FilterList(id: "easyprivacy", name: "EasyPrivacy", detail: String(localized: "Trackers and analytics"),
                    group: .trackers, url: URL(string: "https://easylist.to/easylist/easyprivacy.txt")!),
-        FilterList(id: "cookies", name: "EasyList Cookie List", detail: "Cookie consent pop-ups",
+        FilterList(id: "cookies", name: "EasyList Cookie List", detail: String(localized: "Cookie consent pop-ups"),
                    group: .cookies, url: URL(string: "https://secure.fanboy.co.nz/fanboy-cookiemonster.txt")!),
         FilterList(id: "annoyances", name: "Fanboy's Annoyance List",
-                   detail: "Newsletter and open-in-app pop-ups, chat and notification prompts, social buttons",
+                   detail: String(localized: "Newsletter and open-in-app pop-ups, chat and notification prompts, social buttons"),
                    group: .annoyances, url: URL(string: "https://easylist.to/easylist/fanboy-annoyance.txt")!),
-        regional("ruadlist", "RuAdList", "Russian, Ukrainian, Kazakh, Uzbek",
+        regional("ruadlist", "RuAdList",
                  "https://easylist-downloads.adblockplus.org/ruadlist.txt", ["ru", "uk", "kk", "uz", "be"]),
-        regional("adguard-ru", "AdGuard Russian", "Russian",
+        regional("adguard-ru", "AdGuard Russian",
                  "https://filters.adtidy.org/extension/ublock/filters/1.txt", ["ru"]),
-        regional("easylist-de", "EasyList Germany", "German",
+        regional("easylist-de", "EasyList Germany",
                  "https://easylist.to/easylistgermany/easylistgermany.txt", ["de"]),
-        regional("liste-fr", "Liste FR", "French", "https://easylist-downloads.adblockplus.org/liste_fr.txt", ["fr"]),
-        regional("easylist-it", "EasyList Italy", "Italian",
+        regional("liste-fr", "Liste FR", "https://easylist-downloads.adblockplus.org/liste_fr.txt", ["fr"]),
+        regional("easylist-it", "EasyList Italy",
                  "https://easylist-downloads.adblockplus.org/easylistitaly.txt", ["it"]),
-        regional("easylist-es", "EasyList Spanish", "Spanish",
+        regional("easylist-es", "EasyList Spanish",
                  "https://easylist-downloads.adblockplus.org/easylistspanish.txt", ["es"]),
-        regional("easylist-pt", "EasyList Portuguese", "Portuguese",
+        regional("easylist-pt", "EasyList Portuguese",
                  "https://easylist-downloads.adblockplus.org/easylistportuguese.txt", ["pt"]),
-        regional("easylist-nl", "EasyList Dutch", "Dutch",
+        regional("easylist-nl", "EasyList Dutch",
                  "https://easylist-downloads.adblockplus.org/easylistdutch.txt", ["nl"]),
-        regional("easylist-pl", "EasyList Polish", "Polish",
+        regional("easylist-pl", "EasyList Polish",
                  "https://easylist-downloads.adblockplus.org/easylistpolish.txt", ["pl"]),
-        regional("easylist-lt", "EasyList Lithuania", "Lithuanian",
+        regional("easylist-lt", "EasyList Lithuania",
                  "https://easylist-downloads.adblockplus.org/easylistlithuania.txt", ["lt"]),
-        regional("adguard-tr", "AdGuard Turkish", "Turkish",
+        regional("adguard-tr", "AdGuard Turkish",
                  "https://filters.adtidy.org/extension/ublock/filters/13.txt", ["tr"]),
-        regional("liste-ar", "Liste AR", "Arabic", "https://easylist-downloads.adblockplus.org/Liste_AR.txt", ["ar"]),
-        regional("easylist-he", "EasyList Hebrew", "Hebrew",
+        regional("liste-ar", "Liste AR", "https://easylist-downloads.adblockplus.org/Liste_AR.txt", ["ar"]),
+        regional("easylist-he", "EasyList Hebrew",
                  "https://easylist-downloads.adblockplus.org/israellist.txt", ["he"]),
-        regional("easylist-zh", "EasyList China", "Chinese",
+        regional("easylist-zh", "EasyList China",
                  "https://easylist-downloads.adblockplus.org/easylistchina.txt", ["zh"]),
-        regional("adguard-ja", "AdGuard Japanese", "Japanese",
+        regional("adguard-ja", "AdGuard Japanese",
                  "https://filters.adtidy.org/extension/ublock/filters/7.txt", ["ja"]),
-        regional("koreanlist", "KoreanList", "Korean",
+        regional("koreanlist", "KoreanList",
                  "https://easylist-downloads.adblockplus.org/koreanlist.txt", ["ko"]),
-        regional("abpindo", "ABPindo", "Indonesian", "https://easylist-downloads.adblockplus.org/abpindo.txt", ["id"]),
-        regional("abpvn", "ABPVN", "Vietnamese", "https://easylist-downloads.adblockplus.org/abpvn.txt", ["vi"]),
+        regional("abpindo", "ABPindo", "https://easylist-downloads.adblockplus.org/abpindo.txt", ["id"]),
+        regional("abpvn", "ABPVN", "https://easylist-downloads.adblockplus.org/abpvn.txt", ["vi"]),
     ]
 
-    private static func regional(_ id: String, _ name: String, _ detail: String, _ url: String,
-                                 _ languages: [String]) -> FilterList {
-        FilterList(id: id, name: name, detail: detail, group: .ads, url: URL(string: url)!, languages: languages)
+    /// Described by the languages it covers, named in the iPhone's own language.
+    private static func regional(_ id: String, _ name: String, _ url: String, _ languages: [String]) -> FilterList {
+        let names = languages.compactMap { Locale.current.localizedString(forLanguageCode: $0) }.formatted(.list(type: .and))
+        return FilterList(id: id, name: name, detail: names.prefix(1).uppercased() + names.dropFirst(), group: .ads,
+                          url: URL(string: url)!, languages: languages)
     }
 
     /// On at first: ads, trackers and cookie pop-ups, plus the lists for the iPhone's languages.
@@ -307,6 +309,6 @@ final class ContentBlocker {
 
     enum BlockerError: LocalizedError {
         case compileFailed
-        var errorDescription: String? { "The filter lists didn't compile." }
+        var errorDescription: String? { String(localized: "The filter lists didn't compile.") }
     }
 }

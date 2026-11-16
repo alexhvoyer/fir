@@ -84,19 +84,20 @@ final class IntelligenceSearch {
         let links = await Self.waitForLinks(in: request.tab.webView)
         guard !Task.isCancelled else { return }
         guard !links.isEmpty else {
-            phase = .failed("Fir couldn't read the results. If the search asks you to prove you're human, answer it there and try again.")
+            phase = .failed(String(localized: "Fir couldn't read the results. If the search asks you to prove you're human, answer it there and try again."))
             return
         }
         phase = .reading
         for url in links.prefix(Self.linksToTry) where sources.count < Self.pagesToRead {
             guard !Task.isCancelled else { return }
-            let step = Step(url: url, name: Self.isRedirect(url) ? "A result" : url.host() ?? url.absoluteString)
+            let step = Step(url: url, name: Self.isRedirect(url) ? String(localized: "A result") : url.host() ?? url.absoluteString)
             steps.append(step)
             await read(step.id, for: request.question, images: !request.tab.isPrivate)
         }
         guard !Task.isCancelled else { return }
         guard !sources.isEmpty else {
-            phase = .failed(modelError.map { "The model couldn't read the pages: \($0)" } ?? "None of the first results had text to answer from.")
+            phase = .failed(modelError.map { String(localized: "The model couldn't read the pages: \($0)") }
+                ?? String(localized: "None of the first results had text to answer from."))
             return
         }
         await writeAnswer(to: request.question)
@@ -180,7 +181,7 @@ final class IntelligenceSearch {
             for try await partial in stream { answer = partial.content }
             phase = .done
         } catch {
-            if !Task.isCancelled { phase = .failed("The model couldn't answer: \(error.localizedDescription)") }
+            if !Task.isCancelled { phase = .failed(String(localized: "The model couldn't answer: \(error.localizedDescription)")) }
         }
     }
 
@@ -398,9 +399,9 @@ struct IntelligenceSearchView: View {
 
     private var status: String {
         switch search.phase {
-        case .searching: "Looking at the results"
-        case .writing: "Writing the answer"
-        default: "Reading \(min(search.sources.count + 1, 3)) of 3"
+        case .searching: String(localized: "Looking at the results")
+        case .writing: String(localized: "Writing the answer")
+        default: String(localized: "Reading \(min(search.sources.count + 1, 3)) of 3")
         }
     }
 

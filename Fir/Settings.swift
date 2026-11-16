@@ -59,7 +59,14 @@ enum Appearance: String, CaseIterable, Identifiable {
     case system, light, dark
 
     var id: Self { self }
-    var name: String { rawValue.capitalized }
+
+    var name: String {
+        switch self {
+        case .system: String(localized: "System")
+        case .light: String(localized: "Light")
+        case .dark: String(localized: "Dark")
+        }
+    }
 
     private var style: UIUserInterfaceStyle {
         switch self {
@@ -82,7 +89,18 @@ enum Accent: String, CaseIterable, Identifiable {
     case system, pine, purple, pink, green, teal
 
     var id: Self { self }
-    var name: String { rawValue.capitalized }
+
+    var name: String {
+        switch self {
+        // Its own key: Russian, for one, inflects it differently from the theme's "System".
+        case .system: String(localized: "Accent.System", defaultValue: "System")
+        case .pine: String(localized: "Pine")
+        case .purple: String(localized: "Purple")
+        case .pink: String(localized: "Pink")
+        case .green: String(localized: "Green")
+        case .teal: String(localized: "Teal")
+        }
+    }
 
     /// nil keeps the system's own accent.
     var color: Color? {
@@ -106,8 +124,8 @@ enum NewTabStyle: String, CaseIterable, Identifiable {
 
     var name: String {
         switch self {
-        case .sheet: "Search Sheet"
-        case .page: "Start Page"
+        case .sheet: String(localized: "Search Sheet")
+        case .page: String(localized: "Start Page")
         }
     }
 }
@@ -120,8 +138,8 @@ enum TabLayout: String, CaseIterable, Identifiable {
 
     var name: String {
         switch self {
-        case .deck: "Cards"
-        case .grid: "Grid"
+        case .deck: String(localized: "Cards")
+        case .grid: String(localized: "Grid")
         }
     }
 }
@@ -138,10 +156,10 @@ enum BarAction: String, CaseIterable, Identifiable {
 
     var name: String {
         switch self {
-        case .share: "Share"
-        case .reload: "Reload"
-        case .find: "Find on Page"
-        case .translate: "Translate"
+        case .share: String(localized: "Share")
+        case .reload: String(localized: "Reload")
+        case .find: String(localized: "Find on Page")
+        case .translate: String(localized: "Translate")
         }
     }
 
