@@ -140,19 +140,9 @@ struct OnboardingView: View {
                 ForEach(NewTabStyle.allCases) { style in
                     let selected = newTabStyle == style
                     Button {
-                        withAnimation(.spring(duration: 0.45, bounce: 0.35)) { newTabStyle = style }
+                        newTabStyle = style
                     } label: {
-                        VStack(spacing: 12) {
-                            NewTabPreview(style: style, selected: selected)
-                                .frame(width: 120, height: 240)
-                                .scaleEffect(selected ? 1 : 0.92)
-                                .opacity(selected ? 1 : 0.7)
-                            Text(style.name).font(.subheadline.weight(.medium))
-                            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                                .font(.title2)
-                                .foregroundStyle(selected ? Palette.teal : .secondary)
-                                .contentTransition(.symbolEffect(.replace))
-                        }
+                        Choice(name: style.name, selected: selected) { NewTabPreview(style: style, selected: selected) }
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(selected ? .isSelected : [])
@@ -173,19 +163,9 @@ struct OnboardingView: View {
                 ForEach(TabLayout.allCases) { layout in
                     let selected = tabLayout == layout
                     Button {
-                        withAnimation(.spring(duration: 0.45, bounce: 0.35)) { tabLayout = layout }
+                        tabLayout = layout
                     } label: {
-                        VStack(spacing: 12) {
-                            TabLayoutPreview(layout: layout, selected: selected)
-                                .frame(width: 120, height: 240)
-                                .scaleEffect(selected ? 1 : 0.92)
-                                .opacity(selected ? 1 : 0.7)
-                            Text(layout.name).font(.subheadline.weight(.medium))
-                            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                                .font(.title2)
-                                .foregroundStyle(selected ? Palette.teal : .secondary)
-                                .contentTransition(.symbolEffect(.replace))
-                        }
+                        Choice(name: layout.name, selected: selected) { TabLayoutPreview(layout: layout, selected: selected) }
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(selected ? .isSelected : [])
@@ -296,6 +276,47 @@ struct FeatureRow: View {
     }
 }
 
+/// The onboarding sketches' springs, shared so a sketch and its border move as one.
+private enum ChoiceMotion {
+    static let sketch = Animation.spring(duration: 0.45, bounce: 0.35)
+    /// Livelier, each tile a beat after the last.
+    static let tiles = Animation.spring(duration: 0.4, bounce: 0.45)
+}
+
+/// A sketch to pick, with its name and tick. Each change animates where it is made: animations set around the
+/// sketch (withAnimation, or on the whole choice) left it jumping.
+private struct Choice<Preview: View>: View {
+    let name: String
+    let selected: Bool
+    @ViewBuilder let preview: Preview
+
+    var body: some View {
+        VStack(spacing: 12) {
+            preview
+                .frame(width: 120, height: 240)
+                .scaleEffect(selected ? 1 : 0.92)
+                .opacity(selected ? 1 : 0.7)
+                .animation(ChoiceMotion.sketch, value: selected)
+            Text(name).font(.subheadline.weight(.medium))
+            ChoiceMark(selected: selected)
+        }
+    }
+}
+
+/// The tick under a choice. Quick, with its colour changing alongside: a slow swap kept a grey ticked circle on the
+/// choice just left.
+private struct ChoiceMark: View {
+    let selected: Bool
+
+    var body: some View {
+        Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+            .font(.title2)
+            .foregroundStyle(selected ? Palette.teal : .secondary)
+            .contentTransition(.symbolEffect(.replace, options: .speed(2)))
+            .animation(.snappy(duration: 0.2), value: selected)
+    }
+}
+
 /// A phone sketch of each style: the search sheet over a page, or the start page above its bar.
 private struct NewTabPreview: View {
     let style: NewTabStyle
@@ -316,6 +337,7 @@ private struct NewTabPreview: View {
                             in: UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18, style: .continuous))
                 // Chosen, the sheet rises as it does over a page.
                 .offset(y: selected ? 0 : 60)
+                .animation(ChoiceMotion.sketch, value: selected)
             } else {
                 Color(.systemBackground)
                 VStack(alignment: .leading, spacing: 10) {
@@ -325,7 +347,7 @@ private struct NewTabPreview: View {
                                 .fill(Palette.teal.opacity(selected ? 0.6 : 0.3))
                                 .aspectRatio(1, contentMode: .fit)
                                 .scaleEffect(selected ? 1 : 0.6)
-                                .animation(.spring(duration: 0.4, bounce: 0.45).delay(Double(index) * 0.04), value: selected)
+                                .animation(ChoiceMotion.tiles.delay(Double(index) * 0.04), value: selected)
                         }
                     }
                     ForEach(0..<4, id: \.self) { _ in row }
@@ -338,6 +360,7 @@ private struct NewTabPreview: View {
         }
         .clipShape(shape)
         .overlay(shape.stroke(selected ? Palette.teal : Color(.separator), lineWidth: selected ? 3 : 1))
+        .animation(ChoiceMotion.sketch, value: selected)
     }
 
     private var row: some View {
@@ -364,15 +387,23 @@ private struct TabLayoutPreview: View {
                         .frame(width: 56, height: 116)
                         // Chosen, the cards fan out as the deck lays them.
                         .offset(x: rel * (selected ? 28 : 10))
+                        .animation(ChoiceMotion.sketch, value: selected)
                         .zIndex(Double(index))
                 }
             } else {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible())], spacing: 8) {
-                    ForEach(0..<6, id: \.self) { index in
-                        card(radius: 7)
-                            .frame(height: 58)
-                            .scaleEffect(selected ? 1 : 0.7)
-                            .animation(.spring(duration: 0.4, bounce: 0.45).delay(Double(index) * 0.04), value: selected)
+                // Plain stacks: in a LazyVGrid the sketch's border and fade jumped when it was left, while the
+                // tiles animated.
+                VStack(spacing: 8) {
+                    ForEach(0..<3, id: \.self) { row in
+                        HStack(spacing: 8) {
+                            ForEach(0..<2, id: \.self) { column in
+                                card(radius: 7)
+                                    .frame(height: 58)
+                                    .scaleEffect(selected ? 1 : 0.7)
+                                    .animation(ChoiceMotion.tiles.delay(Double(row * 2 + column) * 0.04),
+                                               value: selected)
+                            }
+                        }
                     }
                 }
                 .padding(12)
@@ -380,6 +411,7 @@ private struct TabLayoutPreview: View {
         }
         .clipShape(shape)
         .overlay(shape.stroke(selected ? Palette.teal : Color(.separator), lineWidth: selected ? 3 : 1))
+        .animation(ChoiceMotion.sketch, value: selected)
     }
 
     private func card(radius: CGFloat) -> some View {
