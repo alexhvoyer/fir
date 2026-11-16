@@ -957,8 +957,9 @@ struct CardImage: View {
     var body: some View {
         Group {
             if let image = tab.snapshot {
+                // Cropped from the top left, as the page reads: centred, a wide page lost its left edge.
                 Image(uiImage: image).resizable().scaledToFill()
-                    .frame(width: width, height: height, alignment: .top)
+                    .frame(width: width, height: height, alignment: .topLeading)
             } else if tab.url == nil {
                 BlankTab(spaceID: tab.spaceID, offset: tab.startPageOffset)
                     // A new offset alone didn't redraw the card's copy.

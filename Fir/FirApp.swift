@@ -133,5 +133,6 @@ struct FirApp: App {
             }
             if scenePhase != .active { browser.save() }
         }
+        .commands { KeyCommands(browser: browser, locked: lockCovers) }
     }
 }

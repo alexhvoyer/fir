@@ -335,6 +335,7 @@ struct IntelligenceSearchView: View {
     @State private var search = IntelligenceSearch()
     @State private var detent = PresentationDetent.medium
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.sheetsCentered) private var centered
 
     var body: some View {
         NavigationStack {
@@ -368,7 +369,7 @@ struct IntelligenceSearchView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large], selection: $detent)
+        .presentationDetents(centered ? [.large] : [.medium, .large], selection: centered ? .constant(.large) : $detent)
         .environment(\.openURL, OpenURLAction { url in
             onOpen(url)
             return .handled

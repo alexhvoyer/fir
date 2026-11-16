@@ -24,6 +24,7 @@ Tabs in a Zen workspace sync to the real account. Close tabs in tests only in Pr
 | `PasswordAutofill`, `PasswordStore` | Passwords |
 | `Extensions` | Add-ons |
 | Onboarding, What's New, settings | Onboarding and settings |
+| Sheets, `KeyCommands`, anything sized by the screen | iPad |
 
 ## Smoke
 
@@ -174,6 +175,16 @@ timing, sync.
 - `sim` What's New shows once after an update (`-whatsNewSeen` one below the current list), and never on a fresh
   install.
 - `sim` Every settings page opens and closes, and each picker changes the app straight away. New Tab is under Tabs.
+
+## iPad
+
+- `sim` **(was broken)** On a full-screen iPad, the search sheet and the page menu show all their content. They used
+  phone heights in a centered sheet and were cut short.
+- `sim` **(was broken)** In landscape, deck cards and grid cells show the page from its top-left corner, not its middle.
+- `sim` With a keyboard: Command-T opens new-tab search, Command-L edits the address, Command-W closes the tab,
+  Control-Tab moves to the next tab in the workspace. None of them act while Fir or a private tab is locked.
+- `sim` Fir opens only one window: two would share one browser, and the lock covers one window.
+- `sim` In Split View beside another app, Fir in a narrow column behaves as on an iPhone.
 
 ## Accessibility and layout
 

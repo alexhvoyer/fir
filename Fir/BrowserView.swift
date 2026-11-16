@@ -9,6 +9,7 @@ import Translation
 struct BrowserView: View {
     @Environment(BrowserModel.self) private var browser
     @Environment(AccountService.self) private var account
+    @Environment(\.horizontalSizeClass) private var widthClass
     @State private var pageShown = true
     /// Shrink toward the card: 0 = full screen, 1 = card size and crop.
     @State private var progress: CGFloat = 0
@@ -228,6 +229,7 @@ struct BrowserView: View {
         // Beside a camera column the bars go in the column, so even the Duo's wide inner screen keeps
         // the upright layout: no top bar or tab strip over the page.
         .environment(\.isLandscape, screen.width > screen.height && !Self.sideRail(safeInsets))
+        .environment(\.sheetsCentered, UIDevice.current.userInterfaceIdiom == .pad && widthClass == .regular)
         .onChange(of: screen.width > screen.height && !Self.sideRail(safeInsets), initial: true) { barOnTop = $1 }
         // Over the bottom bar, on the page and on the deck.
         .overlay(alignment: .bottom) {
@@ -297,6 +299,11 @@ struct BrowserView: View {
     /// already open switches over.
     private func openSearch(_ request: BrowserModel.SearchRequest) {
         FrameMeter.mark("open search")
+        if request == .address {
+            // A locked private page's address must not show: the sheet would sit over its cover.
+            if !(browser.selected.isPrivate && browser.privateLocked) { search = .edit }
+            return
+        }
         if request == .privateTab {
             browser.space = BrowserModel.privateSpace
         } else if browser.space == BrowserModel.privateSpace {
@@ -671,6 +678,9 @@ struct BrowserView: View {
 extension EnvironmentValues {
     /// Wider than tall, from the root's own size: the size class read compact on a portrait iPhone.
     @Entry var isLandscape = false
+    /// Sheets open as a centered form, an iPad's full-width window, not from the bottom: heights
+    /// tuned for the bottom cut them short there. A big iPhone on its side is regular width too, so not that alone.
+    @Entry var sheetsCentered = false
 }
 
 /// One tab in the landscape strip; the selected one carries its close button, as in Safari.
@@ -1256,6 +1266,8 @@ private struct PageView: View {
         // These sheets sit above the locked page's cover and would keep showing the private tab.
         .onChange(of: browser.privateLocked) {
             guard browser.privateLocked, tab.isPrivate else { return }
+            // Keys would still reach the hidden page: a hardware keyboard's typing, scrolling and Find.
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             reader = nil
             showPageSheet = false
             PageShare.dismiss()

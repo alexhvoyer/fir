@@ -802,7 +802,8 @@ final class BrowserModel {
         let preview: LinkPreviewController
         let tab: BrowserTab
     }
-    enum SearchRequest { case tab, privateTab }
+    /// `address` edits the current tab's address, as Command-L does in Safari.
+    enum SearchRequest { case tab, privateTab, address }
     /// Counts links opened from other apps; the root view closes search on each so the page shows.
     private(set) var linksOpened = 0
 

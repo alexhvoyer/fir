@@ -24,6 +24,7 @@ struct NewTabView: View {
 
     @Environment(BrowserModel.self) private var browser
     @Environment(AccountService.self) private var account
+    @Environment(\.sheetsCentered) private var centered
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
     @AppStorage(SettingsKey.searchSuggestions) private var suggestionsEnabled = true
     @AppStorage(SettingsKey.historySuggestions) private var historyEnabled = true
@@ -123,7 +124,8 @@ struct NewTabView: View {
             .safeAreaInset(edge: .top) { searchBar }
             // One height at a time: low, then after a pull up only the full one, so a swipe down from
             // there closes rather than stopping half-way. Two from the start made the keyboard lift it to full.
-            .presentationDetents(expanded ? [Self.tall] : [Self.low], selection: $detent)
+            .presentationDetents(centered ? [.large] : expanded ? [Self.tall] : [Self.low],
+                                 selection: centered ? .constant(.large) : $detent)
             // A swipe down on a sheet with a keyboard only drops the keyboard; closing with it makes one motion.
             .background(SheetKeyboard(onRevive: reset) {
                 guard !rising else { return }
@@ -397,7 +399,7 @@ struct NewTabView: View {
     /// own change snapped. SwiftUI's state catches up after, with the same height, so nothing moves then.
     private func expand() {
         // Once: each scroll step calls this, and restarting the animation stalled it short of the top.
-        guard !inline, !expanded, !rising, let sheet = Self.topSheet() else { return }
+        guard !inline, !centered, !expanded, !rising, let sheet = Self.topSheet() else { return }
         rising = true
         sheet.animateChanges {
             sheet.detents = [.custom(identifier: Self.tallID) { context in

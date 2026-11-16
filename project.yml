@@ -64,6 +64,9 @@ targets:
         # Keeps page audio playing with the screen off and lets video continue in picture in picture.
         UIBackgroundModes: [audio]
         LSSupportsOpeningDocumentsInPlace: true
+        # One window: two would share one browser and its web views, and the lock covers only one window.
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
         # The heading typeface (OFL, see Shared/Fonts).
         UIAppFonts: [BricolageGrotesque.ttf]
         # Standard algorithms only (NSS in the Rust components) and no France, so App Store Connect
@@ -78,8 +81,12 @@ targets:
         # Chosen in Settings > Appearance.
         ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIcon-Night AppIcon-Spruce"
         SWIFT_VERSION: "5.0"
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: YES
+        # Every turn of an iPad: required for Split View and Stage Manager.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: >-
+          UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
+          UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         INFOPLIST_KEY_CFBundleDisplayName: Fir
         INFOPLIST_KEY_NSFaceIDUsageDescription: Unlock Fir when the app lock is on.
         INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Save images from websites to your photo library.
@@ -87,7 +94,6 @@ targets:
         INFOPLIST_KEY_NSMicrophoneUsageDescription: Record video for websites, and use the microphone on sites you allow.
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: Turn your speech into text on sites you allow.
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
   # Unit tests for code that parses untrusted input. It compiles those files directly, so no app host is needed.
@@ -120,7 +126,7 @@ targets:
         SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: Fir
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
   FirWidget:
     type: app-extension
     platform: iOS
@@ -138,7 +144,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser.Widget
         SWIFT_VERSION: "5.0"
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: YES
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"

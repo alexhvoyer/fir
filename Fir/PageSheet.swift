@@ -19,6 +19,7 @@ struct PageSheet: View {
     let onAction: (Action) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.sheetsCentered) private var centered
     @State private var languages: [Locale.Language] = []
     @State private var confirmForget = false
     @State private var copied = false
@@ -134,7 +135,7 @@ struct PageSheet: View {
                 Text("Its cookies and data on this iPhone are removed, so you're signed out of it.")
             }
         }
-        .presentationDetents([.medium, top], selection: $detent)
+        .presentationDetents(centered ? [.large] : [.medium, top], selection: centered ? .constant(.large) : $detent)
         .task { languages = await LanguageAvailability().supportedLanguages }
     }
 
