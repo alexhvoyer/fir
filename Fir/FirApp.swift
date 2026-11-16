@@ -109,7 +109,9 @@ struct FirApp: App {
                 .onOpenURL { url in
                     switch url.scheme?.lowercased() {
                     case "firbrowser" where url.host() == "search": browser.searchRequested = .tab
-                    case "http", "https": browser.openLink(url)
+                    case "http", "https":
+                        DefaultBrowser.linkArrived()
+                        browser.openLink(url)
                     default: break
                     }
                 }

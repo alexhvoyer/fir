@@ -214,6 +214,32 @@ enum SettingsKey {
     static let syncPasswords = "syncPasswords"
     static let hiddenDevices = "hiddenDevices"
     static let signInCardHidden = "signInCardHidden"
+    static let isDefaultBrowser = "isDefaultBrowser"
+    static let defaultBrowserRetry = "defaultBrowserRetry"
+}
+
+/// Whether Fir is the default browser. iOS answers about four times a year and throws in between, so the
+/// last answer is kept and iOS isn't asked again before the date it gives.
+enum DefaultBrowser {
+    @MainActor static func check() -> Bool? {
+        let defaults = UserDefaults.standard
+        let known = defaults.object(forKey: SettingsKey.isDefaultBrowser) as? Bool
+        if let retry = defaults.object(forKey: SettingsKey.defaultBrowserRetry) as? Date, retry > .now { return known }
+        do {
+            let answer = try UIApplication.shared.isDefault(.webBrowser)
+            defaults.set(answer, forKey: SettingsKey.isDefaultBrowser)
+            return answer
+        } catch {
+            let retry = (error as NSError).userInfo[UIApplication.CategoryDefaultError.retryAvailableDateErrorKey] as? Date
+            defaults.set(retry, forKey: SettingsKey.defaultBrowserRetry)
+            return known
+        }
+    }
+
+    /// Other apps hand web links only to the default browser.
+    static func linkArrived() {
+        UserDefaults.standard.set(true, forKey: SettingsKey.isDefaultBrowser)
+    }
 }
 
 extension UserDefaults {

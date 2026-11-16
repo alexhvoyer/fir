@@ -100,7 +100,8 @@ private struct GeneralSettingsView: View {
     var body: some View {
         List {
             Section {
-                LabeledContent("Default Browser", value: isDefault == true ? "Fir" : String(localized: "Not Fir"))
+                // Unknown says nothing rather than "Not Fir": iOS stops answering for months at a time.
+                LabeledContent("Default Browser", value: isDefault.map { $0 ? "Fir" : String(localized: "Not Fir") } ?? "")
                 Button("Open iOS Settings") {
                     UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
                 }
@@ -136,8 +137,7 @@ private struct GeneralSettingsView: View {
         }
         .navigationTitle("General")
         .task {
-            // Rate-limited by iOS; on an error the status just stays unknown.
-            isDefault = try? UIApplication.shared.isDefault(.webBrowser)
+            isDefault = DefaultBrowser.check()
         }
     }
 }
