@@ -181,5 +181,8 @@ timing, sync.
 - `sim` Light and dark appearance both look right on the page, both tab overviews, and the sheets.
 - `sim` Landscape: the bar moves to the top and the tab strip shows.
 - `sim` Larger Dynamic Type sizes don't break the bar or the grid titles.
+- `sim` In Russian and German (launch argument `-AppleLanguages (ru)` or `(de)`), onboarding, the page menu and every
+  settings page show no English, and long lines wrap instead of being cut. New interface text goes into the catalogs with
+  `scripts/sync-strings.sh` after a simulator build.
 - `sim` **(open)** VoiceOver: after a bar swipe the Tabs button's element spans the whole glass bar, so activating it
   edits the address instead of showing the tabs. The UI tests tap the menu's inner button to step around it.

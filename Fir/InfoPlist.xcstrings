@@ -15,6 +15,36 @@
             "state" : "translated",
             "value" : "Разблокировка Fir, когда включена блокировка приложения."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sblocca Fir quando il blocco dell'app è attivo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear Fir cuando el bloqueo de la app está activado."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear o Fir quando o bloqueio do app estiver ativado."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entsperrt Fir, wenn die App-Sperre aktiv ist."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déverrouiller Fir lorsque le verrouillage de l’app est activé."
+          }
         }
       }
     },
@@ -31,6 +61,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сохранение изображений с сайтов в медиатеку."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salva le immagini dai siti web nella libreria foto."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar imágenes de sitios web en tu fototeca."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar imagens de sites na sua fototeca."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sichert Bilder von Websites in Ihrer Fotomediathek."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer des images de sites web dans votre photothèque."
           }
         }
       }
@@ -49,6 +109,36 @@
             "state" : "translated",
             "value" : "Фото для сайтов и камера на сайтах, которым вы это разрешите."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scatta foto per i siti web e usa la fotocamera sui siti che autorizzi."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hacer fotos para sitios web y usar la cámara en los sitios que permitas."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tirar fotos para sites e usar a câmera nos sites que você permitir."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nimmt Fotos für Websites auf und verwendet die Kamera auf Websites, die Sie erlauben."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendre des photos pour les sites web et utiliser l’appareil photo sur les sites que vous autorisez."
+          }
         }
       }
     },
@@ -65,6 +155,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Видео для сайтов и микрофон на сайтах, которым вы это разрешите."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra video per i siti web e usa il microfono sui siti che autorizzi."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabar vídeo para sitios web y usar el micrófono en los sitios que permitas."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gravar vídeos para sites e usar o microfone nos sites que você permitir."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nimmt Videos für Websites auf und verwendet das Mikrofon auf Websites, die Sie erlauben."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer des vidéos pour les sites web et utiliser le micro sur les sites que vous autorisez."
           }
         }
       }
@@ -83,6 +203,36 @@
             "state" : "translated",
             "value" : "Распознавание речи на сайтах, которым вы это разрешите."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trasforma la tua voce in testo sui siti che autorizzi."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convertir tu voz en texto en los sitios que permitas."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformar sua fala em texto nos sites que você permitir."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wandelt Ihre Sprache auf Websites, die Sie erlauben, in Text um."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convertir votre parole en texte sur les sites que vous autorisez."
+          }
         }
       }
     },
@@ -100,6 +250,36 @@
             "state" : "translated",
             "value" : "Новая вкладка"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo pannello"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva pestaña"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova Aba"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Tab"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvel onglet"
+          }
         }
       }
     },
@@ -116,6 +296,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Новая частная вкладка"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo pannello privato"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva pestaña privada"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova Aba Privada"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer privater Tab"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvel onglet privé"
           }
         }
       }
