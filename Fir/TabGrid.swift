@@ -163,8 +163,8 @@ struct TabGrid: View {
         closing.insert(tab.id)
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(GridCell.flightTime))
-            // Gone meanwhile (a sync): closing it again would list it in Recently Closed.
-            if browser.tabs.contains(where: { $0.id == tab.id }) { tabMenu.close(tab) }
+            // The tab as it is now: a sync or an unload may have replaced it under this id, or removed it.
+            if let current = browser.tabs.first(where: { $0.id == tab.id }) { tabMenu.close(current) }
             // Not before the removal has played out: a view still leaving watches the mark and would turn back.
             try? await Task.sleep(for: .seconds(0.5))
             closing.remove(tab.id)
@@ -230,7 +230,8 @@ private struct GridCell: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            GridPicture(tab: tab, width: width, height: height, hidden: hidden, live: live, onFrame: onFrame)
+            // The press lift scales the cell; the page grows from, and shrinks onto, its resting frame.
+            GridPicture(tab: tab, width: width, height: height, hidden: hidden, live: live) { if !pressed { onFrame($0) } }
                 .overlay {
                     if selected, !hidden {
                         RoundedRectangle(cornerRadius: TabGrid.radius, style: .continuous)
@@ -239,7 +240,7 @@ private struct GridCell: View {
                 }
                 .overlay(alignment: .topTrailing) {
                     // A Zen folder's tab only unloads here, as its swipe does in the deck; closing is in the menu.
-                    if let tabMenu, !hidden, !tab.fromZenFolder || tab.wasOpened {
+                    if tabMenu != nil, !hidden, !tab.fromZenFolder || tab.wasOpened {
                         Button(tab.fromZenFolder ? "Unload Tab" : "Close Tab",
                                systemImage: tab.fromZenFolder ? "moon.zzz" : "xmark", action: onClose)
                             .labelStyle(.iconOnly)
@@ -397,23 +398,35 @@ private struct GridRows: Layout {
     let spacing: CGFloat
     let rowSpacing: CGFloat
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
-        let rows = rowHeights(sizes)
-        let width = sizes.prefix(columns).reduce(0) { $0 + $1.width } + CGFloat(max(0, min(columns, sizes.count) - 1)) * spacing
-        return CGSize(width: proposal.width ?? width,
-                      height: rows.reduce(0, +) + CGFloat(max(0, rows.count - 1)) * rowSpacing)
+    /// Each cell measured once per change, not again for every proposal and for placing.
+    struct Cache {
+        var sizes: [CGSize]
+        var rows: [CGFloat]
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    func makeCache(subviews: Subviews) -> Cache {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
-        let rows = rowHeights(sizes)
+        return Cache(sizes: sizes, rows: rowHeights(sizes))
+    }
+
+    func updateCache(_ cache: inout Cache, subviews: Subviews) {
+        cache = makeCache(subviews: subviews)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) -> CGSize {
+        let sizes = cache.sizes
+        let width = sizes.prefix(columns).reduce(0) { $0 + $1.width } + CGFloat(max(0, min(columns, sizes.count) - 1)) * spacing
+        return CGSize(width: proposal.width ?? width,
+                      height: cache.rows.reduce(0, +) + CGFloat(max(0, cache.rows.count - 1)) * rowSpacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) {
         var y = bounds.minY
-        for (row, height) in rows.enumerated() {
+        for (row, height) in cache.rows.enumerated() {
             var x = bounds.minX
             for index in row * columns..<min((row + 1) * columns, subviews.count) {
-                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(sizes[index]))
-                x += sizes[index].width + spacing
+                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(cache.sizes[index]))
+                x += cache.sizes[index].width + spacing
             }
             y += height + rowSpacing
         }

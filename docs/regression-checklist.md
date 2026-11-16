@@ -54,6 +54,9 @@ timing, sync.
   field fades into the bar. Removed at once, both vanished in one frame.
 - `sim` Start Page mode on a blank tab: while the field is up, the tab's own start page shows behind it and its tiles
   open in the tab.
+- `sim` **(was broken)** Start Page mode on a blank tab: Go on a typed address, or a tile behind the field, takes the
+  keyboard down with the field riding on it. A fast page used to cut the field off in one frame.
+- `sim` Start Page mode: turning the phone with the field in the bar moves the search into the sheet, never both at once.
 - `phone` Start Page mode: the keyboard comes up as fast as in Safari (FrameMeter stall well under the sheet's).
 - `sim` Page menu grows out of the menu button or the address. With Reduce Motion it slides up.
 - `sim` **(was broken)** Close the page menu and lift to the tab overview at once. The address capsule must not stay

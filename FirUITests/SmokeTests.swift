@@ -129,8 +129,8 @@ final class SmokeTests: XCTestCase {
         XCTAssertEqual(blanks.count, count, "the blank tab is back")
     }
 
-    /// Quick closes from the grid and an Undo while the cell is still leaving. Undo used to bring the cell back
-    /// still off screen, with a dead close button; a quick second close could leave a cell there too.
+    /// Quick closes from the grid, and Undo while the cell is still leaving: it used to come back off screen
+    /// with a dead close button.
     func testGridQuickClosesAndEarlyUndo() {
         launch(layout: "grid")
         open("m")

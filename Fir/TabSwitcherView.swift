@@ -300,9 +300,8 @@ struct TabSwitcherView: View {
         DeckLayout(browser.spaceTabs, folder: browser.folder, expanded: expandedFolder)
     }
 
-    /// Under the page the deck stands on the selected card, read straight from the layout. The stored
-    /// position caught up one update late: a sync's new layout was drawn at the old position, and
-    /// `onGeometryChange` kept that card frame, so the page shrank onto the wrong place.
+    /// Under the page, the selected card's slot from the layout: the stored position lagged an update behind
+    /// a sync, and the page shrank onto a stale card frame.
     private func pagePosition(in layout: DeckLayout) -> CGFloat? {
         guard hiddenTab != nil, !holdsPosition, let slot = browser.selectedID.flatMap({ layout.slot[$0] }) else { return nil }
         return CGFloat(slot)

@@ -89,8 +89,8 @@ struct BrowserView: View {
         insets.trailing >= 40 && insets.leading < 20
     }
 
-    /// Editing the address in start-page mode happens in the bar, as in Safari: no sheet to present first.
-    /// Landscape keeps the sheet, as its bar is at the top, away from the keyboard.
+    /// In start-page mode the address is edited in the bar, as in Safari, with no sheet to present first.
+    /// Landscape keeps the sheet: its bar is at the top.
     static func searchIsInline(_ mode: NewTabView.Mode?, style: NewTabStyle, landscape: Bool) -> Bool {
         mode == .edit && style == .page && !landscape
     }
@@ -140,18 +140,19 @@ struct BrowserView: View {
         .haptic(.selection, trigger: swipeCommits)
     }
 
+    /// The one place that decides it: the page view takes this value, so overlay and sheet never disagree.
+    private var inlineSearch: Bool {
+        Self.searchIsInline(search, style: newTabStyle, landscape: barOnTop)
+    }
+
     /// Address editing in the bar's place, in start-page mode; the page view hides its bar meanwhile.
     @ViewBuilder private var inlineSearchView: some View {
-        if pageShown, !(browser.selected.isPrivate && browser.privateLocked),
-           Self.searchIsInline(search, style: newTabStyle, landscape: barOnTop) {
+        if pageShown, !(browser.selected.isPrivate && browser.privateLocked), inlineSearch {
             // The field has come down onto the bar's place by now; the two cross-fade.
             NewTabView(mode: .edit, inline: true, onOpen: showPageAtOnce) {
                 withAnimation(.easeOut(duration: 0.15)) { search = nil }
             }
             .transition(.opacity)
-            // A tile or pin on a blank tab's start page opened something: the search over it is done.
-            .onChange(of: browser.selected.url) { old, _ in if old == nil { search = nil } }
-            .onChange(of: browser.selectedID) { search = nil }
         }
     }
 
@@ -189,6 +190,7 @@ struct BrowserView: View {
 
             PageView(
                 search: $search,
+                inlineSearch: inlineSearch,
                 sheetSource: sheetSource,
                 liveHidden: transitioning,
                 sheetsDismissed: sheetsDismissed,
@@ -247,7 +249,7 @@ struct BrowserView: View {
         }
         .haptic(.impact(weight: .light), trigger: search) { old, new in old == nil && new != nil }
         .onChange(of: search) { old, new in
-            if old == nil, new != nil, !Self.searchIsInline(new, style: newTabStyle, landscape: barOnTop) { recede() }
+            if old == nil, new != nil, !inlineSearch { recede() }
             guard search == nil else { return }
             unrecede()
             // A cancelled new-tab search mustn't leave the deck on another workspace than the page's.
@@ -1034,6 +1036,8 @@ private struct PageMask: Shape {
 private struct PageView: View {
     /// The search screen, shown by the root over everything.
     @Binding var search: NewTabView.Mode?
+    /// The search is in the bar's place, not in the sheet.
+    let inlineSearch: Bool
     let sheetSource: Namespace.ID
     let liveHidden: Bool
     let sheetsDismissed: Int
@@ -1064,7 +1068,6 @@ private struct PageView: View {
     @AppStorage(SettingsKey.collapseOnScroll) private var collapseOnScroll = true
     @AppStorage(SettingsKey.barActions) private var barActions = BarAction.encode(BarAction.defaults)
     @AppStorage(SettingsKey.translateTarget) private var translateTarget = ""
-    @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     /// Settled state: the page's insets and the landscape strip follow it, not the live progress.
     @State private var collapsed = false
     /// 0 is the full bar, 1 the pill. Follows the scroll while it moves, then settles at either end.
@@ -1429,10 +1432,6 @@ private struct PageView: View {
         return UIEdgeInsets(top: insets.top, left: 0, bottom: bottom.rounded(), right: 0)
     }
 
-    private var inlineSearch: Bool {
-        BrowserView.searchIsInline(search, style: newTabStyle, landscape: landscape)
-    }
-
     /// The search the sheet shows: all but the one in the bar.
     private var sheetSearch: Binding<NewTabView.Mode?> {
         Binding(get: { inlineSearch ? nil : search }, set: { search = $0 })
@@ -1452,8 +1451,9 @@ private struct PageView: View {
             // High priority so interactive glass on the buttons doesn't swallow the drag; taps still pass.
             .highPriorityGesture(liftGesture)
             // The sheet hands over an Intelligence Search on its dismissal; the search in the bar has none.
-            .onChange(of: search) { old, new in
-                guard new == nil, BrowserView.searchIsInline(old, style: newTabStyle, landscape: landscape) else { return }
+            // Ended, not moved to the sheet by a turn to landscape.
+            .onChange(of: inlineSearch) { was, _ in
+                guard was, search == nil else { return }
                 intelligenceSearch = browser.intelligenceRequest
                 browser.intelligenceRequest = nil
             }
@@ -1810,8 +1810,8 @@ private struct PageView: View {
     private func addressBar(_ tab: BrowserTab, live: Bool, width: CGFloat) -> some View {
         HStack(spacing: 0) {
             if tab.url == nil {
-                // A blank tab has no page for the menu; the search field's own glass stands in, so opening
-                // and closing search swaps nothing. A long press still opens the menu.
+                // A blank tab has no page for the menu; the search icon stands in, so opening search swaps
+                // nothing. A long press opens the menu.
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                     .frame(width: 44, height: 48)

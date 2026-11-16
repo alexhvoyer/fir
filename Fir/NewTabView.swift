@@ -109,6 +109,9 @@ struct NewTabView: View {
                 }
                 // A keyboard put away ends the search, as in Safari.
                 .onChange(of: focused) { if !focused { close() } }
+                // A tile on a blank tab's start page opened something: the field rides down. Another tab: at once.
+                .onChange(of: browser.selected.url) { old, _ in if old == nil { close() } }
+                .onChange(of: browser.selectedID) { dismiss() }
                 .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
                     if leaving { dismiss() }
                 }
@@ -154,8 +157,8 @@ struct NewTabView: View {
         .padding(.bottom, focused ? 8 : 0)
     }
 
-    /// In the bar, the keyboard first carries the field back to the bar's place, as in Safari: removed at
-    /// once, field and keyboard vanished in one frame. A sheet just closes.
+    /// In the bar, the keyboard carries the field back down first, as in Safari: removed at once, field and
+    /// keyboard vanished in one frame.
     private func close() {
         guard inline else { return dismiss() }
         // Dropping focus below calls back here.
