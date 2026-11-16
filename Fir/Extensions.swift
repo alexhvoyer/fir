@@ -326,7 +326,8 @@ extension BrowserTab: WKWebExtensionTab {
         ExtensionManager.shared.focusedWindow
     }
 
-    func webView(for context: WKWebExtensionContext) -> WKWebView? { webView }
+    /// None for a tab not loaded yet: asking every tab made them all, and there is no page to script.
+    func webView(for context: WKWebExtensionContext) -> WKWebView? { existingWebView }
     func title(for context: WKWebExtensionContext) -> String? { title }
     func url(for context: WKWebExtensionContext) -> URL? { url }
     func isLoadingComplete(for context: WKWebExtensionContext) -> Bool { !isLoading }

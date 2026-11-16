@@ -234,6 +234,7 @@ struct TabSwitcherView: View {
             let step = cardWidth * 0.92
             let layout = deckLayout
             let focused = focusedSlot
+            let position = pagePosition(in: layout) ?? progress
 
             ZStack {
                 // Over (offset, tab) pairs: ForEach straight over the tabs left the deck frozen mid-swipe.
@@ -241,7 +242,7 @@ struct TabSwitcherView: View {
                     let slot = layout.slot[tab.id] ?? 0
                     let depth = layout.depth[tab.id] ?? 0
                     let stack = layout.stacks[slot]
-                    let rel = CGFloat(slot) - progress
+                    let rel = CGFloat(slot) - position
                     // Swiping a card up to close: its title goes first so it never runs over the header,
                     // then the card shrinks a little and fades as it leaves. A folder's stack doesn't close.
                     let lift = slot == focused && stack == nil ? min(liftOffset, 0) : 0
@@ -297,6 +298,14 @@ struct TabSwitcherView: View {
 
     private var deckLayout: DeckLayout {
         DeckLayout(browser.spaceTabs, folder: browser.folder, expanded: expandedFolder)
+    }
+
+    /// Under the page the deck stands on the selected card, read straight from the layout. The stored
+    /// position caught up one update late: a sync's new layout was drawn at the old position, and
+    /// `onGeometryChange` kept that card frame, so the page shrank onto the wrong place.
+    private func pagePosition(in layout: DeckLayout) -> CGFloat? {
+        guard hiddenTab != nil, !holdsPosition, let slot = browser.selectedID.flatMap({ layout.slot[$0] }) else { return nil }
+        return CGFloat(slot)
     }
 
     private var focusedSlot: Int {

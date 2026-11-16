@@ -15,6 +15,8 @@ struct NewTabView: View {
     }
 
     let mode: Mode
+    /// Over the page in the bar's place instead of in a sheet: no sheet to present, so the keyboard rises at once.
+    var inline = false
     /// Called after a tab was opened or switched to, as opposed to cancelling.
     let onOpen: () -> Void
     /// Hides this screen, opened or cancelled.
@@ -37,6 +39,8 @@ struct NewTabView: View {
     @State private var expanded = false
     @State private var rising = false
     @State private var detent = Self.low
+    /// The search in the bar is closing: the keyboard takes the field down before the bar comes back.
+    @State private var leaving = false
 
     private var deckSpace: String? {
         if case .newTab(let space) = mode { space } else { nil }
@@ -77,6 +81,95 @@ struct NewTabView: View {
     }
 
     var body: some View {
+        presented(content)
+        .task {
+            if mode == .edit { query = browser.selected.url?.absoluteString ?? "" }
+            // Its own task: closing this sheet cancels `.task`, which aborted the workspace fetch.
+            Task { await account.sync() }
+        }
+        .task(id: query) { await loadSuggestions() }
+        .sheet(isPresented: $showSignIn) { SignInView() }
+    }
+
+    @ViewBuilder private func presented(_ content: some View) -> some View {
+        if inline {
+            content
+                // Opaque only where it draws something: over a blank tab's own start page it lets that through.
+                // Under the keyboard too: its translucent edge showed the page through.
+                .background {
+                    Color(.systemGroupedBackground).opacity(!showsStartPage || !coversStartPage ? 1 : 0).ignoresSafeArea()
+                }
+                .opacity(leaving ? 0 : 1)
+                .allowsHitTesting(!leaving)
+                .animation(.easeOut(duration: 0.25), value: leaving)
+                .safeAreaInset(edge: .bottom) { inlineBar }
+                .onAppear {
+                    // Under the app lock the keyboard would sit above it and type into the hidden field.
+                    if !LockWindow.isShown { focused = true }
+                }
+                // A keyboard put away ends the search, as in Safari.
+                .onChange(of: focused) { if !focused { close() } }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+                    if leaving { dismiss() }
+                }
+        } else {
+            content
+            // While the sheet rises the finger's drag stops scrolling: both at once moved the content twice.
+            .scrollDisabled(rising)
+            // At the top of the sheet, as in Lens: what's below scrolls under the keyboard.
+            .safeAreaInset(edge: .top) { searchBar }
+            // One height at a time: low, then after a pull up only the full one, so a swipe down from
+            // there closes rather than stopping half-way. Two from the start made the keyboard lift it to full.
+            .presentationDetents(expanded ? [Self.tall] : [Self.low], selection: $detent)
+            // A swipe down on a sheet with a keyboard only drops the keyboard; closing with it makes one motion.
+            .background(SheetKeyboard(onRevive: reset) {
+                guard !rising else { return }
+                dismiss()
+            })
+        }
+    }
+
+    /// The tab's own start page is behind: a blank tab in start-page mode.
+    private var coversStartPage: Bool {
+        newTabStyle == .page && browser.selected.url == nil
+    }
+
+    /// The field in the bar's place, with Cancel where the tabs button was, as Safari's bar while editing.
+    private var inlineBar: some View {
+        HStack(spacing: 10) {
+            searchField
+                .padding(.horizontal, 16)
+                .frame(height: 48)
+                .glassEffect(.regular.interactive(), in: .capsule)
+            Button("Cancel", systemImage: "xmark", action: close)
+                .labelStyle(.iconOnly)
+                .font(.body.weight(.medium))
+                .frame(width: 48, height: 48)
+                .foregroundStyle(.primary)
+                .glassEffect(.regular.interactive(), in: .circle)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        // A gap above the keyboard; at the bottom, exactly where the bar sits.
+        .padding(.bottom, focused ? 8 : 0)
+    }
+
+    /// In the bar, the keyboard first carries the field back to the bar's place, as in Safari: removed at
+    /// once, field and keyboard vanished in one frame. A sheet just closes.
+    private func close() {
+        guard inline else { return dismiss() }
+        // Dropping focus below calls back here.
+        guard !leaving else { return }
+        leaving = true
+        focused = false
+        // A hardware keyboard shows none, so no hiding is reported.
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            if leaving { dismiss() }
+        }
+    }
+
+    private var content: some View {
         // The start page until something is typed, as in Safari; typing switches to matches. Both stay
         // mounted: swapping them dropped the keyboard on the first letter.
         ZStack {
@@ -86,30 +179,11 @@ struct NewTabView: View {
             StartPage(spaceID: newTabSpace, onPullUp: expand, onOpen: { open($0) }, onOpenPin: { pin in
                 browser.open(pin, replacing: mode == .edit ? browser.selected : nil)
                 onOpen()
-                dismiss()
+                close()
             })
             // Over the start page itself, the sheet would repeat it.
-            .shown(showsStartPage && !(newTabStyle == .page && browser.selected.url == nil))
+            .shown(showsStartPage && !coversStartPage)
         }
-        // While the sheet rises the finger's drag stops scrolling: both at once moved the content twice.
-        .scrollDisabled(rising)
-        // At the top of the sheet, as in Lens: what's below scrolls under the keyboard.
-        .safeAreaInset(edge: .top) { searchBar }
-        // One height at a time: low, then after a pull up only the full one, so a swipe down from
-        // there closes rather than stopping half-way. Two from the start made the keyboard lift it to full.
-        .presentationDetents(expanded ? [Self.tall] : [Self.low], selection: $detent)
-        // A swipe down on a sheet with a keyboard only drops the keyboard; closing with it makes one motion.
-        .background(SheetKeyboard(onRevive: reset) {
-            guard !rising else { return }
-            dismiss()
-        })
-        .task {
-            if mode == .edit { query = browser.selected.url?.absoluteString ?? "" }
-            // Its own task: closing this sheet cancels `.task`, which aborted the workspace fetch.
-            Task { await account.sync() }
-        }
-        .task(id: query) { await loadSuggestions() }
-        .sheet(isPresented: $showSignIn) { SignInView() }
     }
 
     /// A request while this sheet was closing brings it back; it starts as a new one would.
@@ -258,6 +332,16 @@ struct NewTabView: View {
     }
 
     private var searchBar: some View {
+        searchField
+            .padding(.horizontal, 16)
+            .frame(height: 52)
+            .glassEffect(.regular.interactive(), in: .capsule)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 4)
+    }
+
+    private var searchField: some View {
         HStack {
             if isPrivate {
                 PrivateMark()
@@ -304,19 +388,13 @@ struct NewTabView: View {
                 .tint(.secondary)
             }
         }
-        .padding(.horizontal, 16)
-        .frame(height: 52)
-        .glassEffect(.regular.interactive(), in: .capsule)
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 4)
     }
 
     /// Swaps the low height for the full one and moves there. UIKit does it in one animation: SwiftUI's
     /// own change snapped. SwiftUI's state catches up after, with the same height, so nothing moves then.
     private func expand() {
         // Once: each scroll step calls this, and restarting the animation stalled it short of the top.
-        guard !expanded, !rising, let sheet = Self.topSheet() else { return }
+        guard !inline, !expanded, !rising, let sheet = Self.topSheet() else { return }
         rising = true
         sheet.animateChanges {
             sheet.detents = [.custom(identifier: Self.tallID) { context in
@@ -380,11 +458,11 @@ struct NewTabView: View {
         case .tab(let tab):
             browser.select(tab)
             onOpen()
-            dismiss()
+            close()
         case .zen(let space, _) where mode != .edit && !isPrivate:
             browser.open(match.url, in: space)
             onOpen()
-            dismiss()
+            close()
         default:
             open(match.url)
         }
@@ -411,7 +489,7 @@ struct NewTabView: View {
             browser.open(url, in: zenSpace ?? deckSpace)
         }
         onOpen()
-        dismiss()
+        close()
     }
 
     /// "alexh's Zen on Alexanders-MacBook-Pro" -> "MacBook Pro"; "alexh's Zen on PC" -> "PC".

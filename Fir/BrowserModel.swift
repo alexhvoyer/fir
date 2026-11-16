@@ -7,7 +7,20 @@ import WebKit
 @Observable
 final class BrowserTab: NSObject, Identifiable {
     let id: UUID
-    @ObservationIgnored let webView: WKWebView
+    /// Made on first use for restored and Zen folder tabs: one per tab at launch held the first frame up
+    /// for about 120 ms with twenty tabs.
+    @ObservationIgnored private var loadedWebView: WKWebView?
+
+    var webView: WKWebView {
+        if let loadedWebView { return loadedWebView }
+        let made = Self.makeWebView(dataStore: .default())
+        loadedWebView = made
+        observe()
+        return made
+    }
+
+    /// The web view if the tab has one yet; for code that visits every tab and must not make them all.
+    var existingWebView: WKWebView? { loadedWebView }
     private(set) var snapshot: UIImage?
     /// The Zen workspace this tab is in; nil for this iPhone's own tabs.
     private(set) var spaceID: String?
@@ -102,7 +115,7 @@ final class BrowserTab: NSObject, Identifiable {
         self.spaceID = spaceID
         restoredTitle = nil
         requestedURL = url
-        webView = Self.makeWebView(dataStore: dataStore)
+        loadedWebView = Self.makeWebView(dataStore: dataStore)
         super.init()
         observe()
         if let url { webView.load(URLRequest(url: url)) }
@@ -115,7 +128,7 @@ final class BrowserTab: NSObject, Identifiable {
         restoredTitle = nil
         let webView = WKWebView(frame: .zero, configuration: configuration)
         ContentBlocker.shared.attach(webView, addRules: false)
-        self.webView = Self.configure(webView)
+        loadedWebView = Self.configure(webView)
         super.init()
         observe()
     }
@@ -132,10 +145,8 @@ final class BrowserTab: NSObject, Identifiable {
         fromZenFolder = saved.zenFolder ?? false
         localFolderID = saved.localFolder
         localPinID = saved.localPin
-        webView = Self.makeWebView(dataStore: .default())
         super.init()
         snapshot = SessionStore.loadSnapshot(for: saved.id)
-        observe()
     }
 
     /// A Zen folder's tab, unloaded until first shown, like a tab restored at launch.
@@ -148,9 +159,7 @@ final class BrowserTab: NSObject, Identifiable {
         isPinned = true
         zenPinID = zenTab.id
         fromZenFolder = true
-        webView = Self.makeWebView(dataStore: .default())
         super.init()
-        observe()
     }
 
     /// Opened at some point, not just standing in for its Zen folder tab.
@@ -747,6 +756,8 @@ final class BrowserModel {
         // Leaving a tab is its last view, as is arriving at one.
         didSet {
             guard oldValue != selectedID else { return }
+            // Made here, not by the page view's update: its first observation writes observed state.
+            _ = selected.webView
             for tab in tabs where tab.id == oldValue || tab.id == selectedID { tab.lastViewed = .now }
             ExtensionManager.shared.tabActivated(selected, previous: tabs.first { $0.id == oldValue })
         }
@@ -812,6 +823,7 @@ final class BrowserModel {
         adoptLegacyPins()
         // Tabs left unviewed while Fir was closed go at launch, not only on the next return to it.
         sweepIdleTabs()
+        _ = selected.webView
     }
 
     /// A launch while the phone was locked couldn't read the saved files. Saving waits, or it would overwrite
@@ -1006,8 +1018,8 @@ final class BrowserModel {
         let fresh = BrowserTab(zenFolderTab: zenTab, url: url, spaceID: space, id: tab.id)
         tabs[position] = fresh
         tab.stopUpgrade()
-        tab.webView.stopLoading()
-        tab.webView.removeFromSuperview()
+        tab.existingWebView?.stopLoading()
+        tab.existingWebView?.removeFromSuperview()
         if selectedID == tab.id {
             let others = siblings.filter { $0.id != tab.id }
             selectedID = inPlace || others.isEmpty ? fresh.id : others[min(index, others.count - 1)].id
@@ -1161,8 +1173,8 @@ final class BrowserModel {
               let position = tabs.firstIndex(where: { $0.id == tab.id }) else { return }
         tabs.removeAll { $0.id == tab.id }
         tab.stopUpgrade()
-        tab.webView.stopLoading()
-        tab.webView.removeFromSuperview()
+        tab.existingWebView?.stopLoading()
+        tab.existingWebView?.removeFromSuperview()
         var placeholder: BrowserTab.ID?
         // Closing a regular tab must not bring up a private one, so one regular tab always remains.
         if tabs.isEmpty || (!tab.isPrivate && tabs.allSatisfy(\.isPrivate)) {
@@ -1211,7 +1223,8 @@ final class BrowserModel {
         tabs.insert(tab, at: min(undo.index, tabs.count))
         if tab.isPrivate { privateStore = tab.webView.configuration.websiteDataStore }
         if undo.wasSelected { select(tab) }
-        if !tab.isPrivate, recentlyClosed.first?.url == tab.url {
+        // Only what `remember` added: a blank tab has no address, and nil matched an empty list's nil.
+        if !tab.isPrivate, let url = tab.url, recentlyClosed.first?.url == url {
             recentlyClosed.removeFirst()
             storeRecentlyClosed()
         }
@@ -1239,7 +1252,7 @@ final class BrowserModel {
 
     /// Media playing in the background shows its title on the Lock Screen, which Fir's lock doesn't cover.
     func pausePrivateMedia() {
-        for tab in tabs where tab.isPrivate { tab.webView.pauseAllMediaPlayback(completionHandler: nil) }
+        for tab in tabs where tab.isPrivate { tab.existingWebView?.pauseAllMediaPlayback(completionHandler: nil) }
     }
 
     func unlockPrivate() async {
@@ -1310,8 +1323,8 @@ final class BrowserModel {
     private func discard(_ tab: BrowserTab) {
         tabs.removeAll { $0.id == tab.id }
         tab.stopUpgrade()
-        tab.webView.stopLoading()
-        tab.webView.removeFromSuperview()
+        tab.existingWebView?.stopLoading()
+        tab.existingWebView?.removeFromSuperview()
         if tabs.isEmpty { tabs = [BrowserTab()] }
         endPrivateSessionIfDone()
         SessionStore.deleteSnapshot(for: tab.id)

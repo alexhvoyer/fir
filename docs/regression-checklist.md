@@ -27,7 +27,8 @@ Tabs in a Zen workspace sync to the real account. Close tabs in tests only in Pr
 
 ## Smoke
 
-`scripts/ui-tests.sh` runs steps 1 to 6 and 8 as `FirUITests`, on an erased simulator of its own with local test
+`scripts/ui-tests.sh` runs steps 1 to 6 and 8, the start-page search in the bar, Undo of a blank tab and quick grid
+closes with an early Undo, as `FirUITests`, on an erased simulator of its own with local test
 pages. `scripts/testflight.sh` runs it before every upload. Step 7 needs a signed-in account, so it stays a manual
 check on the signed-in simulator. Run the whole list by hand when a change touches what a test can't see: feel,
 timing, sync.
@@ -47,6 +48,13 @@ timing, sync.
 
 - `sim` The address bar shows the committed host. While a cross-origin page loads, it keeps the old one.
 - `sim` Search sheet from the bar grows out of the address capsule. With Reduce Motion it slides up as a plain sheet.
+- `sim` With New Tab set to Start Page, tapping the address puts the field in the bar's place with no sheet; it rides
+  up on the keyboard. Cancel, or putting the keyboard away, brings the bar back. Landscape still uses the sheet.
+- `sim` **(was broken)** Start Page mode: Cancel or Return takes the keyboard down with the field riding on it, then the
+  field fades into the bar. Removed at once, both vanished in one frame.
+- `sim` Start Page mode on a blank tab: while the field is up, the tab's own start page shows behind it and its tiles
+  open in the tab.
+- `phone` Start Page mode: the keyboard comes up as fast as in Safari (FrameMeter stall well under the sheet's).
 - `sim` Page menu grows out of the menu button or the address. With Reduce Motion it slides up.
 - `sim` **(was broken)** Close the page menu and lift to the tab overview at once. The address capsule must not stay
   over the switcher.
@@ -68,6 +76,11 @@ timing, sync.
 - `sim` Tap a card: the page grows out of it. Close the page: it shrinks back onto the same card.
 - `sim` A Zen folder shows as a stack. Tap it to fan it out. Its title menu collapses it again.
 - `sim` A card's title menu offers pin, essentials and folder actions, and close.
+- `sim` After a cold launch, a tab not opened yet loads when its card is tapped or it is swiped to, with its bar buttons.
+  Restored tabs get their web view only then; closing one that never loaded works and Undo brings it back.
+- `sim` **(was broken)** Close a blank tab and tap Undo with Recently Closed empty: the tab comes back. It crashed.
+- `sim` **(was broken)** Signed in, with a Zen folder in the workspace: quit Fir, open it, and tap the tabs button at once.
+  The page shrinks straight onto its card. The sync's new layout used to send it one card aside first.
 
 ## Tab overview: Grid
 
@@ -76,6 +89,12 @@ timing, sync.
   the picture hidden.
 - `sim` Swipe a cell left past a third of its width: it slides off and closes. A shorter swipe returns it.
 - `sim` A flick back to the right keeps the tab, however far the cell went.
+- `sim` A cell dragged right follows with growing resistance and springs back; it never closes that way.
+- `sim` A finger on a cell lifts it a little; scrolling or lifting the finger settles it back. The long-press menu still opens.
+- `sim` The close button sends the cell off to the left like a swipe, then the cells after it slide into place, from
+  one row up to the previous one. A quick second tap closes nothing more.
+- `sim` **(was broken)** Close a cell and tap Undo while it is still leaving, by button and by swipe: it comes back in its
+  own place and its close button works. It used to come back off screen with a dead button.
 - `sim` **(was broken)** A cell sliding back stays above its left neighbour the whole way.
 - `sim` **(was broken)** A swiped cell's title fades out and doesn't run into the neighbour's title.
 - `sim` **(was broken)** Titles scrolled under the bottom bar fade out instead of showing through the glass.
@@ -141,7 +160,7 @@ timing, sync.
   works from any page.
 - `sim` What's New shows once after an update (`-whatsNewSeen` one below the current list), and never on a fresh
   install.
-- `sim` Every settings page opens and closes, and each picker changes the app straight away.
+- `sim` Every settings page opens and closes, and each picker changes the app straight away. New Tab is under Tabs.
 
 ## Accessibility and layout
 

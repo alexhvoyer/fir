@@ -88,6 +88,80 @@ final class SmokeTests: XCTestCase {
         XCTAssert(page("g").waitForNonExistence(timeout: 5), "the private tab closes")
     }
 
+    /// In start-page mode the address is edited in the bar, with no sheet: the keyboard comes up, a page
+    /// opens in the same tab, and Cancel puts the bar back.
+    func testStartPageSearchInBar() {
+        launch(layout: "grid", newTab: "page")
+        open("i")
+        let tabs = tabsButton.value as? String
+
+        address.tap()
+        XCTAssert(searchField.waitForExistence(timeout: 5), "the field takes the bar's place")
+        XCTAssert(app.keyboards.firstMatch.waitForExistence(timeout: 5), "the keyboard comes up")
+        type("j")
+        XCTAssert(page("j").waitForExistence(timeout: Self.pageLoad), "the page loads")
+        XCTAssertEqual(tabsButton.value as? String, tabs, "it loads in the same tab")
+
+        address.tap()
+        XCTAssert(searchField.waitForExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
+        XCTAssert(searchField.waitForNonExistence(timeout: 5), "Cancel ends the search")
+        XCTAssert(page("j").exists, "the page stays")
+    }
+
+    /// Undo brings back a closed blank tab. With nothing in Recently Closed, that crashed: tests share app data,
+    /// so the list is emptied by a launch argument.
+    func testUndoCloseBlankTab() {
+        launch(layout: "grid", newTab: "page", extra: ["-recentlyClosedTabs", ""])
+        showTabs()
+        overviewNewTab.tap()
+        showTabs()
+        let blanks = app.descendants(matching: .any).matching(identifier: "gridCell")
+            .containing(.staticText, identifier: "New Tab")
+        let count = blanks.count
+        XCTAssertGreaterThan(count, 0)
+        blanks.element(boundBy: count - 1).buttons["Close Tab"].tap()
+        let undo = app.buttons["Undo Close Tab"]
+        XCTAssert(undo.waitForExistence(timeout: 2), "closing offers Undo")
+        undo.tap()
+        XCTAssertEqual(app.state, .runningForeground, "Fir is still running after Undo")
+        XCTAssert(waitHittable(overviewNewTab), "the overview is still up")
+        XCTAssertEqual(blanks.count, count, "the blank tab is back")
+    }
+
+    /// Quick closes from the grid and an Undo while the cell is still leaving. Undo used to bring the cell back
+    /// still off screen, with a dead close button; a quick second close could leave a cell there too.
+    func testGridQuickClosesAndEarlyUndo() {
+        launch(layout: "grid")
+        open("m")
+        newTab("n")
+        newTab("o")
+        showTabs()
+        let cells = app.descendants(matching: .any).matching(identifier: "gridCell")
+        let before = cells.count
+        cell("Page m").buttons["Close Tab"].tap()
+        cell("Page n").buttons["Close Tab"].tap()
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == %d", before - 2), object: cells)
+        XCTAssertEqual(XCTWaiter().wait(for: [closed], timeout: 5), .completed, "two quick closes close two tabs")
+
+        cell("Page o").buttons["Close Tab"].tap()
+        app.buttons["Undo Close Tab"].tap()
+        XCTAssert(waitHittable(cell("Page o").buttons["Close Tab"]), "an early Undo puts the cell back on screen")
+        cell("Page o").buttons["Close Tab"].tap()
+        XCTAssert(cell("Page o").waitForNonExistence(timeout: 5), "it closes again after Undo")
+
+        // The same with a swipe, which leaves the cell where the finger let go of it.
+        app.buttons["Undo Close Tab"].tap()
+        XCTAssert(waitHittable(cell("Page o").buttons["Close Tab"]))
+        sleep(1)
+        let home = cell("Page o").frame.minX
+        cell("Page o").swipeLeft()
+        app.buttons["Undo Close Tab"].tap()
+        XCTAssert(waitHittable(cell("Page o").buttons["Close Tab"]), "an early Undo after a swipe puts the cell back")
+        sleep(1)
+        XCTAssertEqual(cell("Page o").frame.minX, home, accuracy: 2, "in its own place, not where the swipe left it")
+    }
+
     /// Settings opens from the tab overview and closes.
     func testSettingsOpenAndClose() {
         launch(layout: "grid")
@@ -117,14 +191,15 @@ final class SmokeTests: XCTestCase {
             .containing(.staticText, identifier: title).firstMatch
     }
 
-    private func launch(layout: String) {
+    private func launch(layout: String, newTab: String = "sheet", extra: [String] = []) {
         XCTAssertNotEqual(server.port, 0, "the local page server didn't start")
         app = XCUIApplication()
         app.launchArguments += [
             "-onboardingDone", "YES",
             "-whatsNew", "<false/>",
             "-tabLayout", layout,
-        ]
+            "-newTabStyle", newTab,
+        ] + extra
         app.launch()
     }
 

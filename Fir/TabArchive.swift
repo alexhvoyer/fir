@@ -74,9 +74,17 @@ struct TabsSettingsView: View {
     @AppStorage(SettingsKey.archiveTabsAfter) private var archive = TabLifetime.week
     @AppStorage(SettingsKey.clearTabsAfter) private var clear = TabLifetime.never
     @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
+    @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
 
     var body: some View {
         List {
+            Section {
+                Picker("New Tab", selection: $newTabStyle) {
+                    ForEach(NewTabStyle.allCases) { Text($0.name).tag($0) }
+                }
+            } footer: {
+                Text("Search Sheet opens search at once. Start Page shows your pinned and frequent sites and history; tap the address bar to search, and the keyboard comes up right away.")
+            }
             Section {
                 Picker("Tab Overview", selection: $tabLayout) {
                     ForEach(TabLayout.allCases) { Text($0.name).tag($0) }

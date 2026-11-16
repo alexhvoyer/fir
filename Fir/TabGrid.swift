@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit.UIGestureRecognizerSubclass
 
 /// The tab overview as a grid, as in Safari: a workspace's tabs side by side. A closed folder is one
 /// cell; an open one gets its own row under its name.
@@ -18,6 +19,10 @@ struct TabGrid: View {
     let space: (BrowserTab) -> ZenWorkspaces.Space?
     let onCardFrame: (BrowserTab.ID, CGRect) -> Void
     let onOpen: () -> Void
+
+    /// Tabs whose cells are flying off to the left; each closes once its cell is off screen.
+    @State private var closing: Set<BrowserTab.ID> = []
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Smaller than the deck's: a cell is under half the screen wide. The page's mask lands on it.
     static let radius: CGFloat = 22
@@ -40,10 +45,10 @@ struct TabGrid: View {
                                 FolderLabel(folder: folder, detail: nil, font: .headline, folderMenu: live ? folderMenu : nil)
                                     .padding(.top, 8)
                             }
-                            ForEach(rows(section.cells, columns: columns), id: \.first?.id) { row in
-                                HStack(alignment: .top, spacing: Self.spacing) {
-                                    ForEach(row) { cell($0, width: width, height: height) }
-                                }
+                            // One layout per section, not a stack per row: a cell moving up a row stays the
+                            // same view, so it slides there instead of popping in.
+                            GridRows(columns: columns, spacing: Self.spacing, rowSpacing: 22) {
+                                ForEach(section.cells) { cell($0, width: width, height: height, screen: geo.size.width) }
                             }
                         }
                     }
@@ -71,10 +76,6 @@ struct TabGrid: View {
             await Task.yield()
             proxy.scrollTo(id, anchor: .center)
         }
-    }
-
-    private func rows(_ cells: [Cell], columns: Int) -> [[Cell]] {
-        stride(from: 0, to: cells.count, by: columns).map { Array(cells[$0..<min($0 + columns, cells.count)]) }
     }
 
     private struct GridSection: Identifiable {
@@ -117,10 +118,10 @@ struct TabGrid: View {
         return sections
     }
 
-    @ViewBuilder private func cell(_ cell: Cell, width: CGFloat, height: CGFloat) -> some View {
+    @ViewBuilder private func cell(_ cell: Cell, width: CGFloat, height: CGFloat, screen: CGFloat) -> some View {
         switch cell {
         case .tab(let tab):
-            tabCell(tab, width: width, height: height)
+            tabCell(tab, width: width, height: height, screen: screen)
         case .stack(let folder, let front, let count):
             VStack(spacing: 8) {
                 picture(front, width: width, height: height)
@@ -143,14 +144,31 @@ struct TabGrid: View {
         }
     }
 
-    private func tabCell(_ tab: BrowserTab, width: CGFloat, height: CGFloat) -> some View {
+    private func tabCell(_ tab: BrowserTab, width: CGFloat, height: CGFloat, screen: CGFloat) -> some View {
         GridCell(tab: tab, width: width, height: height, hidden: tab.id == hiddenTab,
                  selected: tab.id == browser.selectedID, live: live, tabMenu: tabMenu, space: space(tab),
-                 onFrame: { onCardFrame(tab.id, $0) }) {
+                 leaving: closing.contains(tab.id), flight: screen,
+                 onFrame: { onCardFrame(tab.id, $0) }, onClose: { close(tab) }) {
             browser.select(tab)
             onOpen()
         }
         .id(tab.id)
+    }
+
+    /// The cell flies off, then the tab closes on a timer: the animation's completion didn't always come.
+    /// Unmarked, a cell still here (Undo, a Zen unload) slides back.
+    private func close(_ tab: BrowserTab) {
+        guard let tabMenu, !closing.contains(tab.id) else { return }
+        guard !reduceMotion else { return tabMenu.close(tab) }
+        closing.insert(tab.id)
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(GridCell.flightTime))
+            // Gone meanwhile (a sync): closing it again would list it in Recently Closed.
+            if browser.tabs.contains(where: { $0.id == tab.id }) { tabMenu.close(tab) }
+            // Not before the removal has played out: a view still leaving watches the mark and would turn back.
+            try? await Task.sleep(for: .seconds(0.5))
+            closing.remove(tab.id)
+        }
     }
 
     private func picture(_ tab: BrowserTab, width: CGFloat, height: CGFloat) -> some View {
@@ -192,14 +210,23 @@ private struct GridCell: View {
     let live: Bool
     let tabMenu: TabMenu?
     let space: ZenWorkspaces.Space?
+    /// Its tab is closing: the cell flies this far left, and slides back if it is still here after.
+    let leaving: Bool
+    let flight: CGFloat
     let onFrame: (CGRect) -> Void
+    let onClose: () -> Void
     let onSelect: () -> Void
     @State private var dragX: CGFloat = 0
     /// Over its neighbours from the first move until it has slid back, not only while the finger is down.
     @State private var lifted = false
+    /// A finger is on it: it rises a little, as Safari's cells do.
+    @State private var pressed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    static let flightTime = 0.3
 
     /// A Zen folder's tab only unloads, so one never opened has nothing to swipe away.
-    private var swipes: Bool { tabMenu != nil && !hidden && (!tab.fromZenFolder || tab.wasOpened) }
+    private var swipes: Bool { tabMenu != nil && !hidden && !leaving && (!tab.fromZenFolder || tab.wasOpened) }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -214,7 +241,7 @@ private struct GridCell: View {
                     // A Zen folder's tab only unloads here, as its swipe does in the deck; closing is in the menu.
                     if let tabMenu, !hidden, !tab.fromZenFolder || tab.wasOpened {
                         Button(tab.fromZenFolder ? "Unload Tab" : "Close Tab",
-                               systemImage: tab.fromZenFolder ? "moon.zzz" : "xmark") { tabMenu.close(tab) }
+                               systemImage: tab.fromZenFolder ? "moon.zzz" : "xmark", action: onClose)
                             .labelStyle(.iconOnly)
                             .font(.caption.weight(.bold))
                             .foregroundStyle(.primary)
@@ -237,11 +264,16 @@ private struct GridCell: View {
             .opacity(max(0, 1 - abs(dragX) / 30))
         }
         .frame(width: width)
+        .scaleEffect(pressed && !reduceMotion ? 1.04 : 1)
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: pressed)
         .offset(x: dragX)
         .zIndex(lifted ? 1 : 0)
         .contentShape(.rect)
+        // On its way out it opens nothing: the tab is about to close.
+        .allowsHitTesting(!leaving)
         .onTapGesture(perform: onSelect)
-        .gesture(LeftwardPan(enabled: swipes, changed: { lifted = true; dragX = $0 > 0 ? $0 / 4 : $0 }, ended: endSwipe))
+        .gesture(SidewaysPan(enabled: swipes, pressed: { pressed = $0 },
+                             changed: { lifted = true; dragX = Self.follow($0) }, ended: endSwipe))
         .contextMenu {
             if let tabMenu {
                 TabMenuItems(tab: tab, space: space, local: tab.spaceID == nil, menu: tabMenu)
@@ -249,42 +281,62 @@ private struct GridCell: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("gridCell")
+        .onChange(of: leaving) { fly() }
+    }
+
+    /// Off to the left from wherever it is, and home once unmarked: a view SwiftUI revives for an Undo
+    /// mid-removal still holds the old offset.
+    private func fly() {
+        lifted = true
+        if leaving {
+            withAnimation(.easeIn(duration: Self.flightTime)) { dragX = -flight }
+        } else {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { dragX = 0 } completion: {
+                if !leaving { lifted = false }
+            }
+        }
+    }
+
+    /// Left with the finger; right only with growing resistance, as in Safari, since that way doesn't close.
+    private static func follow(_ translation: CGFloat) -> CGFloat {
+        translation < 0 ? translation : translation * 90 / (translation + 90)
     }
 
     private func endSwipe(translation: CGFloat, velocity: CGFloat) {
         // Flung back to the right, it stays, however far it got.
-        guard let tabMenu, (translation < -width / 3 && velocity < 300) || velocity < -800 else {
-            withAnimation(.snappy) { dragX = 0 } completion: { lifted = false }
+        guard (translation < -width / 3 && velocity < 300) || velocity < -800 else {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { dragX = 0 } completion: { lifted = false }
             return
         }
-        withAnimation(.easeOut(duration: 0.2)) { dragX = -width * 3 } completion: {
-            tabMenu.close(tab)
-            // An unloaded Zen folder tab keeps its cell; it comes back.
-            if tab.fromZenFolder { withAnimation(.snappy) { dragX = 0 } completion: { lifted = false } }
-        }
+        // It flies on from where the finger let it go.
+        onClose()
     }
 }
 
-/// A pan that starts only when the finger moves left, so the grid still scrolls up and down under it.
-private struct LeftwardPan: UIGestureRecognizerRepresentable {
+/// Starts only on a sideways move, either way, so the grid still scrolls. It also reports presses: a second
+/// gesture for that took every touch from this one.
+private struct SidewaysPan: UIGestureRecognizerRepresentable {
     let enabled: Bool
+    let pressed: (Bool) -> Void
     let changed: (CGFloat) -> Void
     let ended: (_ translation: CGFloat, _ velocity: CGFloat) -> Void
 
-    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
-        let pan = UIPanGestureRecognizer()
+    func makeUIGestureRecognizer(context: Context) -> PressPan {
+        let pan = PressPan()
         pan.delegate = context.coordinator
-        pan.isEnabled = enabled
+        pan.swipes = enabled
+        pan.pressed = pressed
         return pan
     }
 
-    func updateUIGestureRecognizer(_ pan: UIPanGestureRecognizer, context: Context) {
-        pan.isEnabled = enabled
+    func updateUIGestureRecognizer(_ pan: PressPan, context: Context) {
+        pan.swipes = enabled
+        pan.pressed = pressed
     }
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
 
-    func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
+    func handleUIGestureRecognizerAction(_ pan: PressPan, context: Context) {
         let translation = pan.translation(in: pan.view).x
         switch pan.state {
         case .changed: changed(translation)
@@ -296,10 +348,80 @@ private struct LeftwardPan: UIGestureRecognizerRepresentable {
 
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
-            guard let pan = recognizer as? UIPanGestureRecognizer else { return false }
+            guard let pan = recognizer as? PressPan, pan.swipes else { return false }
             let velocity = pan.velocity(in: pan.view)
-            return velocity.x < 0 && abs(velocity.x) > abs(velocity.y)
+            return abs(velocity.x) > abs(velocity.y)
         }
     }
 }
 
+/// Says when a finger is on it, swipe or not. A scroll taking the touch cancels it and a failed pan
+/// resets, so the cell always settles back.
+private final class PressPan: UIPanGestureRecognizer {
+    var swipes = true
+    var pressed: (Bool) -> Void = { _ in }
+    private var down = false
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesBegan(touches, with: event)
+        guard !down else { return }
+        down = true
+        pressed(true)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesEnded(touches, with: event)
+        lift()
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesCancelled(touches, with: event)
+        lift()
+    }
+
+    override func reset() {
+        super.reset()
+        lift()
+    }
+
+    private func lift() {
+        guard down else { return }
+        down = false
+        pressed(false)
+    }
+}
+
+/// Rows of fixed-width cells, each row as tall as its tallest cell.
+private struct GridRows: Layout {
+    let columns: Int
+    let spacing: CGFloat
+    let rowSpacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let rows = rowHeights(sizes)
+        let width = sizes.prefix(columns).reduce(0) { $0 + $1.width } + CGFloat(max(0, min(columns, sizes.count) - 1)) * spacing
+        return CGSize(width: proposal.width ?? width,
+                      height: rows.reduce(0, +) + CGFloat(max(0, rows.count - 1)) * rowSpacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let rows = rowHeights(sizes)
+        var y = bounds.minY
+        for (row, height) in rows.enumerated() {
+            var x = bounds.minX
+            for index in row * columns..<min((row + 1) * columns, subviews.count) {
+                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(sizes[index]))
+                x += sizes[index].width + spacing
+            }
+            y += height + rowSpacing
+        }
+    }
+
+    private func rowHeights(_ sizes: [CGSize]) -> [CGFloat] {
+        stride(from: 0, to: sizes.count, by: columns).map { start in
+            sizes[start..<min(start + columns, sizes.count)].map(\.height).max() ?? 0
+        }
+    }
+}
