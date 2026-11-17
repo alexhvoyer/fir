@@ -1000,6 +1000,46 @@
         }
       }
     },
+    "A blank tab offers to paste what you copied." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein leerer Tab bietet an, Kopiertes einzusetzen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una pestaña vacía ofrece pegar lo que copiaste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un onglet vide propose de coller ce que vous avez copié."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un pannello vuoto propone di incollare ciò che hai copiato."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma aba vazia oferece colar o que você copiou."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пустая вкладка предлагает вставить скопированное."
+          }
+        }
+      }
+    },
     "A demo of the tab gestures" : {
       "localizations" : {
         "de" : {
@@ -5613,6 +5653,46 @@
         }
       }
     },
+    "Fir on iPad" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir auf dem iPad"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir en el iPad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir sur iPad"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir su iPad"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir no iPad"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir на iPad"
+          }
+        }
+      }
+    },
     "Fir opens ready to type. The page you were reading stays behind the search." : {
       "localizations" : {
         "de" : {
@@ -5693,6 +5773,46 @@
         }
       }
     },
+    "Fir speaks your language" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir spricht deine Sprache"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir habla tu idioma"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir parle votre langue"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir parla la tua lingua"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Fir fala seu idioma"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir на вашем языке"
+          }
+        }
+      }
+    },
     "Folder" : {
       "localizations" : {
         "de" : {
@@ -5729,46 +5849,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Папка"
-          }
-        }
-      }
-    },
-    "Follows Reduce Motion" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Folgt „Bewegung reduzieren“"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Según “Reducir movimiento”"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suit Réduire les animations"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Segue Riduci movimento"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Segue Reduzir Movimento"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Учитывает «Уменьшение движения»"
           }
         }
       }
@@ -6693,6 +6773,46 @@
         }
       }
     },
+    "In every orientation, with Safari's keyboard shortcuts." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In jeder Ausrichtung, mit den Tastaturkurzbefehlen von Safari."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En cualquier orientación, con los atajos de teclado de Safari."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans toutes les orientations, avec les raccourcis clavier de Safari."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In ogni orientamento, con le abbreviazioni da tastiera di Safari."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em qualquer orientação, com os atalhos de teclado do Safari."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В любой ориентации, с сочетаниями клавиш Safari."
+          }
+        }
+      }
+    },
     "In iOS Settings, choose Fir under Apps > Default Apps > Browser App. Links from other apps then open here." : {
       "localizations" : {
         "de" : {
@@ -7529,6 +7649,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Смотрю результаты"
+          }
+        }
+      }
+    },
+    "Made for iPhone Duo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemacht für das iPhone Duo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hecho para el iPhone Duo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conçu pour l'iPhone Duo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pensato per iPhone Duo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feito para o iPhone Duo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделан для iPhone Duo"
           }
         }
       }
@@ -8653,6 +8813,46 @@
         }
       }
     },
+    "Now in Spanish, French, German, Italian, Russian and Portuguese." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt auf Spanisch, Französisch, Deutsch, Italienisch, Russisch und Portugiesisch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora en español, francés, alemán, italiano, ruso y portugués."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désormais en espagnol, français, allemand, italien, russe et portugais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ora in spagnolo, francese, tedesco, italiano, russo e portoghese."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora em espanhol, francês, alemão, italiano, russo e português."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Теперь на испанском, французском, немецком, итальянском, русском и португальском."
+          }
+        }
+      }
+    },
     "OK" : {
       "localizations" : {
         "de" : {
@@ -9609,6 +9809,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пароли и история удалятся с этого iPhone. Всё, что уже синхронизировано, останется в аккаунте Mozilla."
+          }
+        }
+      }
+    },
+    "Paste and Go in the bar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einsetzen und öffnen in der Leiste"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegar e ir en la barra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coller et accéder dans la barre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incolla e vai nella barra"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colar e Acessar na barra"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Вставить и перейти» в строке"
           }
         }
       }
@@ -11369,46 +11609,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сразу поиск или стартовая страница с закреплёнными и частыми сайтами и историей."
-          }
-        }
-      }
-    },
-    "See a workspace's tabs side by side: choose Grid in Settings > Tabs > Tab Overview. Swipe a tab left to close it." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tabs eines Arbeitsbereichs nebeneinander sehen: Wählen Sie „Raster“ unter „Einstellungen“ > „Tabs“ > „Tab-Übersicht“. Wischen Sie einen Tab nach links, um ihn zu schließen."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ve las pestañas de un espacio de trabajo una al lado de otra: elige Cuadrícula en Ajustes > Pestañas > Vista de pestañas. Desliza una pestaña a la izquierda para cerrarla."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Affichez les onglets d’un espace de travail côte à côte : choisissez Grille dans Réglages > Onglets > Aperçu des onglets. Balayez un onglet vers la gauche pour le fermer."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vedi affiancati i pannelli di uno spazio di lavoro: scegli Griglia in Impostazioni > Pannelli > Panoramica pannelli. Scorri un pannello a sinistra per chiuderlo."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veja as abas de um espaço de trabalho lado a lado: escolha Grade em Ajustes > Abas > Visão Geral das Abas. Deslize uma aba para a esquerda para fechá-la."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вкладки пространства рядом друг с другом: выберите «Сетка» в «Настройки» > «Вкладки» > «Обзор вкладок». Чтобы закрыть вкладку, смахните её влево."
           }
         }
       }
@@ -13373,46 +13573,6 @@
         }
       }
     },
-    "Tabs in a grid" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tabs im Raster"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pestañas en cuadrícula"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les onglets en grille"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pannelli in griglia"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abas em grade"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вкладки сеткой"
-          }
-        }
-      }
-    },
     "Tabs you haven't viewed in this long close. They stay in Recently Closed." : {
       "localizations" : {
         "de" : {
@@ -13649,6 +13809,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Изменение не дошло до сервера синхронизации Zen, поэтому ничего не изменилось. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "The controls sit in the camera column on both screens." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Bedienelemente sitzen auf beiden Bildschirmen in der Kameraspalte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los controles, en la columna de la cámara en ambas pantallas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les commandes dans la colonne de la caméra, sur les deux écrans."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I controlli nella colonna della fotocamera, su entrambi gli schermi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os controles ficam na coluna da câmera, nas duas telas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кнопки в колонке камеры на обоих экранах."
           }
         }
       }
@@ -14449,6 +14649,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Повторить"
+          }
+        }
+      }
+    },
+    "Turn off Save and Fill Passwords in Settings > Passwords." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schalte „Passwörter sichern und ausfüllen“ unter Einstellungen > Passwörter aus."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactiva Guardar y rellenar contraseñas en Ajustes > Contraseñas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivez Enregistrer et remplir les mots de passe dans Réglages > Mots de passe."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattiva Salva e compila password in Impostazioni > Password."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desative Salvar e Preencher Senhas em Ajustes > Senhas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выключите «Сохранять и подставлять пароли» в Настройках > Пароли."
           }
         }
       }
@@ -15453,6 +15693,46 @@
         }
       }
     },
+    "Use your own password manager" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutze deinen eigenen Passwort-Manager"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa tu propio gestor de contraseñas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilisez votre gestionnaire de mots de passe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa il tuo gestore di password"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use seu próprio gerenciador de senhas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свой менеджер паролей"
+          }
+        }
+      }
+    },
     "Username" : {
       "localizations" : {
         "de" : {
@@ -15849,46 +16129,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Если выключено, Fir не предлагает сохранить или подставить пароль. Другие менеджеры паролей по-прежнему подставляют их через автозаполнение iOS."
-          }
-        }
-      }
-    },
-    "With Reduce Motion on in iOS Settings, sheets slide up without the zoom and pages switch to your tabs at once." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ist in den iOS-Einstellungen „Bewegung reduzieren“ aktiviert, gleiten Fenster ohne Zoom nach oben und Seiten wechseln sofort zu Ihren Tabs."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Con Reducir movimiento activado en Ajustes de iOS, las hojas aparecen sin zoom y las páginas pasan a tus pestañas al instante."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avec Réduire les animations activé dans les Réglages iOS, les volets glissent vers le haut sans zoom et les pages basculent immédiatement vers vos onglets."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Con Riduci movimento attivo in Impostazioni di iOS, i riquadri scorrono verso l'alto senza zoom e le pagine passano subito ai pannelli."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Com Reduzir Movimento ativado nos Ajustes do iOS, os painéis sobem sem o zoom e as páginas passam para as abas na hora."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Если в настройках iOS включено «Уменьшение движения», шторки выезжают без увеличения, а страницы сразу переключаются к вкладкам."
           }
         }
       }

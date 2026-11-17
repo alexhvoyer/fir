@@ -3,7 +3,7 @@ import SwiftUI
 /// The list shown once after an update. It has its own number: raise `list` and rewrite `items` only
 /// when an update has something to tell, so most builds pass quietly.
 enum WhatsNew {
-    static let list = 2
+    static let list = 3
 
     struct Item: Identifiable {
         let symbol: String
@@ -14,10 +14,16 @@ enum WhatsNew {
 
     @MainActor static var items: [Item] {
         [
-            Item(symbol: "square.grid.2x2", title: String(localized: "Tabs in a grid"),
-                 detail: String(localized: "See a workspace's tabs side by side: choose Grid in Settings > Tabs > Tab Overview. Swipe a tab left to close it.")),
-            Item(symbol: "accessibility", title: String(localized: "Follows Reduce Motion"),
-                 detail: String(localized: "With Reduce Motion on in iOS Settings, sheets slide up without the zoom and pages switch to your tabs at once.")),
+            Item(symbol: "globe", title: String(localized: "Fir speaks your language"),
+                 detail: String(localized: "Now in Spanish, French, German, Italian, Russian and Portuguese.")),
+            Item(symbol: "ipad", title: String(localized: "Fir on iPad"),
+                 detail: String(localized: "In every orientation, with Safari's keyboard shortcuts.")),
+            Item(symbol: "rectangle.split.2x1", title: String(localized: "Made for iPhone Duo"),
+                 detail: String(localized: "The controls sit in the camera column on both screens.")),
+            Item(symbol: "key.fill", title: String(localized: "Use your own password manager"),
+                 detail: String(localized: "Turn off Save and Fill Passwords in Settings > Passwords.")),
+            Item(symbol: "doc.on.clipboard", title: String(localized: "Paste and Go in the bar"),
+                 detail: String(localized: "A blank tab offers to paste what you copied.")),
         ]
     }
 
