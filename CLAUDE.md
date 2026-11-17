@@ -24,6 +24,7 @@ xcodebuild test -project Fir.xcodeproj -scheme FirTests -destination "id=<simula
 ```
 
 `/fir-install` builds for a phone or uploads to TestFlight. `/animation-check` measures an animation from a recording.
+`/verify-matrix` lists where a visible change must be checked, and reports each place with its evidence.
 
 ## Working rules
 
@@ -31,7 +32,8 @@ xcodebuild test -project Fir.xcodeproj -scheme FirTests -destination "id=<simula
   Draw something custom only when nothing native exists, and say so.
 - Never commit, push, upload to TestFlight or install on a phone unless asked. Several ideas often share one build.
 - Every non-trivial change gets `/code-review` before it is reported done; each finding is fixed or answered.
-  Trivial means copy, a constant or a one-line fix.
+  Trivial means copy, a constant or a one-line fix. The review covers the final diff: a change made after it
+  (a fix, a finding answered in code) gets a review of that delta.
 - `docs/regression-checklist.md`: the sections a change touches are run by hand; its Smoke is automated in
   `FirUITests`. A fixed bug gets a case there, and a UI test when one can see it.
 - UI tests never run on the signed-in simulator: closing tabs there reaches the real Zen account.
@@ -39,6 +41,23 @@ xcodebuild test -project Fir.xcodeproj -scheme FirTests -destination "id=<simula
 - Code, comments and docs are in English. A comment block is at most 30 words and explains why.
 - Temporary test code must contain `dbg` or `DBG`, so the commit hook can catch what was left behind.
 - Open a saved API key file only through `xcodebuild`; never read it.
+
+## Done means nothing left to find
+
+"Done" is reported when the user would find nothing more, not when the case in the request works. On 2026-11-17 the
+Duo, asked for overnight, took another half day: each fault was in a case nobody checked (the other screen, dark
+mode, a tap on a button only looked at).
+
+- Before a change to anything visible, `/verify-matrix` writes out where it must be checked. The report marks each
+  cell checked, with its evidence, or not checked and why. An unchecked cell is said, never implied.
+- Fix the class, not the frame. Before fixing a reported fault, search the code for the same pattern and fix every
+  place; report what the search found.
+- A design choice the request leaves open (layout, placement, wording) is not made alone, least of all overnight.
+  Build the HIG's answer, describe the other, and ask.
+- A request from someone else (a tester, a ticket) is quoted word for word before it is interpreted.
+- User-facing text is checked in its longest language before it is shown: if it wraps badly or scrolls, shorten it.
+- A conclusion from the simulator needs a repeat and a control run; one recording proves nothing on flaky
+  behaviour like the keyboard ride.
 
 ## Security invariants
 
