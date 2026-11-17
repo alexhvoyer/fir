@@ -8,21 +8,28 @@ struct PasswordsView: View {
     @State private var unlocked = false
     @State private var logins: [Login] = []
     @State private var query = ""
+    @AppStorage(SettingsKey.offerPasswords) private var offerPasswords = true
 
     var body: some View {
         Group {
             if unlocked {
                 list
             } else {
-                ContentUnavailableView {
-                    Label("Passwords Are Locked", systemImage: "lock.fill")
-                } actions: {
-                    Button("Unlock") { Task { await unlock() } }
-                        .buttonStyle(.glassProminent)
+                // The switch stays outside the lock: it reveals nothing.
+                List {
+                    options
+                    ContentUnavailableView {
+                        Label("Passwords Are Locked", systemImage: "lock.fill")
+                    } actions: {
+                        Button("Unlock") { Task { await unlock() } }
+                            .buttonStyle(.glassProminent)
+                    }
+                    .listRowBackground(Color.clear)
                 }
             }
         }
         .navigationTitle("Passwords")
+        .onChange(of: offerPasswords) { if !offerPasswords { PasswordAutofill.shared.offersTurnedOff() } }
         .task { await unlock() }
         // A screen left open locks again with the app, as in Safari.
         .onChange(of: scenePhase) {
@@ -37,6 +44,7 @@ struct PasswordsView: View {
             $0.origin.localizedCaseInsensitiveContains(query) || $0.username.localizedCaseInsensitiveContains(query)
         }
         return List {
+            if query.isEmpty { options }
             if logins.isEmpty {
                 Text(account.isSignedIn
                      ? "No saved passwords yet. Passwords saved in Zen appear here after sync."
@@ -59,6 +67,14 @@ struct PasswordsView: View {
             }
         }
         .searchable(text: $query, prompt: "Search Passwords")
+    }
+
+    private var options: some View {
+        Section {
+            Toggle("Save and Fill Passwords", isOn: $offerPasswords)
+        } footer: {
+            Text("When off, Fir doesn't offer to save or fill passwords. Other password managers still fill through iOS AutoFill.")
+        }
     }
 
     private func unlock() async {

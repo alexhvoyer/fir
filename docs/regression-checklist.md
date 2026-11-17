@@ -25,6 +25,7 @@ Tabs in a Zen workspace sync to the real account. Close tabs in tests only in Pr
 | `Extensions` | Add-ons |
 | Onboarding, What's New, settings | Onboarding and settings |
 | Sheets, `KeyCommands`, anything sized by the screen | iPad |
+| Layout by screen shape, safe-area insets, the camera column | iPhone Duo and landscape |
 
 ## Smoke
 
@@ -138,6 +139,8 @@ timing, sync.
 - `sim` On an https sign-in page, a saved login is offered and fills. Nothing is offered on http.
 - `sim` After signing in with new details, Fir offers to save them.
 - `phone` The Passwords settings page asks for Face ID.
+- `sim` With Save and Fill Passwords off (Settings > Passwords, shown without unlocking), Fir neither offers a
+  saved login nor asks to save one; the keyboard's own Passwords button still works.
 
 ## Content blocking and site settings
 
@@ -185,6 +188,24 @@ timing, sync.
   Control-Tab moves to the next tab in the workspace. None of them act while Fir or a private tab is locked.
 - `sim` Fir opens only one window: two would share one browser, and the lock covers one window.
 - `sim` In Split View beside another app, Fir in a narrow column behaves as on an iPhone.
+
+## iPhone Duo and landscape
+
+Record each Duo screen on its own: `xcrun simctl io <udid> recordVideo --display=<display UUID>` (outer: `--display=1`).
+
+- `sim` On both Duo screens, the wide inner one included, the camera column holds + and Tabs on a page, and Settings
+  and + in the tab overview; the page stops at the column, as the HIG asks. Back and Forward sit in the
+  column above +, the address bar has none, and both of the tab overview's column buttons respond.
+- `sim` **(was broken)** On the Duo, shrinking a page into its card and opening it again lands without a sideways
+  jump at the end, and nothing is drawn over the camera column.
+- `sim` **(was broken)** Lifting a page on the Duo: the next card slides in from the column's edge, slides back out
+  when the lift is called off, and no grey strip appears as the tab overview takes over.
+- `sim` **(was broken)** Shrinking a page into its card and opening it again shows no black strip below the page, on
+  the Duo's inner screen and on an iPhone on its side, in Cards and in Grid.
+- `sim` In the tab overview on an iPhone on its side, Settings sits at the left of the bottom bar, and its sheet zooms
+  out of that button and back into it.
+- `sim` **(was broken)** On the Duo outer screen the camera column takes the page's colour, dark and light, and the
+  error page's; a blank tab keeps the start page's grey.
 
 ## Accessibility and layout
 

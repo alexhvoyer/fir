@@ -10,6 +10,8 @@ struct BrowserView: View {
     @Environment(BrowserModel.self) private var browser
     @Environment(AccountService.self) private var account
     @Environment(\.horizontalSizeClass) private var widthClass
+    /// The camera column's width beside the page; zero without one.
+    @State private var railWidth: CGFloat = 0
     @State private var pageShown = true
     /// Shrink toward the card: 0 = full screen, 1 = card size and crop.
     @State private var progress: CGFloat = 0
@@ -84,6 +86,12 @@ struct BrowserView: View {
     /// The bottom bar's height and a gap.
     private static let barClearance: CGFloat = 56
 
+    /// Where the page is drawn: beside a camera column it stops at the column, so transitions drawn to
+    /// the screen's width jumped as they began and landed off their card.
+    private var page: CGRect {
+        CGRect(x: screen.minX, y: screen.minY, width: screen.width - railWidth, height: screen.height)
+    }
+
     /// A camera column down one side only, as on both of the iPhone Duo's screens: Apple lays bars out
     /// beside it, so the buttons move there. A notched iPhone on its side has both sides inset.
     static func sideRail(_ insets: EdgeInsets) -> Bool {
@@ -149,11 +157,10 @@ struct BrowserView: View {
     /// Address editing in the bar's place, in start-page mode; the page view hides its bar meanwhile.
     @ViewBuilder private var inlineSearchView: some View {
         if pageShown, !(browser.selected.isPrivate && browser.privateLocked), inlineSearch {
-            // The field has come down onto the bar's place by now; the two cross-fade.
-            NewTabView(mode: .edit, inline: true, onOpen: showPageAtOnce) {
-                withAnimation(.easeOut(duration: 0.15)) { search = nil }
-            }
-            .transition(.opacity)
+            // The field has come down onto the bar's place, laid out alike: swapped in one frame. A cross-fade
+            // showed both glasses at once, a blink.
+            NewTabView(mode: .edit, inline: true, onOpen: showPageAtOnce) { search = nil }
+                .transition(.identity)
         }
     }
 
@@ -174,7 +181,8 @@ struct BrowserView: View {
                 onNewTab: startNewTab,
                 onSettings: { settings = .main },
                 onEditWorkspaces: { settings = .workspaces },
-                railWidth: Self.sideRail(safeInsets) ? safeInsets.trailing : 0,
+                railWidth: railWidth,
+                sheetSource: sheetSource,
                 holdsPosition: opening
             )
             .equatable()
@@ -198,7 +206,7 @@ struct BrowserView: View {
                 sheetsDismissed: sheetsDismissed,
                 chromeOpacity: max(0, 1 - progress * 2.5),
                 swipeX: swipeX,
-                screenWidth: screen.width,
+                pageWidth: page.width,
                 safeInsets: safeInsets,
                 swipeNeighbour: swipeNeighbour,
                 swipeOpensNewTab: swipeOpensNewTab,
@@ -226,11 +234,12 @@ struct BrowserView: View {
             .allowsHitTesting(pageShown)
         }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { screen = $0 }
-        // Beside a camera column the bars go in the column, so even the Duo's wide inner screen keeps
-        // the upright layout: no top bar or tab strip over the page.
+        // Beside a camera column the bars go in the column, so the Duo's wide inner screen keeps the
+        // upright layout, as the HIG asks: the buttons stay put when the phone opens.
         .environment(\.isLandscape, screen.width > screen.height && !Self.sideRail(safeInsets))
         .environment(\.sheetsCentered, UIDevice.current.userInterfaceIdiom == .pad && widthClass == .regular)
         .onChange(of: screen.width > screen.height && !Self.sideRail(safeInsets), initial: true) { barOnTop = $1 }
+        .onChange(of: Self.sideRail(safeInsets) ? safeInsets.trailing : 0, initial: true) { railWidth = $1 }
         // Over the bottom bar, on the page and on the deck.
         .overlay(alignment: .bottom) {
             UndoCloseCapsule()
@@ -246,6 +255,7 @@ struct BrowserView: View {
         }) { sheet in
             SettingsView(onOpenPage: showPageAtOnce, onShowOnboarding: { onboardingRequested = true },
                          opensWorkspaces: sheet == .workspaces)
+                .modifier(ZoomFromSource(id: "settings", namespace: sheetSource))
         }
         .sheet(isPresented: $showWhatsNew, onDismiss: { whatsNewPending = false }) {
             WhatsNewView().onAppear(perform: WhatsNew.markSeen)
@@ -319,40 +329,40 @@ struct BrowserView: View {
     @ViewBuilder private var transitionLayer: some View {
         if transitioning {
             let card = currentCard
-            let k = card.width / max(screen.width, 1)
-            let a = anchor ?? CGPoint(x: screen.midX, y: screen.midY)
+            let k = cardScale(card)
+            let a = anchor ?? CGPoint(x: page.midX, y: page.midY)
             let swipeRadius = min(abs(swipeX) / 2, 48)
             ZStack(alignment: .topLeading) {
                 if swipeOpensNewTab {
                     NewTabPlaceholder(spaceID: browser.selected.spaceID)
-                        .frame(width: screen.width, height: screen.height)
+                        .frame(width: page.width, height: page.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
-                        .offset(x: swipeX + screen.width + Self.swipeGap)
+                        .offset(x: swipeX + page.width + Self.swipeGap)
                 } else if swipeX != 0, let neighbour = swipeNeighbour {
                     PageImage(image: neighbour.snapshot, host: neighbour.isPrivate ? nil : neighbour.url?.host(),
                               blank: neighbour.url == nil, space: neighbour.spaceID, offset: neighbour.startPageOffset,
                               failed: neighbour)
-                        .frame(width: screen.width, height: screen.height)
+                        .frame(width: page.width, height: page.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
-                        .offset(x: swipeX + (swipeX > 0 ? -1 : 1) * (screen.width + Self.swipeGap))
+                        .offset(x: swipeX + (swipeX > 0 ? -1 : 1) * (page.width + Self.swipeGap))
                 }
                 PageImage(image: cover, view: coverView, host: browser.selected.isPrivate ? nil : browser.selected.url?.host(),
                           blank: browser.selected.url == nil, space: browser.selected.spaceID,
                           offset: browser.selected.startPageOffset, failed: browser.selected)
-                    .frame(width: screen.width, height: screen.height)
-                    .clipShape(PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k,
+                    .frame(width: page.width, height: page.height)
+                    .clipShape(PageMask(progress: progress, minRadius: swipeRadius, crop: CGSize(width: card.width / k, height: card.height / k), scale: k,
                              cardRadius: cardRadius))
                     // The card's shadow, growing in as the page shrinks: without it the shadow blinked out
                     // while the page moved. Divided by the scale, so it lands at the card's size.
                     .background {
                         let scale = 1 + (k - 1) * progress
-                        PageMask(progress: progress, minRadius: swipeRadius, cropHeight: card.height / k, scale: k,
+                        PageMask(progress: progress, minRadius: swipeRadius, crop: CGSize(width: card.width / k, height: card.height / k), scale: k,
                              cardRadius: cardRadius)
                             .fill(.black)
                             .shadow(color: .black.opacity(0.25 * progress), radius: 18 / scale, x: -6 / scale, y: 8 / scale)
                     }
                     .scaleEffect(1 + (k - 1) * progress,
-                                 anchor: UnitPoint(x: a.x / max(screen.width, 1), y: a.y / max(screen.height, 1)))
+                                 anchor: UnitPoint(x: a.x / max(page.width, 1), y: a.y / max(page.height, 1)))
                     .offset(follow)
                     .offset(x: swipeX)
                 // The later card, or folder pile, slides in over the shrinking page as the deck layers it:
@@ -366,17 +376,19 @@ struct BrowserView: View {
                                 RoundedRectangle(cornerRadius: 34, style: .continuous)
                                     .fill(.black.opacity((pageShown ? 0.7 * (1 - progress) : 0) + Double(depth) * 0.04))
                             }
-                            .offset(x: card.frame.minX - screen.minX + (1 - progress) * (screen.maxX - front.minX),
-                                    y: card.frame.minY - screen.minY)
+                            .offset(x: card.frame.minX - page.minX + (1 - progress) * (page.maxX - front.minX),
+                                    y: card.frame.minY - page.minY)
                     }
                 }
             }
-            .frame(width: screen.width, height: screen.height, alignment: .topLeading)
+            .frame(width: page.width, height: page.height, alignment: .topLeading)
+            // Cut at the camera column as the deck is: the next card waited on the column and vanished there.
+            .clipped()
             .allowsHitTesting(false)
             .transition(.identity)
         } else if let veil {
             PageImage(image: veil, host: nil)
-                .frame(width: screen.width, height: screen.height)
+                .frame(width: page.width, height: page.height)
                 .transition(.opacity)
                 .allowsHitTesting(false)
         }
@@ -418,6 +430,8 @@ struct BrowserView: View {
 
     private func endTransition() {
         transitioning = false
+        // Released here too: cleared mid-shrink, the deck recentred at once under the landing page.
+        opening = false
         cover = nil
         coverView = nil
         anchor = nil
@@ -442,15 +456,21 @@ struct BrowserView: View {
     private var cardRadius: CGFloat { tabLayout == .grid ? TabGrid.radius : 34 }
 
     private var currentCard: CGRect {
-        heldCard ?? cardFrames[browser.selectedID ?? UUID()] ?? Self.fallbackCard(in: screen)
+        heldCard ?? cardFrames[browser.selectedID ?? UUID()] ?? Self.fallbackCard(in: page)
+    }
+
+    /// Covers the card both ways, cropped top-left like the card's picture: by width alone, a landscape page
+    /// showed black below.
+    private func cardScale(_ card: CGRect) -> CGFloat {
+        max(card.width / max(page.width, 1), card.height / max(page.height, 1))
     }
 
     /// The translation that, with the page scaled about `anchor`, lands it exactly on its card.
     private func followOntoCard(anchor a: CGPoint) -> CGSize {
         let card = currentCard
-        let k = card.width / max(screen.width, 1)
-        return CGSize(width: card.minX - screen.minX - (a.x - screen.minX) * (1 - k),
-                      height: card.minY - screen.minY - (a.y - screen.minY) * (1 - k))
+        let k = cardScale(card)
+        return CGSize(width: card.minX - page.minX - (a.x - page.minX) * (1 - k),
+                      height: card.minY - page.minY - (a.y - page.minY) * (1 - k))
     }
 
     /// Live drag: the grabbed point stays under the finger while the page shrinks with upward travel.
@@ -490,7 +510,7 @@ struct BrowserView: View {
 
     private func openPage() {
         FrameMeter.mark("open page")
-        let a = CGPoint(x: screen.midX, y: screen.midY)
+        let a = CGPoint(x: page.midX, y: page.midY)
         cover = browser.selected.snapshot
         // Drawn over the image: a card tapped during a shrink would grow with the old page's picture.
         coverView = nil
@@ -506,8 +526,10 @@ struct BrowserView: View {
         Task {
             await Task.yield()
             withAnimation(cardMorph) { progress = 0; follow = .zero } completion: {
+                // A close during the grow keeps the deck still until the page is back on its card.
+                guard id == transitionID else { return }
                 opening = false
-                if id == transitionID { reveal(browser.selected) }
+                reveal(browser.selected)
             }
         }
     }
@@ -567,7 +589,7 @@ struct BrowserView: View {
         beginTransition()
         transitionID += 1
         let id = transitionID
-        let a = anchor ?? CGPoint(x: screen.midX, y: screen.midY)
+        let a = anchor ?? CGPoint(x: page.midX, y: page.midY)
         Task {
             withAnimation(cardMorph) {
                 anchor = a
@@ -581,9 +603,9 @@ struct BrowserView: View {
         }
     }
 
-    private static func fallbackCard(in screen: CGRect) -> CGRect {
-        let width = screen.width * 0.72
-        return CGRect(x: screen.minX + (screen.width - width) / 2, y: screen.minY + screen.height * 0.15,
+    private static func fallbackCard(in page: CGRect) -> CGRect {
+        let width = page.width * 0.72
+        return CGRect(x: page.minX + (page.width - width) / 2, y: page.minY + page.height * 0.15,
                       width: width, height: width * 1.9)
     }
 
@@ -631,7 +653,7 @@ struct BrowserView: View {
 
     private func endSwipe(_ dx: CGFloat, predicted: CGFloat) {
         FrameMeter.mark("swipe end")
-        let width = screen.width + Self.swipeGap
+        let width = page.width + Self.swipeGap
         // Predicted includes the drag so far: opposite signs mean a flick back the other way.
         let committed = dx * predicted > 0 && (abs(dx) > width * 0.35 || abs(predicted) > width * 0.6)
         if swipeOpensNewTab, committed {
@@ -873,6 +895,18 @@ private struct TabValue<Value: Equatable>: Equatable {
     let value: Value
 }
 
+/// The tabs button's face, the count in a rounded square; the search field's Cancel turns into it too.
+struct TabCountGlyph: View {
+    let count: Int
+
+    var body: some View {
+        Text("\(count)")
+            .font(.footnote.weight(.semibold))
+            .frame(width: 22, height: 22)
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineWidth: 1.5))
+    }
+}
+
 /// A button beside the capsule as the bar collapses: gone by halfway, shrinking slightly where it is.
 private struct FadeInPlace: ViewModifier {
     let progress: CGFloat
@@ -1019,7 +1053,8 @@ private struct PageMask: Shape {
     var progress: CGFloat
     /// The swipe's rounding, animated with it.
     var minRadius: CGFloat
-    let cropHeight: CGFloat
+    /// The part of the page the card shows, in the page's own size.
+    let crop: CGSize
     /// The card's size against the screen's; the page is drawn unscaled and shrunk afterwards.
     let scale: CGFloat
 
@@ -1036,10 +1071,11 @@ private struct PageMask: Shape {
     private static let screenRadius: CGFloat = 39
 
     func path(in rect: CGRect) -> Path {
-        let height = rect.height + (cropHeight - rect.height) * progress
+        let width = rect.width + (crop.width - rect.width) * progress
+        let height = rect.height + (crop.height - rect.height) * progress
         let onScreen = Self.screenRadius + (cardRadius - Self.screenRadius) * progress
         let radius = max(onScreen / (1 + (scale - 1) * progress), minRadius)
-        return Path(roundedRect: CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: height),
+        return Path(roundedRect: CGRect(x: rect.minX, y: rect.minY, width: width, height: height),
                     cornerRadius: radius, style: .continuous)
     }
 }
@@ -1055,7 +1091,7 @@ private struct PageView: View {
     let sheetsDismissed: Int
     let chromeOpacity: Double
     let swipeX: CGFloat
-    let screenWidth: CGFloat
+    let pageWidth: CGFloat
     let safeInsets: EdgeInsets
     let swipeNeighbour: BrowserTab?
     let swipeOpensNewTab: Bool
@@ -1080,6 +1116,9 @@ private struct PageView: View {
     @AppStorage(SettingsKey.collapseOnScroll) private var collapseOnScroll = true
     @AppStorage(SettingsKey.barActions) private var barActions = BarAction.encode(BarAction.defaults)
     @AppStorage(SettingsKey.translateTarget) private var translateTarget = ""
+    @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
+    /// The clipboard holds text or a link. Checking asks nothing of the user; only the paste control reads it.
+    @State private var canPaste = false
     /// Settled state: the page's insets and the landscape strip follow it, not the live progress.
     @State private var collapsed = false
     /// 0 is the full bar, 1 the pill. Follows the scroll while it moves, then settles at either end.
@@ -1164,8 +1203,13 @@ private struct PageView: View {
         let tab = browser.selected
         let insets = safeInsets
         ZStack(alignment: .bottom) {
-                // Fills the side cutouts the page keeps clear of; the deck showed through them.
-                if insets.leading > 0 || insets.trailing > 0 { Color(.systemGroupedBackground) }
+                // Fills the side cutouts the page keeps clear of (the Duo's camera column, a notch side) with what
+                // is under them, as Safari: a fixed grey read as black bars beside dark pages.
+                if insets.leading > 0 || insets.trailing > 0 {
+                    if tab.loadFailure != nil { Color(.systemBackground) }
+                    else if tab.url != nil, let color = tab.pageBackground { Color(uiColor: color) }
+                    else { Color(.systemGroupedBackground) }
+                }
                 // Shown in the gap between sliding pages during a swipe.
                 if swipeX != 0 { Color(.systemGray5) }
                 // Full screen like Safari, with the status bar and the bar declared obscured: fixed
@@ -1194,7 +1238,9 @@ private struct PageView: View {
                         .opacity(liveHidden ? 0 : 1)
                         .animation(nil, value: liveHidden)
                 }
+                // Pinned to the page's corner: centred, it sat half the camera column to the right.
                 transitionLayer
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 if landscape {
                     VStack(spacing: 6) {
                         bar
@@ -1218,12 +1264,20 @@ private struct PageView: View {
                         // As the system lays out bars beside a side camera: the tab buttons go in its column.
                         VStack(spacing: 10) {
                             Spacer(minLength: 0)
+                            // Navigation first, as the HIG orders a vertical toolbar, apart from the actions.
+                            if tab.canGoBack || tab.canGoForward {
+                                railHistory(tab)
+                                    .padding(.bottom, 10)
+                                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                            }
                             iconButton("plus", action: onNewTab)
                                 .frame(width: 48, height: 48)
                                 .glassEffect(.regular.interactive(), in: .circle)
                             tabsButton
                                 .glassEffect(.regular.interactive(), in: .circle)
                         }
+                        .instantOnChange(of: tab.id)
+                        .animation(.snappy, value: [tab.canGoBack, tab.canGoForward], tab: tab.id)
                         .modifier(FadeInPlace(progress: collapse))
                         .allowsHitTesting(collapse < 0.5)
                         .opacity(chromeOpacity)
@@ -1497,7 +1551,7 @@ private struct PageView: View {
     /// Where the neighbouring tab's controls sit relative to the current ones, one page away.
     private var neighbourOffset: CGFloat? {
         guard swipeX != 0, swipeNeighbour != nil || swipeOpensNewTab else { return nil }
-        return (swipeX > 0 ? -1 : 1) * (screenWidth + BrowserView.swipeGap)
+        return (swipeX > 0 ? -1 : 1) * (pageWidth + BrowserView.swipeGap)
     }
 
     // MARK: - Bottom bar
@@ -1516,11 +1570,14 @@ private struct PageView: View {
                 let offsets = swipeOffsets(p: p, s: s, a: a, width: geo.size.width,
                                            vanish: (Self.vanish(currentRel) * Self.leaving(a), Self.vanish(neighbourRel)))
                 ZStack(alignment: .leading) {
-                    historyButtons(tab, p: p, rel: currentRel, offset: offsets.current)
-                        .opacity(max(0, 1 - a * 2))
-                    if neighbourOffset != nil, let neighbour = swipeNeighbour {
-                        historyButtons(neighbour, p: p, rel: neighbourRel, offset: offsets.neighbour)
-                            .allowsHitTesting(false)
+                    if !sideRail {
+                        historyButtons(tab, p: p, rel: currentRel, offset: offsets.current)
+                            .opacity(max(0, 1 - a * 2))
+                            .instantOnChange(of: tab.id)
+                        if neighbourOffset != nil, let neighbour = swipeNeighbour {
+                            historyButtons(neighbour, p: p, rel: neighbourRel, offset: offsets.neighbour)
+                                .allowsHitTesting(false)
+                        }
                     }
                     GlassEffectContainer(spacing: 20) {
                         ZStack(alignment: .leading) {
@@ -1549,21 +1606,39 @@ private struct PageView: View {
                 .frame(height: 48)
             }
         }
-        .animation(.snappy, value: tab.canGoBack)
-        .animation(.snappy, value: tab.canGoForward)
+        .animation(.snappy, value: [tab.canGoBack, tab.canGoForward], tab: tab.id)
+        // Not in the state's initial value: that runs on every PageView init, two pasteboard calls a frame.
+        .onAppear { canPaste = PasteAndGo.clipboardHasText }
+        .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
+            canPaste = PasteAndGo.clipboardHasText
+        }
+        // Another app's copy posts nothing here.
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            canPaste = PasteAndGo.clipboardHasText
+        }
     }
 
     private var trailingWidth: CGFloat { sideRail ? 0 : landscape ? 106 : 48 }
 
     private var sideRail: Bool { BrowserView.sideRail(safeInsets) }
 
+    /// Back and forward buttons beside the address; none in the bar when the camera column holds them.
+    private func barHistory(_ tab: BrowserTab) -> Int {
+        sideRail ? 0 : (tab.canGoBack ? 1 : 0) + (tab.canGoForward ? 1 : 0)
+    }
+
+    /// The bar width a tab's back and forward take beside its capsule.
+    private func historyWidth(_ tab: BrowserTab) -> CGFloat {
+        let history = barHistory(tab)
+        return history > 0 ? CGFloat(history) * 44 + 10 : 0
+    }
+
     /// Where a tab's capsule sits in the bar, before any swipe offset.
     /// As shown: `vanish` of its width, kept centred.
     private func capsuleFrame(for tab: BrowserTab?, p: CGFloat, s: CGFloat, width: CGFloat,
                               vanish: CGFloat = 1) -> (x: CGFloat, width: CGFloat) {
-        let history = tab.map { ($0.canGoBack ? 1 : 0) + ($0.canGoForward ? 1 : 0) } ?? 0
         let frame = capsuleFrame(p: p, s: s, compact: tab.map(compactWidth) ?? 220,
-                                 leading: history > 0 ? CGFloat(history) * 44 + 10 : 0, width: width)
+                                 leading: tab.map(historyWidth) ?? 0, width: width)
         let shown = frame.width * vanish
         return (frame.x + (frame.width - shown) / 2, shown)
     }
@@ -1611,7 +1686,7 @@ private struct PageView: View {
 
     /// How far a tab's page is from home, in pages: 0 shown, ±1 one page aside.
     private func swipeRel(_ pageOffset: CGFloat) -> CGFloat {
-        pageOffset / max(screenWidth + BrowserView.swipeGap, 1)
+        pageOffset / max(pageWidth + BrowserView.swipeGap, 1)
     }
 
     /// As in Safari the compact capsules travel within the bar, not with their pages: the leaving one
@@ -1620,8 +1695,7 @@ private struct PageView: View {
         // A page apart, pills sit side by side with a gap, however long their addresses; the current
         // one counts at its present width, as it is still narrowing early in a swipe.
         let tab = browser.selected
-        let history = (tab.canGoBack ? 1 : 0) + (tab.canGoForward ? 1 : 0)
-        let full = max(0, width - (history > 0 ? CGFloat(history) * 44 + 10 : 0) - trailingWidth - 10)
+        let full = max(0, width - historyWidth(tab) - trailingWidth - 12)
         let current = full + (min(compactWidth(tab), full) - full) * s
         let spacing = max(width * 0.45, (current + (swipeNeighbour.map(compactWidth) ?? 220)) / 2 + 16)
         return swipeRel(pageOffset) * spacing
@@ -1691,12 +1765,13 @@ private struct PageView: View {
     /// `live` is the selected tab's; the other is a swipe neighbour's.
     private func tabCapsule(_ tab: BrowserTab, live: Bool, p: CGFloat, s: CGFloat, width: CGFloat,
                             rel: CGFloat, vanish: CGFloat, offset: CGFloat) -> some View {
-        let history = (tab.canGoBack ? 1 : 0) + (tab.canGoForward ? 1 : 0)
         let base = capsuleFrame(p: p, s: s, compact: compactWidth(tab),
-                                leading: history > 0 ? CGFloat(history) * 44 + 10 : 0, width: width)
+                                leading: historyWidth(tab), width: width)
         let shown = base.width * vanish
         return addressCapsule(tab, live: live, p: p, s: s, presence: Self.presence(rel),
                               frame: (base.x + (base.width - shown) / 2, shown, base.full))
+            // Its width, label and buttons: the old page's host and arrow space faded out over a new tab.
+            .instantOnChange(of: tab.id)
             .offset(x: offset)
     }
 
@@ -1705,7 +1780,8 @@ private struct PageView: View {
     /// While swiping (`s`) it narrows to `compact` around its centre, as Safari's does.
     private func capsuleFrame(p: CGFloat, s: CGFloat, compact: CGFloat, leading: CGFloat,
                               width: CGFloat) -> (x: CGFloat, width: CGFloat, full: CGFloat) {
-        let available = max(0, width - leading - trailingWidth - 10)
+        // The 12 pt gap swipeOffsets keeps before the tabs button: with 10 it pushed the capsule 2 pt left.
+        let available = max(0, width - leading - trailingWidth - 12)
         let full = landscape ? min(available, 560) : available
         let fullX = leading + (available - full) / 2
         let open = full + (min(compact, full) - full) * s
@@ -1766,7 +1842,7 @@ private struct PageView: View {
                 }
                 .frame(maxWidth: max(0, hostSlots[tab.id] ?? frame.full - 168))
                 .scaleEffect(1 - (1 - Self.pillScale) * p)
-                .offset(x: (hostOffsets[tab.id] ?? 0) * (1 - compacting))
+                .offset(x: ((hostOffsets[tab.id] ?? 0) + blankLead(tab)) * (1 - compacting))
                 .opacity(presence)
                 .allowsHitTesting(false)
         }
@@ -1775,7 +1851,9 @@ private struct PageView: View {
         .frame(width: frame.width, height: min(48 - 12 * p, frame.width))
         .clipShape(.capsule)
         .contentShape(.capsule)
-        .onTapGesture { if collapse > 0.5, !justLongPressed { withAnimation(.snappy) { expand() } } }
+        // Only on the collapsed pill: always on, it took the touch from Paste and Go, a system control.
+        .gesture(TapGesture().onEnded { if collapse > 0.5, !justLongPressed { withAnimation(.snappy) { expand() } } },
+                 including: collapse > 0.5 ? .all : .subviews)
         // On the whole capsule, alongside its taps and the glass's own touch handling, so it fires on a
         // real finger anywhere on it, collapsed or not.
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded { _ in
@@ -1795,6 +1873,12 @@ private struct PageView: View {
         .offset(x: frame.x)
     }
 
+    /// A blank tab's prompt sits at the slot's left, where the search field puts it: centred, it jumped on a tap.
+    private func blankLead(_ tab: BrowserTab) -> CGFloat {
+        guard tab.url == nil, let slot = hostSlots[tab.id], let label = labelWidths[tab.id] else { return 0 }
+        return (min(label, slot) - slot) / 2
+    }
+
     /// The pill's label size relative to the bar's: footnote against body.
     private static let pillScale: CGFloat = 13 / 17
 
@@ -1809,13 +1893,16 @@ private struct PageView: View {
                 }
                 .transition(.blurReplace)
             } else {
-                if tab.isPrivate { PrivateMark() }
+                // A blank tab's mark sits in the icon slot, where the search field has it.
+                if tab.isPrivate, tab.url != nil { PrivateMark() }
                 Text(tab.url?.host() ?? String(localized: "Search or enter address"))
-                    .minimumScaleFactor(0.8)
-                    .foregroundStyle(tab.url == nil ? .secondary : .primary)
+                    // A blank tab's prompt at full size, as the search field draws it: it shrank a little and jumped at the swap.
+                    .minimumScaleFactor(tab.url == nil ? 1 : 0.8)
+                    // A blank tab's prompt in the search field's placeholder colour: the bar's grey was a shade off.
+                    .foregroundStyle(tab.url == nil ? AnyShapeStyle(Color(uiColor: .placeholderText)) : AnyShapeStyle(.primary))
                     .transition(.blurReplace)
                 // A hidden twin on the right keeps the address centred, as in a regular tab.
-                if tab.isPrivate { PrivateMark().hidden() }
+                if tab.isPrivate, tab.url != nil { PrivateMark().hidden() }
             }
         }
         .lineLimit(1)
@@ -1826,8 +1913,9 @@ private struct PageView: View {
             if tab.url == nil {
                 // A blank tab has no page for the menu; the search icon stands in, so opening search swaps
                 // nothing. A long press opens the menu.
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
+                Group {
+                    if tab.isPrivate { PrivateMark() } else { Image(systemName: "magnifyingglass").foregroundStyle(.secondary) }
+                }
                     .frame(width: 44, height: 48)
                     .contentShape(.rect)
                     .onTapGesture { if !justLongPressed { search = .edit } }
@@ -1874,13 +1962,17 @@ private struct PageView: View {
             if let url = tab.url {
                 // Only the last gives way to back and forward, which cut even "duckduckgo.com" short.
                 let actions = BarAction.decode(barActions)
-                ForEach(tab.canGoBack || tab.canGoForward ? Array(actions.suffix(1)) : actions) { action in
+                ForEach(barHistory(tab) > 0 ? Array(actions.suffix(1)) : actions) { action in
                     barButton(action, tab: tab, url: url)
                 }
+            } else if canPaste {
+                // Where the search field has it, so the button stays put as the field lands here.
+                PasteAndGo(engine: engine) { tab.load($0) }
+                    .padding(.trailing, 16)
             }
         }
         .foregroundStyle(.primary)
-        .animation(.snappy, value: tab.isReaderable)
+        .animation(.snappy, value: tab.isReaderable, tab: tab.id)
         .animation(.snappy, value: DownloadManager.shared.active.first?.state)
         .coordinateSpace(.named(Self.addressSpace))
     }
@@ -2003,10 +2095,7 @@ private struct PageView: View {
             Button(current.fromZenFolder ? "Unload Tab" : "Close Tab", systemImage: current.fromZenFolder ? "moon.zzz" : "xmark",
                    role: current.fromZenFolder ? nil : .destructive) { browser.close(browser.selected) }
         } label: {
-            Text("\(browser.tabs(in: browser.selected.spaceID).count)")
-                .font(.footnote.weight(.semibold))
-                .frame(width: 22, height: 22)
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineWidth: 1.5))
+            TabCountGlyph(count: browser.tabs(in: browser.selected.spaceID).count)
                 .frame(width: 48, height: 48)
         } primaryAction: {
             onShowTabs()
@@ -2057,6 +2146,24 @@ private struct PageView: View {
         }
         .frame(height: Self.stripHeight)
         .glassEffect(.regular, in: .capsule)
+    }
+
+    /// Back above forward in the camera column, one glass capsule as in the bar.
+    private func railHistory(_ tab: BrowserTab) -> some View {
+        VStack(spacing: 0) {
+            if tab.canGoBack {
+                historyButton("chevron.backward", items: tab.webView.backForwardList.backList.reversed(), tab: tab) {
+                    browser.goBack()
+                }
+            }
+            if tab.canGoForward {
+                historyButton("chevron.forward", items: tab.webView.backForwardList.forwardList, tab: tab) {
+                    browser.goForward()
+                }
+            }
+        }
+        .frame(width: 48)
+        .glassEffect(.regular.interactive(), in: .capsule)
     }
 
     /// Back or forward; a long press lists the pages that way, nearest first, as in Safari.
@@ -2317,9 +2424,35 @@ private struct LoadingLine: View {
         }
         .clipShape(.capsule)
         .opacity(tab.isLoading ? 1 : 0)
-        .animation(.easeOut(duration: 0.25), value: tab.estimatedProgress)
-        .animation(.easeOut(duration: 0.3), value: tab.isLoading)
+        .animation(.easeOut(duration: 0.25), value: tab.estimatedProgress, tab: tab.id)
+        .animation(.easeOut(duration: 0.3), value: tab.isLoading, tab: tab.id)
         .allowsHitTesting(false)
+    }
+}
+
+extension View {
+    /// A new tab's controls show at once: changed inside a card's grow, the old page's eased out over them.
+    func instantOnChange(of id: UUID) -> some View {
+        transaction(value: id) { $0.animation = nil }
+    }
+
+    /// `animation(_:value:)` for a tab's own state, off when the tab itself changes: a plain one overrode
+    /// `instantOnChange` and kept the old page's back arrows through the grow.
+    func animation(_ animation: Animation, value: some Equatable, tab: UUID) -> some View {
+        modifier(TabAnimation(animation: animation, value: value, tab: tab))
+    }
+}
+
+private struct TabAnimation<Value: Equatable>: ViewModifier {
+    let animation: Animation
+    let value: Value
+    let tab: UUID
+    @State private var shown: UUID?
+
+    func body(content: Content) -> some View {
+        content
+            .animation(shown == nil || shown == tab ? animation : nil, value: value)
+            .onChange(of: tab, initial: true) { shown = tab }
     }
 }
 

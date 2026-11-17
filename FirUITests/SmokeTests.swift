@@ -109,6 +109,19 @@ final class SmokeTests: XCTestCase {
         XCTAssert(page("j").exists, "the page stays")
     }
 
+    /// Paste and Go in a blank tab's bar opens what was copied: a tap gesture on the capsule once took its touch.
+    func testPasteAndGoInBar() {
+        UIPasteboard.general.string = server.url("p")
+        launch(layout: "cards", newTab: "page")
+        // Tests share app data: an earlier one leaves a page in front, and only a blank tab's bar has the button.
+        showTabs()
+        overviewNewTab.tap()
+        let paste = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Paste'")).firstMatch
+        XCTAssert(paste.waitForExistence(timeout: 5), "the bar offers Paste and Go")
+        paste.tap()
+        XCTAssert(page("p").waitForExistence(timeout: Self.pageLoad), "the copied address opens")
+    }
+
     /// Undo brings back a closed blank tab. With nothing in Recently Closed, that crashed: tests share app data,
     /// so the list is emptied by a launch argument.
     func testUndoCloseBlankTab() {

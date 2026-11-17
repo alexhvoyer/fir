@@ -21,6 +21,8 @@ struct TabSwitcherView: View {
     var onEditWorkspaces: () -> Void = {}
     /// The camera column's width when the buttons go there instead of the bars; 0 for none.
     var railWidth: CGFloat = 0
+    /// Settings zooms out of its button and back into it, as Safari's sheets do.
+    let sheetSource: Namespace.ID
     /// A page is growing out of its card: the deck stays put, as in Safari, and centres on the
     /// selected tab only once the page covers it.
     var holdsPosition = false
@@ -86,6 +88,18 @@ struct TabSwitcherView: View {
         }
         // A bar, not an inset: grid titles scrolling under it are blurred instead of read through the glass.
         .safeAreaBar(edge: .bottom) { bottomBar }
+        // In the camera column the deck is padded clear of, level with the bar. Not in the bar: outside its
+        // bounds the buttons took no taps.
+        .overlay(alignment: .bottomTrailing) {
+            if railWidth > 0 {
+                VStack(spacing: 10) {
+                    settingsButton
+                    newTabButton
+                }
+                .frame(width: 52)
+                .offset(x: railWidth / 2 + 26)
+            }
+        }
         .background(.regularMaterial)
         // Dark like Safari's private browsing, so it's never mistaken for regular tabs.
         .environment(\.colorScheme, browser.space == BrowserModel.privateSpace ? .dark : colorScheme)
@@ -126,8 +140,9 @@ struct TabSwitcherView: View {
             guard hiddenTab != nil else { return }
             device = nil
             browser.space = browser.selected.spaceID
-            // Its folder opens under the page: a grid draws only a closed folder's front tab.
-            centerSelected(animated: false)
+            // Its folder opens under the page: a grid draws only a closed folder's front tab. Not while a page
+            // grows out of a side card: the deck jumped to it at the tap. It centres once the page covers it.
+            if !holdsPosition { centerSelected(animated: false) }
         }
     }
 
@@ -476,9 +491,9 @@ struct TabSwitcherView: View {
     private var topBar: some View {
         HStack {
             Spacer()
-            if railWidth == 0 { settingsButton }
+            if railWidth == 0, !landscape { settingsButton }
         }
-        .frame(minHeight: 52)
+        .frame(minHeight: landscape ? 8 : 52)
         .padding(.horizontal, 20)
     }
 
@@ -494,6 +509,7 @@ struct TabSwitcherView: View {
             }
             .font(.title3)
             .foregroundStyle(.primary)
+            .matchedTransitionSource(id: "settings", in: sheetSource)
     }
 
     private var newTabButton: some View {
@@ -509,6 +525,9 @@ struct TabSwitcherView: View {
     private var bottomBar: some View {
         // No GlassEffectContainer: inside one the switcher's drawn pill rendered under the glass, frosted.
         HStack(spacing: 10) {
+                // On its side the screen is short, and the top's edge sits under the status bar: all the
+                // buttons share the bottom bar, as in Safari's tab overview.
+                if landscape, railWidth == 0 { settingsButton }
                 // With only this iPhone's tabs there is nothing to switch between.
                 if switcherItems.count > 1 {
                     SpaceSwitcher(items: switcherItems,
@@ -517,17 +536,6 @@ struct TabSwitcherView: View {
                     Spacer()
                 }
                 if railWidth == 0 { newTabButton }
-        }
-        // In the camera column the deck is padded clear of, level with the bar; the top is the camera's.
-        .overlay(alignment: .bottomTrailing) {
-            if railWidth > 0 {
-                VStack(spacing: 10) {
-                    settingsButton
-                    newTabButton
-                }
-                .frame(width: 52)
-                .offset(x: 16 + railWidth / 2 + 26)
-            }
         }
         // Same size and place as the page's bar, so going to the deck reads as one bar changing.
         .padding(.horizontal, 16)

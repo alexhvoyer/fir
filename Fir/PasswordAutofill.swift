@@ -71,6 +71,12 @@ final class PasswordAutofill: NSObject {
         }.value
     }
 
+    /// Switched off in Settings: the bar raised before goes too, and a login read in flight is dropped.
+    func offersTurnedOff() {
+        focusCount += 1
+        offer = nil
+    }
+
     /// A new document has none of the fields the offer was for, and a page leaving sends no blur.
     func pageChanged(in webView: WKWebView) {
         guard offer?.webView === webView else { return }
@@ -87,6 +93,11 @@ final class PasswordAutofill: NSObject {
     }
 
     private func received(_ body: [String: Any], frame: WKFrameInfo, webView: WKWebView?) {
+        // Off for people who fill from another password manager through iOS AutoFill.
+        guard UserDefaults.standard.bool(forKey: SettingsKey.offerPasswords, default: true) else {
+            offer = nil
+            return
+        }
         let security = frame.securityOrigin
         // On plain http anyone on the network could read or rewrite the form, so saved logins stay out of it.
         guard security.protocol == "https", !security.host.isEmpty else { return }

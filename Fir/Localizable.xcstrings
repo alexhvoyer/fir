@@ -10853,6 +10853,46 @@
         }
       }
     },
+    "Save and Fill Passwords" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwörter sichern und ausfüllen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar y rellenar contraseñas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer et remplir les mots de passe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salva e compila password"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar e Preencher Senhas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранять и подставлять пароли"
+          }
+        }
+      }
+    },
     "Save password for %@?" : {
       "localizations" : {
         "de" : {
@@ -15769,6 +15809,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "«Что нового» после обновлений"
+          }
+        }
+      }
+    },
+    "When off, Fir doesn't offer to save or fill passwords. Other password managers still fill through iOS AutoFill." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn aus, bietet Fir nicht an, Passwörter zu sichern oder auszufüllen. Andere Passwort-Manager füllen weiter über die iOS-Autofill-Funktion aus."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si está desactivado, Fir no ofrece guardar ni rellenar contraseñas. Otros gestores de contraseñas siguen rellenando mediante el autorrelleno de iOS."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivé, Fir ne propose plus d'enregistrer ni de remplir les mots de passe. Les autres gestionnaires de mots de passe remplissent toujours via le remplissage automatique d'iOS."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se disattivato, Fir non propone di salvare o compilare le password. Gli altri gestori di password continuano a compilare tramite il riempimento automatico di iOS."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando desativado, o Fir não oferece salvar nem preencher senhas. Outros gerenciadores de senhas continuam preenchendo pelo Preenchimento Automático do iOS."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если выключено, Fir не предлагает сохранить или подставить пароль. Другие менеджеры паролей по-прежнему подставляют их через автозаполнение iOS."
           }
         }
       }

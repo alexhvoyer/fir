@@ -42,6 +42,10 @@ struct NewTabView: View {
     @State private var detent = Self.low
     /// The search in the bar is closing: the keyboard takes the field down before the bar comes back.
     @State private var leaving = false
+    /// An on-screen keyboard is on its way down, so its hiding ends the search, not the fallback timer.
+    @State private var keyboardHiding = false
+    @State private var keyboardUp = false
+    @State private var canPaste = false
 
     private var deckSpace: String? {
         if case .newTab(let space) = mode { space } else { nil }
@@ -113,6 +117,13 @@ struct NewTabView: View {
                 // A tile on a blank tab's start page opened something: the field rides down. Another tab: at once.
                 .onChange(of: browser.selected.url) { old, _ in if old == nil { close() } }
                 .onChange(of: browser.selectedID) { dismiss() }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                    keyboardUp = true
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                    // Nothing the body reads changes here, so the field is left to ride the keyboard's own animation.
+                    keyboardHiding = true
+                }
                 .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
                     if leaving { dismiss() }
                 }
@@ -141,22 +152,36 @@ struct NewTabView: View {
 
     /// The field in the bar's place, with Cancel where the tabs button was, as Safari's bar while editing.
     private var inlineBar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
             searchField
-                .padding(.horizontal, 16)
+                .padding(.trailing, 16)
                 .frame(height: 48)
                 .glassEffect(.regular.interactive(), in: .capsule)
-            Button("Cancel", systemImage: "xmark", action: close)
-                .labelStyle(.iconOnly)
-                .font(.body.weight(.medium))
+            Button(action: close) {
+                // Riding down, the cross turns into the tabs button it lands on, so the bar's swap shows nothing.
+                ZStack {
+                    Image(systemName: "xmark")
+                        .font(.body.weight(.medium))
+                        .animation(.smooth(duration: 0.3)) {
+                            $0.opacity(leaving ? 0 : 1).scaleEffect(leaving ? 0.5 : 1).blur(radius: leaving ? 4 : 0)
+                        }
+                    TabCountGlyph(count: browser.tabs(in: browser.selected.spaceID).count)
+                        .animation(.smooth(duration: 0.3)) {
+                            $0.opacity(leaving ? 1 : 0).scaleEffect(leaving ? 1 : 0.5).blur(radius: leaving ? 0 : 4)
+                        }
+                }
                 .frame(width: 48, height: 48)
-                .foregroundStyle(.primary)
-                .glassEffect(.regular.interactive(), in: .circle)
+            }
+            .accessibilityLabel("Cancel")
+            .foregroundStyle(.primary)
+            // Not interactive: its pressed glow lasted the ride down and vanished at the swap to the bar.
+            .glassEffect(.regular, in: .circle)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-        // A gap above the keyboard; at the bottom, exactly where the bar sits.
-        .padding(.bottom, focused ? 8 : 0)
+        // A gap above the keyboard, at the bottom exactly where the bar sits. Opens with the keyboard's show notice
+        // (on focus it hopped first) and closes with the focus, as the field rides down.
+        .padding(.bottom, keyboardUp && !leaving ? 8 : 0)
     }
 
     /// In the bar, the keyboard carries the field back down first, as in Safari: removed at once, field and
@@ -166,11 +191,14 @@ struct NewTabView: View {
         // Dropping focus below calls back here.
         guard !leaving else { return }
         leaving = true
+        // Only a hide this close starts counts: one from earlier (a keyboard attached mid-edit) would block the fallback.
+        keyboardHiding = false
         focused = false
-        // A hardware keyboard shows none, so no hiding is reported.
+        // A hardware keyboard shows none, so no hiding is reported. With one riding down, slowed animations
+        // outlasted 600 ms and the bar came back under the moving field.
         Task {
             try? await Task.sleep(for: .milliseconds(600))
-            if leaving { dismiss() }
+            if leaving, !keyboardHiding { dismiss() }
         }
     }
 
@@ -347,12 +375,16 @@ struct NewTabView: View {
     }
 
     private var searchField: some View {
-        HStack {
-            if isPrivate {
-                PrivateMark()
-            } else {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+        // In the bar, laid out as the page bar's capsule: its icon in 44 pt, the text right after.
+        HStack(spacing: inline ? 0 : nil) {
+            Group {
+                if isPrivate {
+                    PrivateMark()
+                } else {
+                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                }
             }
+            .frame(width: inline ? 44 : nil)
             TextField("Search or enter address", text: $query)
                 .focused($focused)
                 .overlay(alignment: .leading) {
@@ -376,22 +408,20 @@ struct NewTabView: View {
                     guard mode == .edit, let field = $0.object as? UITextField else { return }
                     Task { field.selectedTextRange = field.textRange(from: field.beginningOfDocument, to: field.endOfDocument) }
                 }
+                // Zero spacing in the bar would run the text into Clear or Paste.
+                .padding(.trailing, inline ? 8 : 0)
             if !query.isEmpty {
                 Button("Clear", systemImage: "xmark.circle.fill") { query = "" }
                     .labelStyle(.iconOnly)
                     .foregroundStyle(.secondary)
-            } else if UIPasteboard.general.hasStrings || UIPasteboard.general.hasURLs {
-                // Paste and Go, as Safari offers: the system paste control reads the clipboard without
-                // the "Allow Paste" prompt a plain read would raise.
-                PasteButton(payloadType: String.self) { strings in
-                    guard let text = strings.first?.trimmingCharacters(in: .whitespacesAndNewlines),
-                          !text.isEmpty else { return }
-                    Task { @MainActor in open(BrowserModel.url(from: text, engine: engine)) }
-                }
-                .labelStyle(.iconOnly)
-                .buttonBorderShape(.circle)
-                .tint(.secondary)
+            } else if canPaste {
+                PasteAndGo(engine: engine) { open($0) }
             }
+        }
+        // Not read in the body: two pasteboard calls on every render of the empty field.
+        .onAppear { canPaste = PasteAndGo.clipboardHasText }
+        .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
+            canPaste = PasteAndGo.clipboardHasText
         }
     }
 
@@ -503,6 +533,27 @@ struct NewTabView: View {
         var device = String(clientName[range.upperBound...])
         if let mac = device.range(of: "MacBook") { device = String(device[mac.lowerBound...]) }
         return device.replacingOccurrences(of: "-", with: " ")
+    }
+}
+
+/// Paste and Go: the system paste control reads the clipboard without the "Allow Paste" prompt a plain read
+/// raises. One view for the field and the bar, so the swap between them shows nothing.
+struct PasteAndGo: View {
+    let engine: SearchEngine
+    let go: (URL) -> Void
+
+    /// The clipboard holds text or a link. Asking prompts nothing; only the paste control reads it.
+    static var clipboardHasText: Bool { UIPasteboard.general.hasStrings || UIPasteboard.general.hasURLs }
+
+    var body: some View {
+        PasteButton(payloadType: String.self) { strings in
+            guard let text = strings.first?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty,
+                  let url = BrowserModel.url(from: text, engine: engine) else { return }
+            Task { @MainActor in go(url) }
+        }
+        .labelStyle(.iconOnly)
+        .buttonBorderShape(.circle)
+        .tint(.secondary)
     }
 }
 

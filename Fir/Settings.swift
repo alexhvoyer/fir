@@ -212,6 +212,7 @@ enum SettingsKey {
     static let syncHistory = "syncHistory"
     static let syncWorkspaces = "syncWorkspaces"
     static let syncPasswords = "syncPasswords"
+    static let offerPasswords = "offerPasswords"
     static let hiddenDevices = "hiddenDevices"
     static let signInCardHidden = "signInCardHidden"
     static let isDefaultBrowser = "isDefaultBrowser"
