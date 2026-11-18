@@ -2296,6 +2296,8 @@ private struct PageView: View {
     /// The bar follows the scroll both ways; once the page stops, it settles at the nearer end.
     private func handleScroll(from old: CGFloat, to new: CGFloat) {
         guard collapseOnScroll, Date.now.timeIntervalSince(collapseToggled) > 0.4 else { return }
+        // At the end the bar's own inset moves the offset, and following it flipped the bar back and forth.
+        guard !browser.selected.scrolledToEnd else { return }
         guard new > 0 else {
             if collapse > 0 { settle(at: 0) }
             return

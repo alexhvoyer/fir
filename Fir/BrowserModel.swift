@@ -52,6 +52,8 @@ final class BrowserTab: NSObject, Identifiable {
     var readerRequest: URL?
     /// Vertical scroll offset, for collapsing the bar.
     private(set) var scrollY: CGFloat = 0
+    /// The page sits at its end, or bounces past it: offset changes there come from the bar's inset and the bounce.
+    private(set) var scrolledToEnd = false
     /// A finger is on the page; the bar settles only once it lifts and the scroll stops.
     private(set) var isTouching = false
     /// Where a blank tab's start page last came to rest, for its card and transitions.
@@ -266,6 +268,9 @@ final class BrowserTab: NSObject, Identifiable {
             webView.scrollView.observe(\.contentOffset) { [weak self] scroll, _ in
                 MainActor.assumeIsolated {
                     guard let self else { return }
+                    let end = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
+                    let atEnd = scroll.contentSize.height > scroll.bounds.height && scroll.contentOffset.y >= end - 2
+                    if atEnd != self.scrolledToEnd { self.scrolledToEnd = atEnd }
                     self.scrollY = scroll.contentOffset.y + scroll.adjustedContentInset.top
                     self.scheduleIdleSnapshot()
                 }
@@ -518,6 +523,75 @@ extension BrowserTab: WKUIDelegate {
 }
 
 extension BrowserTab {
+    /// The site's page zoom, as Safari's: the page lays out wider and is scaled to fit. `changed`: also restores a page
+    /// set back to 100%.
+    func applyPageZoom(changed: Bool) {
+        let percent = Int((SiteSettings.shared.entry(for: pageURL, isPrivate: isPrivate).zoom * 100).rounded())
+        guard changed || percent != 100, let webView = existingWebView else { return }
+        Task {
+            _ = try? await webView.callAsyncJavaScript(Self.pageZoomScript, arguments: ["percent": percent],
+                                                       contentWorld: .defaultClient)
+        }
+    }
+
+    /// Through the viewport tag. pageZoom is CSS zoom on iOS and kept the layout width; text-size-adjust on a phone
+    /// shrank em-sized text again at every level.
+    static let pageZoomScript = """
+        const z = window.firZoom ??= {};
+        z.scale = percent / 100;
+        const apply = () => {
+          if (!z.read) {
+            // The page's own tag and layout width, before any change; no tag means the 980 px desktop layout.
+            z.read = true;
+            z.page = document.querySelector('meta[name=viewport]');
+            z.original = z.page?.content;
+            z.fixed = z.page && /device-width/.test(z.page.content) ? 0 : document.documentElement.clientWidth;
+          }
+          if (z.scale === 1) {
+            if (z.page) write(z.page, z.original); else z.own?.remove();
+            return;
+          }
+          if (!z.page && !z.own) z.own = Object.assign(document.createElement('meta'), { name: 'viewport' });
+          const meta = z.page ?? z.own;
+          if (!meta.isConnected) document.head.append(meta);
+          // The view's width in CSS pixels; stays put while the user pinches, changes on rotation.
+          z.device = visualViewport.width * visualViewport.scale;
+          const layout = z.fixed || z.device;
+          const fit = (z.device / layout * z.scale).toFixed(4);
+          // The page's own limits, such as user-scalable=no on a map, stay.
+          const kept = (z.original ?? '').split(',').map(s => s.trim())
+            .filter(s => s && !/^(width|initial-scale|minimum-scale)\\s*=/.test(s));
+          write(meta, [`width=${Math.round(layout / z.scale)}`, `initial-scale=${fit}`, `minimum-scale=${fit}`, ...kept].join(', '));
+        };
+        // Rewriting an unchanged tag can snap the page back to its initial scale mid-pinch.
+        const write = (meta, content) => {
+          if (meta.content === content) return;
+          z.written = content;
+          meta.content = content;
+        };
+        if (!z.listening) {
+          z.listening = true;
+          visualViewport.addEventListener('resize', () => {
+            if (z.scale !== 1 && Math.abs(visualViewport.width * visualViewport.scale - z.device) > 1) apply();
+          });
+          // A page that rewrites its tag later, as single-page apps do, gets it as its new original.
+          new MutationObserver(() => {
+            // Fir's own tag is known by reference: a marker on it would tell the page it runs in Fir.
+            const page = [...document.querySelectorAll('meta[name=viewport]')].find(m => m !== z.own);
+            if (!z.read || z.scale === 1 || !page || (page === z.page && page.content === z.written)) return;
+            z.page = page;
+            z.original = page.content;
+            if (/device-width/.test(page.content)) z.fixed = 0;
+            z.own?.remove();
+            z.own = null;
+            apply();
+          }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['content'] });
+        }
+        // Before the parser reaches the page's own tag, a tag added here would lose to it.
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once: true });
+        else apply();
+        """
+
     /// Also run after in-page navigation: sites like meduza.io open articles without loading a page.
     func checkReaderable() async {
         isReaderable = (try? await webView.evaluateJavaScript(Self.readerableCheck)) as? Bool ?? false
@@ -642,7 +716,7 @@ extension BrowserTab: WKNavigationDelegate {
         openedBySubframe = false
         isTranslated = false
         isReaderable = false
-        webView.pageZoom = SiteSettings.shared.entry(for: webView.url, isPrivate: isPrivate).zoom
+        applyPageZoom(changed: false)
         PasswordAutofill.shared.pageChanged(in: webView)
         ExtensionManager.shared.tabChanged(self, .URL)
     }
@@ -675,6 +749,8 @@ extension BrowserTab: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        // Again once loaded, in case the page rewrote its viewport tag.
+        applyPageZoom(changed: false)
         Task { await checkReaderable() }
         if SiteSettings.shared.entry(for: webView.url, isPrivate: isPrivate).reader { readerRequest = webView.url }
         // Finishing comes just before the first paint.

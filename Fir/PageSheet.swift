@@ -18,6 +18,7 @@ struct PageSheet: View {
     /// The chosen action; the caller runs it once the sheet is gone, so find and reader see the page.
     let onAction: (Action) -> Void
 
+    @Environment(BrowserModel.self) private var browser
     @Environment(\.dismiss) private var dismiss
     @Environment(\.sheetsCentered) private var centered
     @State private var languages: [Locale.Language] = []
@@ -291,8 +292,12 @@ struct PageSheet: View {
     }
 
     private func setZoom(_ zoom: Double) {
+        // Steps of 0.1 add up to 0.9999…, which read as a changed zoom.
+        let zoom = (zoom * 10).rounded() / 10
         settings.update(tab.pageURL, isPrivate: tab.isPrivate) { $0.zoom = zoom }
-        tab.webView.pageZoom = zoom
+        // Every open tab of the site, as the setting is the site's; each reads its own private or regular entry.
+        let site = SiteSettings.site(tab.pageURL)
+        for open in browser.tabs where SiteSettings.site(open.pageURL) == site { open.applyPageZoom(changed: true) }
     }
 
     /// A toggle for one of the site's settings; those that change how the page loads reload it.

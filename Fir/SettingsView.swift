@@ -144,6 +144,7 @@ private struct GeneralSettingsView: View {
 
 private struct SearchSettingsView: View {
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
+    @AppStorage(SettingsKey.customSearchURL) private var customSearchURL = ""
     @AppStorage(SettingsKey.searchSuggestions) private var searchSuggestions = true
     @AppStorage(SettingsKey.historySuggestions) private var historySuggestions = true
     @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearch = true
@@ -156,6 +157,25 @@ private struct SearchSettingsView: View {
                 }
                 .pickerStyle(.inline)
                 .labelsHidden()
+            }
+            if engine == .custom {
+                Section {
+                    TextField(text: $customSearchURL, prompt: Text(verbatim: "https://example.org/search?q=%s")) {
+                        Text("Search Address")
+                    }
+                    .keyboardType(.URL)
+                    .textContentType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                } footer: {
+                    // Interpolated: a bare %s in the text would be read as a format specifier.
+                    let mark = "%s"
+                    if SearchEngine.url(fromTemplate: customSearchURL, query: "fir") != nil {
+                        Text("Type \(mark) where the search goes.")
+                    } else {
+                        Text("Needs a web address with \(mark) where the search goes. Until then, Fir searches with DuckDuckGo.")
+                    }
+                }
             }
             Section {
                 Toggle("Search Engine Suggestions", isOn: $searchSuggestions)

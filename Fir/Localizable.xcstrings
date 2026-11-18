@@ -3973,6 +3973,46 @@
         }
       }
     },
+    "Custom" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eigene"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personnalisé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizzato"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Своя"
+          }
+        }
+      }
+    },
     "Dark" : {
       "localizations" : {
         "de" : {
@@ -7933,6 +7973,46 @@
         }
       }
     },
+    "Needs a web address with %@ where the search goes. Until then, Fir searches with DuckDuckGo." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benötigt eine Webadresse mit %@ an der Stelle der Suche. Bis dahin sucht Fir mit DuckDuckGo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Necesita una dirección web con %@ donde va la búsqueda. Mientras tanto, Fir busca con DuckDuckGo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il faut une adresse web avec %@ à l’endroit de la recherche. En attendant, Fir cherche avec DuckDuckGo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serve un indirizzo web con %@ dove va la ricerca. Fino ad allora, Fir cerca con DuckDuckGo."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Precisa de um endereço da web com %@ onde entra a busca. Até lá, o Fir busca com o DuckDuckGo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нужен веб-адрес с %@ на месте запроса. Пока его нет, Fir ищет через DuckDuckGo."
+          }
+        }
+      }
+    },
     "Never" : {
       "localizations" : {
         "de" : {
@@ -11249,6 +11329,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Поиск"
+          }
+        }
+      }
+    },
+    "Search Address" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suchadresse"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dirección de búsqueda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresse de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indirizzo di ricerca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endereço de busca"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адрес поиска"
           }
         }
       }
@@ -14929,6 +15049,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выключение действует только на этом iPhone; Zen продолжит синхронизацию. Вкладки каких устройств показывать, настраивается в разделе «Пространства»."
+          }
+        }
+      }
+    },
+    "Type %@ where the search goes." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setzen Sie %@ dort ein, wo die Suche stehen soll."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe %@ donde va la búsqueda."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez %@ à l’endroit de la recherche."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrivi %@ dove va la ricerca."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite %@ onde entra a busca."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поставьте %@ на место запроса."
           }
         }
       }

@@ -193,7 +193,8 @@ struct OnboardingView: View {
                         Text("Search Engine")
                         Spacer()
                         Picker("Search Engine", selection: $engine) {
-                            ForEach(SearchEngine.allCases) { Text($0.name).tag($0) }
+                            // Custom only once chosen in Settings, where its address is typed; onboarding can be shown again.
+                            ForEach(engine == .custom ? SearchEngine.allCases : SearchEngine.presets) { Text($0.name).tag($0) }
                         }
                         .labelsHidden()
                         .tint(.secondary)

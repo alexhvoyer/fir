@@ -73,6 +73,8 @@ timing, sync.
   over the switcher.
 - `sim` **(was broken)** With an add-on installed, the bar's buttons don't overlap the address text.
 - `sim` The bar collapses on scroll and expands on tap or when a new page starts loading.
+- `phone` **(was broken)** Scroll to the very end of a long page and hold: the bar stays as it is and the page stays
+  still (the bar flipped between pill and full and the page shook; the simulator never showed it).
 - `phone` Scrolling a long page stays smooth (FrameMeter: about 115 fps at 120 Hz).
 
 ## Swipes and lift
@@ -155,6 +157,12 @@ timing, sync.
 - `sim` With Block Ads & Trackers on, a page with ads loads without them. Turning it off for a site reloads that site
   with ads.
 - `sim` HTTPS-Only upgrades an http link and warns when the site has no https.
+- `sim` **(was broken)** Page Zoom on google.com search results: 70% shrinks the whole page evenly and keeps the
+  full width (pageZoom left a blank strip, did nothing or spilled off screen); 130% reflows narrower without sideways
+  scroll; it stays after reload and relaunch and on turning the phone; other tabs of the site follow; 100% restores.
+- `sim` Page Zoom on a page without a viewport tag (desktop layout) and on one that rewrites its tag after load.
+- `phone` **(was broken)** Page Zoom 70% on google.com: no tiny or invisible titles (text-size-adjust shrank em-sized
+  text again at every level on a real phone, not on the simulator); scrolling has no jitter or jumps back.
 
 ## Reader, translate, downloads
 
@@ -186,6 +194,9 @@ timing, sync.
 - `sim` What's New shows once after an update (`-whatsNewSeen` one below the current list), and never on a fresh
   install.
 - `sim` Every settings page opens and closes, and each picker changes the app straight away. New Tab is under Tabs.
+- `sim` Search > Kagi: typing shows Kagi Suggestions. Custom: the address field appears; an address without `%s` (or
+  empty) says DuckDuckGo is used meanwhile; `https://html.duckduckgo.com/html/?q=%s` with `fir & tree #1` searches
+  for exactly that. In Russian the footer fits.
 
 ## iPad
 

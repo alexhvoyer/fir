@@ -1,9 +1,12 @@
 import SwiftUI
 
 enum SearchEngine: String, CaseIterable, Identifiable {
-    case duckDuckGo, google, bing, startpage
+    case duckDuckGo, google, bing, startpage, kagi, custom
 
     var id: Self { self }
+
+    /// The engines offered without typing an address.
+    static let presets = allCases.filter { $0 != .custom }
 
     var name: String {
         switch self {
@@ -11,29 +14,60 @@ enum SearchEngine: String, CaseIterable, Identifiable {
         case .google: "Google"
         case .bing: "Bing"
         case .startpage: "Startpage"
+        case .kagi: "Kagi"
+        case .custom: String(localized: "Custom")
         }
     }
 
     func url(for query: String) -> URL? {
-        let base = switch self {
-        case .duckDuckGo: "https://duckduckgo.com/"
-        case .google: "https://www.google.com/search"
-        case .bing: "https://www.bing.com/search"
-        case .startpage: "https://www.startpage.com/do/search"
+        let base: String
+        switch self {
+        case .duckDuckGo: base = "https://duckduckgo.com/"
+        case .google: base = "https://www.google.com/search"
+        case .bing: base = "https://www.bing.com/search"
+        case .startpage: base = "https://www.startpage.com/do/search"
+        case .kagi: base = "https://kagi.com/search"
+        case .custom:
+            // An address that doesn't work yet still searches, rather than leaving Return doing nothing.
+            return Self.url(fromTemplate: Self.customTemplate, query: query) ?? Self.duckDuckGo.url(for: query)
         }
         var components = URLComponents(string: base)!
         components.queryItems = [URLQueryItem(name: "q", value: query)]
         return components.url
     }
 
+    /// The custom engine's address, `%s` standing for the query, as in Firefox and Zen.
+    static var customTemplate: String {
+        UserDefaults.standard.string(forKey: SettingsKey.customSearchURL) ?? ""
+    }
+
+    /// Nil unless the template is a web address with `%s` in it.
+    static func url(fromTemplate template: String, query: String) -> URL? {
+        let template = template.trimmingCharacters(in: .whitespacesAndNewlines)
+        // The query never picks the site: in the host, Spotlight's text would open as an address.
+        guard template.contains("%s"),
+              let probe = URL(string: template.replacingOccurrences(of: "%s", with: "firquery")),
+              probe.host()?.lowercased().contains("firquery") == false
+        else { return nil }
+        // Encoded so the query stays one value: its own & or # would end it. ASCII only: .alphanumerics
+        // also passes Cyrillic and other letters through raw.
+        let unreserved = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
+        let encoded = query.addingPercentEncoding(withAllowedCharacters: unreserved)
+        guard let encoded, let url = URL(string: template.replacingOccurrences(of: "%s", with: encoded)),
+              let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http", url.host() != nil
+        else { return nil }
+        return url
+    }
+
     /// OpenSearch suggestions endpoint, answering `[query, [suggestion, ...]]`.
-    /// Startpage's endpoint returns no content, so it gets none.
+    /// Startpage's endpoint returns no content, and a custom engine names none.
     func suggestionsURL(for query: String) -> URL? {
         let (base, param, extra): (String, String, [URLQueryItem]) = switch self {
         case .duckDuckGo: ("https://duckduckgo.com/ac/", "q", [URLQueryItem(name: "type", value: "list")])
         case .google: ("https://suggestqueries.google.com/complete/search", "q", [URLQueryItem(name: "client", value: "firefox")])
         case .bing: ("https://api.bing.com/osjson.aspx", "query", [])
-        case .startpage: ("", "", [])
+        case .kagi: ("https://kagi.com/api/autosuggest", "q", [])
+        case .startpage, .custom: ("", "", [])
         }
         guard var components = URLComponents(string: base), !base.isEmpty else { return nil }
         components.queryItems = [URLQueryItem(name: param, value: query)] + extra
@@ -184,6 +218,7 @@ enum BarAction: String, CaseIterable, Identifiable {
 
 enum SettingsKey {
     static let searchEngine = "searchEngine"
+    static let customSearchURL = "customSearchURL"
     static let appearance = "appearance"
     static let accent = "accent"
     static let collapseOnScroll = "collapseOnScroll"
