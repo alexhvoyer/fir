@@ -6493,6 +6493,46 @@
         }
       }
     },
+    "Full-Width Pages" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiten in voller Breite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Páginas a todo el ancho"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pages pleine largeur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagine a tutta larghezza"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Páginas em Largura Total"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страницы на всю ширину"
+          }
+        }
+      }
+    },
     "General" : {
       "localizations" : {
         "de" : {
@@ -9929,6 +9969,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Масштаб страницы как в Safari"
+          }
+        }
+      }
+    },
+    "Pages also fill the camera column. Its buttons float over the page and hide as you scroll." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiten füllen auch die Kameraspalte. Ihre Tasten schweben über der Seite und verschwinden beim Scrollen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las páginas también ocupan la columna de la cámara. Sus botones flotan sobre la página y se ocultan al desplazarte."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pages occupent aussi la colonne de la caméra. Ses boutons flottent au-dessus de la page et se masquent pendant le défilement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pagine occupano anche la colonna della fotocamera. I suoi pulsanti restano sopra la pagina e si nascondono durante lo scorrimento."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As páginas também ocupam a coluna da câmera. Os botões dela flutuam sobre a página e somem ao rolar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страницы занимают и колонку камеры. Её кнопки висят поверх страницы и прячутся при прокрутке."
           }
         }
       }

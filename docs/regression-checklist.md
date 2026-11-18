@@ -236,12 +236,21 @@ Record each Duo screen on its own: `xcrun simctl io <udid> recordVideo --display
   out of that button and back into it.
 - `sim` **(was broken)** On the Duo outer screen the camera column takes the page's colour, dark and light, and the
   error page's; a blank tab keeps the start page's grey.
+- `sim` Settings > General > Full-Width Pages shows only on the Duo. On: pages and the start page run under the
+  camera column, and so do the deck's cards; + and Tabs (Settings and + on the deck) float over them, the bottom bars
+  stay clear of the column, and shrinking into the deck and back has no jump. Off: page and deck stop at the column.
+- `sim` **(was broken)** On the Duo, shrinking a light page (Wikipedia) into the deck shows the deck behind it, not
+  the page's colour over the whole screen until it lands.
+- `sim` Grid on the Duo's open screen: three wide, page-shaped cells per row, as in Safari; a page opens from its cell
+  and shrinks back into it without a jump.
 
 ## Accessibility and layout
 
 - `sim` Reduce Motion on: no zoom sheets, no screen recess behind search, and pages switch to the tab overview at once.
 - `sim` Light and dark appearance both look right on the page, both tab overviews, and the sheets.
 - `sim` Landscape: the bar moves to the top and the tab strip shows.
+- `sim` **(was broken)** Landscape with more tabs than fit: the strip's chips, favicons included, end at its capsule.
+- `sim` Landscape strip: one tab shows no strip; two to four tabs share its whole width, titles centred; more scroll.
 - `sim` Larger Dynamic Type sizes don't break the bar or the grid titles.
 - `sim` In Russian and German (launch argument `-AppleLanguages (ru)` or `(de)`), onboarding, the page menu and every
   settings page show no English, and long lines wrap instead of being cut. New interface text goes into the catalogs with

@@ -333,6 +333,7 @@ enum SettingsKey {
     static let hardenPrivateTabs = "hardenPrivateTabs"
     static let haptics = "haptics"
     static let keyboardAtLaunch = "keyboardAtLaunch"
+    static let fullWidthPages = "fullWidthPages"
     static let swipeAnywhere = "swipeAnywhere"
     static let newTabStyle = "newTabStyle"
     static let tabLayout = "tabLayout"

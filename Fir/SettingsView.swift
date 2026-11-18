@@ -95,6 +95,8 @@ private struct GeneralSettingsView: View {
     @AppStorage(SettingsKey.keyboardAtLaunch) private var keyboardAtLaunch = false
     @AppStorage(SettingsKey.swipeAnywhere) private var swipeAnywhere = false
     @AppStorage(SettingsKey.whatsNew) private var whatsNew = true
+    @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = false
+    @Environment(\.hasSideColumn) private var hasSideColumn
     @State private var isDefault: Bool?
 
     var body: some View {
@@ -114,6 +116,13 @@ private struct GeneralSettingsView: View {
                 Toggle("Collapse Toolbar on Scroll", isOn: $collapseOnScroll)
                 NavigationLink("Address Bar Buttons") { BarActionsView() }
                 Toggle("Haptics", isOn: $haptics)
+            }
+            if hasSideColumn {
+                Section {
+                    Toggle("Full-Width Pages", isOn: $fullWidthPages)
+                } footer: {
+                    Text("Pages also fill the camera column. Its buttons float over the page and hide as you scroll.")
+                }
             }
             Section {
                 Toggle("Swipe Anywhere to Navigate", isOn: $swipeAnywhere)

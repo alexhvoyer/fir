@@ -6,6 +6,7 @@ import UIKit.UIGestureRecognizerSubclass
 struct TabGrid: View {
     @Environment(BrowserModel.self) private var browser
     @Environment(\.isLandscape) private var landscape
+    @Environment(\.isWideScreen) private var wide
     let tabs: [BrowserTab]
     /// Off for a workspace sliding in beside the shown one: drawn, never touched or measured.
     let live: Bool
@@ -31,10 +32,13 @@ struct TabGrid: View {
 
     var body: some View {
         GeometryReader { geo in
-            let columns = max(2, Int((geo.size.width - 2 * Self.margin + Self.spacing) / (160 + Self.spacing)))
+            // Wide but not on its side: the Duo's open screen, where Safari shows three page-shaped cells.
+            // Screen shape, not grid area: bars made a near-square grid read wide.
+            let minWidth: CGFloat = wide && !landscape ? 260 : 160
+            let columns = max(2, Int((geo.size.width - 2 * Self.margin + Self.spacing) / (minWidth + Self.spacing)))
             let width = (geo.size.width - 2 * Self.margin - CGFloat(columns - 1) * Self.spacing) / CGFloat(columns)
-            // Upright, a cell keeps the top of the page; on its side the screen is wide, so the cell is too.
-            let height = width * (landscape ? 0.7 : 1.38)
+            // Upright, a cell keeps the top of the page; on a wide screen the cell is wide too.
+            let height = width * (wide ? 0.7 : 1.38)
             ScrollViewReader { proxy in
                 ScrollView {
                     // Not LazyVGrid: its cells kept a page's picture hidden after the page closed, though the

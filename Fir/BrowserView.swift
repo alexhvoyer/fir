@@ -65,6 +65,7 @@ struct BrowserView: View {
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = false
     @State private var onboardingRequested = false
     @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
+    @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = false
     @State private var showWhatsNew = WhatsNew.isDue
     /// Stays true until the sheet is fully gone: another one asked for while it leaves would be lost.
     @State private var whatsNewPending = WhatsNew.isDue
@@ -89,7 +90,8 @@ struct BrowserView: View {
     /// Where the page is drawn: beside a camera column it stops at the column, so transitions drawn to
     /// the screen's width jumped as they began and landed off their card.
     private var page: CGRect {
-        CGRect(x: screen.minX, y: screen.minY, width: screen.width - railWidth, height: screen.height)
+        CGRect(x: screen.minX, y: screen.minY, width: screen.width - (fullWidthPages ? 0 : railWidth),
+               height: screen.height)
     }
 
     /// A camera column down one side only, as on both of the iPhone Duo's screens: Apple lays bars out
@@ -182,6 +184,7 @@ struct BrowserView: View {
                 onSettings: { settings = .main },
                 onEditWorkspaces: { settings = .workspaces },
                 railWidth: railWidth,
+                underColumn: fullWidthPages && railWidth > 0,
                 sheetSource: sheetSource,
                 holdsPosition: opening
             )
@@ -189,7 +192,9 @@ struct BrowserView: View {
             // While a page grows or settles it takes no touches, and they fell through to the card under it.
             .allowsHitTesting(!pageShown || progress > 0)
             // The root ignores the safe area for the page; the deck's bars still need it.
-            .safeAreaPadding(safeInsets)
+            .safeAreaPadding(fullWidthPages && railWidth > 0
+                             ? EdgeInsets(top: safeInsets.top, leading: safeInsets.leading, bottom: safeInsets.bottom, trailing: 0)
+                             : safeInsets)
             // A dimming layer, not the deck's opacity: fading the deck re-rendered all its shadows and
             // glass off screen on every frame of the transition.
             .overlay {
@@ -237,6 +242,7 @@ struct BrowserView: View {
         // Beside a camera column the bars go in the column, so the Duo's wide inner screen keeps the
         // upright layout, as the HIG asks: the buttons stay put when the phone opens.
         .environment(\.isLandscape, screen.width > screen.height && !Self.sideRail(safeInsets))
+        .environment(\.isWideScreen, screen.width > screen.height)
         .environment(\.sheetsCentered, UIDevice.current.userInterfaceIdiom == .pad && widthClass == .regular)
         .onChange(of: screen.width > screen.height && !Self.sideRail(safeInsets), initial: true) { barOnTop = $1 }
         .onChange(of: Self.sideRail(safeInsets) ? safeInsets.trailing : 0, initial: true) { railWidth = $1 }
@@ -255,6 +261,7 @@ struct BrowserView: View {
         }) { sheet in
             SettingsView(onOpenPage: showPageAtOnce, onShowOnboarding: { onboardingRequested = true },
                          opensWorkspaces: sheet == .workspaces)
+                .environment(\.hasSideColumn, railWidth > 0)
                 .modifier(ZoomFromSource(id: "settings", namespace: sheetSource))
         }
         .sheet(isPresented: $showWhatsNew, onDismiss: { whatsNewPending = false }) {
@@ -703,6 +710,10 @@ extension EnvironmentValues {
     /// Sheets open as a centered form, an iPad's full-width window, not from the bottom: heights
     /// tuned for the bottom cut them short there. A big iPhone on its side is regular width too, so not that alone.
     @Entry var sheetsCentered = false
+    /// A camera column beside the page, as on the iPhone Duo.
+    @Entry var hasSideColumn = false
+    /// The screen is wider than tall, the Duo's open one included, which keeps the upright layout.
+    @Entry var isWideScreen = false
 }
 
 /// One tab in the landscape strip; the selected one carries its close button, as in Safari.
@@ -711,6 +722,10 @@ private struct TabChip: View {
     let selected: Bool
     let onSelect: () -> Void
     let onClose: () -> Void
+    /// Shares out the strip's width when every tab fits, title centred, as in Safari.
+    var stretch = false
+    /// One selection capsule for the strip, so it slides from chip to chip.
+    let selection: Namespace.ID
 
     var body: some View {
         HStack(spacing: 6) {
@@ -726,8 +741,12 @@ private struct TabChip: View {
         }
         .font(.footnote.weight(selected ? .semibold : .regular))
         .padding(.horizontal, 10)
-        .frame(width: 170, height: 28, alignment: .leading)
-        .background { if selected { Capsule().fill(.primary.opacity(0.12)) } }
+        .frame(minWidth: 170, idealWidth: 170, maxWidth: stretch ? .infinity : 170, minHeight: 28, maxHeight: 28,
+               alignment: stretch ? .center : .leading)
+        .background {
+            // Per layout: ViewThatFits builds both rows, and one id in both would have two sources.
+            if selected { Capsule().fill(.primary.opacity(0.12)).matchedGeometryEffect(id: stretch, in: selection) }
+        }
         .contentShape(.capsule)
         .onTapGesture(perform: onSelect)
     }
@@ -1136,6 +1155,7 @@ private struct PageView: View {
 
     @Environment(BrowserModel.self) private var browser
     @AppStorage(SettingsKey.collapseOnScroll) private var collapseOnScroll = true
+    @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = false
     @AppStorage(SettingsKey.barActions) private var barActions = BarAction.encode(BarAction.defaults)
     @AppStorage(SettingsKey.translateTarget) private var translateTarget = ""
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
@@ -1196,6 +1216,7 @@ private struct PageView: View {
     }
     @State private var readerUnavailable = false
     @State private var dragAxis: Axis?
+    @Namespace private var stripSelection
     /// A sideways drag that started off the address field: tab switching belongs to the field only.
     @State private var dragIgnored = false
     /// The address field's global frame, expanded or collapsed.
@@ -1224,13 +1245,19 @@ private struct PageView: View {
     var body: some View {
         let tab = browser.selected
         let insets = safeInsets
+        // Full-width pages run under the Duo's camera column; its buttons float over them.
+        let trailing = sideRail && fullWidthPages ? 0 : insets.trailing
         ZStack(alignment: .bottom) {
                 // Fills the side cutouts the page keeps clear of (the Duo's camera column, a notch side) with what
                 // is under them, as Safari: a fixed grey read as black bars beside dark pages.
                 if insets.leading > 0 || insets.trailing > 0 {
-                    if tab.loadFailure != nil { Color(.systemBackground) }
-                    else if tab.url != nil, let color = tab.pageBackground { Color(uiColor: color) }
-                    else { Color(.systemGroupedBackground) }
+                    Group {
+                        if tab.loadFailure != nil { Color(.systemBackground) }
+                        else if tab.url != nil, let color = tab.pageBackground { Color(uiColor: color) }
+                        else { Color(.systemGroupedBackground) }
+                    }
+                    // Fades with the bar: it spans the screen and hid the deck behind a shrinking page.
+                    .opacity(chromeOpacity)
                 }
                 // Shown in the gap between sliding pages during a swipe.
                 if swipeX != 0 { Color(.systemGray5) }
@@ -1242,13 +1269,13 @@ private struct PageView: View {
                     // Clear of side cutouts, as Safari lays out: the iPhone Duo's camera column and the
                     // notch side in landscape. Top and bottom stay obscured insets, under which content scrolls.
                     .padding(.leading, insets.leading)
-                    .padding(.trailing, insets.trailing)
+                    .padding(.trailing, trailing)
                     .opacity(liveHidden ? 0 : 1)
                     .animation(nil, value: liveHidden)
                 if tab.url == nil {
                     BlankTab(spaceID: tab.spaceID, tab: tab,
                              insets: EdgeInsets(top: pageInsets(insets).top, leading: insets.leading,
-                                                bottom: 0, trailing: insets.trailing),
+                                                bottom: 0, trailing: trailing),
                              isCovered: liveHidden)
                         // Each blank tab its own page, so one's scroll position isn't another's.
                         .id(tab.id)
@@ -2163,24 +2190,35 @@ private struct PageView: View {
 
     /// Landscape: the workspace's tabs side by side, the selected one scrolled into view.
     private var tabStrip: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal) {
-                HStack(spacing: 4) {
-                    ForEach(browser.tabs(in: browser.selected.spaceID)) { tab in
-                        TabChip(tab: tab, selected: tab.id == browser.selectedID,
-                                onSelect: { browser.select(tab) }, onClose: { browser.close(tab) })
-                            .id(tab.id)
+        let tabs = browser.tabs(in: browser.selected.spaceID)
+        // Tabs that fit share the strip; only more than that scroll.
+        return ViewThatFits(in: .horizontal) {
+            chips(tabs, stretch: true)
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) { chips(tabs, stretch: false) }
+                    .scrollIndicators(.hidden)
+                    .onChange(of: browser.selectedID, initial: true) {
+                        withAnimation(.snappy) { proxy.scrollTo(browser.selectedID, anchor: .center) }
                     }
-                }
-                .padding(4)
-            }
-            .scrollIndicators(.hidden)
-            .onChange(of: browser.selectedID, initial: true) {
-                withAnimation(.snappy) { proxy.scrollTo(browser.selectedID, anchor: .center) }
             }
         }
         .frame(height: Self.stripHeight)
+        // Without it, favicons scrolled past the capsule's ends stayed visible beside it.
+        .clipShape(.capsule)
         .glassEffect(.regular, in: .capsule)
+    }
+
+    private func chips(_ tabs: [BrowserTab], stretch: Bool) -> some View {
+        HStack(spacing: 4) {
+            ForEach(tabs) { tab in
+                TabChip(tab: tab, selected: tab.id == browser.selectedID,
+                        onSelect: { browser.select(tab) }, onClose: { browser.close(tab) }, stretch: stretch,
+                        selection: stripSelection)
+                    .id(tab.id)
+            }
+        }
+        .padding(4)
+        .animation(.snappy, value: browser.selectedID)
     }
 
     /// Back above forward in the camera column, one glass capsule as in the bar.

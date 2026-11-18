@@ -21,6 +21,8 @@ struct TabSwitcherView: View {
     var onEditWorkspaces: () -> Void = {}
     /// The camera column's width when the buttons go there instead of the bars; 0 for none.
     var railWidth: CGFloat = 0
+    /// Full-width pages: cards run under the column too, its buttons over them; the bottom bar stays clear.
+    var underColumn = false
     /// Settings zooms out of its button and back into it, as Safari's sheets do.
     let sheetSource: Namespace.ID
     /// A page is growing out of its card: the deck stays put, as in Safari, and centres on the
@@ -88,8 +90,7 @@ struct TabSwitcherView: View {
         }
         // A bar, not an inset: grid titles scrolling under it are blurred instead of read through the glass.
         .safeAreaBar(edge: .bottom) { bottomBar }
-        // In the camera column the deck is padded clear of, level with the bar. Not in the bar: outside its
-        // bounds the buttons took no taps.
+        // In the camera column, level with the bar. Not in the bar: outside its bounds the buttons took no taps.
         .overlay(alignment: .bottomTrailing) {
             if railWidth > 0 {
                 VStack(spacing: 10) {
@@ -97,7 +98,7 @@ struct TabSwitcherView: View {
                     newTabButton
                 }
                 .frame(width: 52)
-                .offset(x: railWidth / 2 + 26)
+                .offset(x: (underColumn ? -railWidth : railWidth) / 2 + 26)
             }
         }
         .background(.regularMaterial)
@@ -539,6 +540,7 @@ struct TabSwitcherView: View {
         }
         // Same size and place as the page's bar, so going to the deck reads as one bar changing.
         .padding(.horizontal, 16)
+        .padding(.trailing, underColumn ? railWidth : 0)
     }
 }
 
@@ -940,7 +942,7 @@ private struct SpacePager<Page: View>: View, Animatable {
 extension TabSwitcherView: Equatable {
     nonisolated static func == (a: Self, b: Self) -> Bool {
         a.hiddenTab == b.hiddenTab && a.coveredTabs == b.coveredTabs && a.holdsPosition == b.holdsPosition
-            && a.railWidth == b.railWidth
+            && a.railWidth == b.railWidth && a.underColumn == b.underColumn
     }
 }
 
