@@ -51,6 +51,8 @@ final class AccountService {
     private(set) var sendTargets: [Device] = []
     /// Tabs other devices sent here; the browser opens them and empties the list.
     var receivedTabs: [URL] = []
+    /// How the account lists this iPhone, as the server last said; nil until the device list arrives.
+    private(set) var deviceName: String?
 
     /// The last synced workspaces and devices, shown at launch while the first sync runs.
     init() {
@@ -79,7 +81,11 @@ final class AccountService {
         NotificationCenter.default.addObserver(forName: .constellationStateUpdate, object: nil, queue: .main) { [weak self] note in
             guard let state = note.userInfo?["newState"] as? ConstellationState else { return }
             let targets = state.remoteDevices.filter { $0.capabilities.contains(.sendTab) }
-            MainActor.assumeIsolated { self?.sendTargets = targets }
+            let name = state.localDevice?.displayName
+            MainActor.assumeIsolated {
+                self?.sendTargets = targets
+                if let name { self?.deviceName = name }
+            }
         }
         isSignedIn = manager.hasAccount()
         if case .failure(let error) = result { lastError = "\(error)" }
@@ -143,6 +149,7 @@ final class AccountService {
         zenWorkspaces = nil
         sendTargets = []
         receivedTabs = []
+        deviceName = nil
         lastError = nil
         spacesError = nil
         lastSynced = nil
@@ -206,6 +213,16 @@ final class AccountService {
         SyncCache.save(spaces: spacesRecords, clients: remoteClients)
         await fetchDeviceCommands(manager)
     }
+
+    /// Renames this iPhone on the account; Zen's Send Tab list and the synced tabs pick the name up from there.
+    func rename(_ name: String) {
+        let name = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.deviceNameLimit))
+        guard !name.isEmpty, name != deviceName, let constellation = manager?.deviceConstellation() else { return }
+        // deviceName waits for the server's device list: a rename that failed offline mustn't look saved.
+        constellation.setLocalDeviceName(name: name)
+    }
+
+    static let deviceNameLimit = 60
 
     /// Sends a page to another device's browser.
     func send(_ url: URL, title: String, to device: Device) async -> Bool {

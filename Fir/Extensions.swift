@@ -83,11 +83,27 @@ final class ExtensionManager: NSObject {
         } else {
             String(localized: "\"\(name)\" will be able to read and change \(hosts.formatted(.list(type: .and))).")
         }
-        if webExtension.requestedPermissions.contains(.tabs) {
-            message += " " + String(localized: "It will also see the addresses of your open tabs.")
+        let extras = Self.notablePermissions(webExtension.requestedPermissions)
+        if !extras.isEmpty {
+            message += "\n\n" + String(localized: "It will also be able to:") + "\n" + extras.joined(separator: "\n")
         }
         return await PageDialog.present(message, host: String(localized: "Install Add-on?"), cancel: String(localized: "Cancel"),
                                         confirm: String(localized: "Install")) != nil
+    }
+
+    /// What Firefox warns about at install, among what WebKit supports; storage, alarms and menus need no warning.
+    private static func notablePermissions(_ permissions: Set<WKWebExtension.Permission>) -> [String] {
+        var lines: [String] = []
+        if permissions.contains(.tabs) { lines.append(String(localized: "See the addresses of your open tabs")) }
+        if permissions.contains(.webNavigation) { lines.append(String(localized: "See the pages you open as they load")) }
+        if !permissions.isDisjoint(with: [.declarativeNetRequest, .declarativeNetRequestWithHostAccess]) {
+            lines.append(String(localized: "Block content on any page"))
+        }
+        if permissions.contains(.declarativeNetRequestFeedback) { lines.append(String(localized: "Read your browsing history")) }
+        if permissions.contains(.clipboardWrite) { lines.append(String(localized: "Put text on your clipboard")) }
+        if permissions.contains(.nativeMessaging) { lines.append(String(localized: "Exchange messages with other apps")) }
+        if permissions.contains(.unlimitedStorage) { lines.append(String(localized: "Store unlimited data on this device")) }
+        return lines
     }
 
     func setEnabled(_ enabled: Bool, for id: String) {

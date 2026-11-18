@@ -125,6 +125,8 @@ timing, sync.
 - `sim` Send a tab to a computer: it arrives there.
 - `sim` A new-tab search opens in the workspace it was started from, even after the keyboard hides.
 - `sim` Sign out: local passwords and history are wiped before sync disconnects.
+- `phone` Settings > Sync > Device Name: a new name shows in Zen's Send Tab to Device within a minute; an emptied
+  field comes back with the current name; offline, the old name returns on reopening Sync.
 
 ## Private and locks
 
@@ -184,6 +186,8 @@ timing, sync.
 - `sim` **(was broken)** An add-on's settings open in a sheet from Settings > Extensions > the add-on > Extension
   Settings, and from the page menu. A link out of that sheet opens in a tab.
 - `sim` Disabling and removing an add-on takes effect without restarting.
+- `sim` Installing Privacy Badger (`privacy-badger17`) lists "See the addresses of your open tabs" and "See the pages
+  you open as they load" under "It will also be able to:"; Cancel installs nothing.
 
 ## Onboarding and settings
 

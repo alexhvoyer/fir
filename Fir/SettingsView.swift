@@ -371,12 +371,24 @@ private struct SyncSettingsView: View {
     @AppStorage(SettingsKey.syncWorkspaces) private var syncWorkspaces = true
     @AppStorage(SettingsKey.syncPasswords) private var syncPasswords = true
     @State private var showSignIn = false
+    @State private var deviceName = ""
+    @FocusState private var editingName: Bool
 
     var body: some View {
         List {
             if account.isSignedIn {
                 Section {
                     LabeledContent("Account", value: account.email ?? "-")
+                    LabeledContent("Device Name") {
+                        TextField("Device Name", text: $deviceName, prompt: Text(account.deviceName ?? ""))
+                            .multilineTextAlignment(.trailing)
+                            .submitLabel(.done)
+                            .focused($editingName)
+                            .onSubmit { account.rename(deviceName) }
+                            .onChange(of: deviceName) { _, name in
+                                if name.count > AccountService.deviceNameLimit { deviceName = String(name.prefix(AccountService.deviceNameLimit)) }
+                            }
+                    }
                     LabeledContent("Status") {
                         if account.isSyncing {
                             ProgressView()
@@ -389,6 +401,8 @@ private struct SyncSettingsView: View {
                         }
                     }
                     LabeledContent("Devices", value: "\(account.remoteClients.count)")
+                } footer: {
+                    Text("How Zen and your other devices list this iPhone, as in Send Tab to Device.")
                 }
                 Section {
                     Toggle("Open Tabs", isOn: $syncTabs)
@@ -425,6 +439,16 @@ private struct SyncSettingsView: View {
             }
         }
         .navigationTitle("Sync")
+        // The field shows the account's name; leaving it, by Done or by going back, saves what was typed.
+        .onAppear { deviceName = account.deviceName ?? "" }
+        .onChange(of: account.deviceName) { if !editingName { deviceName = account.deviceName ?? "" } }
+        .onChange(of: editingName) {
+            guard !editingName else { return }
+            account.rename(deviceName)
+            // An emptied field shows the current name again; a typed one stays until the server confirms it.
+            if deviceName.trimmingCharacters(in: .whitespaces).isEmpty { deviceName = account.deviceName ?? "" }
+        }
+        .onDisappear { account.rename(deviceName) }
         .onChange(of: [syncTabs, syncHistory, syncWorkspaces, syncPasswords]) { Task { await account.sync() } }
         .sheet(isPresented: $showSignIn) { SignInView() }
     }

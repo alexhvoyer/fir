@@ -2527,6 +2527,46 @@
         }
       }
     },
+    "Block content on any page" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inhalte auf jeder Seite blockieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear contenido en cualquier página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquer du contenu sur n’importe quelle page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloccare contenuti su qualsiasi pagina"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear conteúdo em qualquer página"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировать содержимое на любой странице"
+          }
+        }
+      }
+    },
     "Bring your Zen browser along" : {
       "localizations" : {
         "de" : {
@@ -4693,6 +4733,46 @@
         }
       }
     },
+    "Device Name" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerätename"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre del dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom de l’appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome dispositivo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome do dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя устройства"
+          }
+        }
+      }
+    },
     "Devices" : {
       "localizations" : {
         "de" : {
@@ -5129,6 +5209,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Основное"
+          }
+        }
+      }
+    },
+    "Exchange messages with other apps" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachrichten mit anderen Apps austauschen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intercambiar mensajes con otras apps"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échanger des messages avec d’autres apps"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scambiare messaggi con altre app"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trocar mensagens com outros apps"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обмениваться сообщениями с другими приложениями"
           }
         }
       }
@@ -6933,6 +7053,46 @@
         }
       }
     },
+    "How Zen and your other devices list this iPhone, as in Send Tab to Device." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "So zeigen Zen und deine anderen Geräte dieses iPhone an, etwa unter „Tab an Gerät senden“."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Así ven Zen y tus otros dispositivos este iPhone, como en «Enviar pestaña a dispositivo»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le nom de cet iPhone dans Zen et vos autres appareils, comme dans « Envoyer l’onglet à un appareil »."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il nome di questo iPhone in Zen e sugli altri dispositivi, come in «Invia scheda a dispositivo»."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como o Zen e seus outros dispositivos mostram este iPhone, como em “Enviar aba para dispositivo”."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Так Zen и другие ваши устройства показывают этот iPhone, например в «Отправить вкладку на устройство»."
+          }
+        }
+      }
+    },
     "In iOS Settings, choose Fir under Apps > Default Apps > Browser App. Links from other apps then open here." : {
       "localizations" : {
         "de" : {
@@ -7333,42 +7493,42 @@
         }
       }
     },
-    "It will also see the addresses of your open tabs." : {
+    "It will also be able to:" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Außerdem sieht es die Adressen Ihrer offenen Tabs."
+            "value" : "Außerdem kann es:"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "También verá las direcciones de tus pestañas abiertas."
+            "value" : "Además podrá:"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il verra aussi les adresses de vos onglets ouverts."
+            "value" : "Il pourra aussi :"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vedrà anche gli indirizzi dei pannelli aperti."
+            "value" : "Potrà inoltre:"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ela também verá os endereços das suas abas abertas."
+            "value" : "Ele também poderá:"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Оно также будет видеть адреса открытых вкладок."
+            "value" : "Ещё оно сможет:"
           }
         }
       }
@@ -10573,6 +10733,46 @@
         }
       }
     },
+    "Put text on your clipboard" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text in die Zwischenablage legen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poner texto en el portapapeles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettre du texte dans le presse-papiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettere testo negli appunti"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colocar texto na área de transferência"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Помещать текст в буфер обмена"
+          }
+        }
+      }
+    },
     "Quick Search" : {
       "localizations" : {
         "de" : {
@@ -10609,6 +10809,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Быстрый поиск"
+          }
+        }
+      }
+    },
+    "Read your browsing history" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deinen Browserverlauf lesen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer tu historial de navegación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lire votre historique de navigation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leggere la cronologia di navigazione"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ler seu histórico de navegação"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читать историю посещений"
           }
         }
       }
@@ -11973,6 +12213,86 @@
         }
       }
     },
+    "See the addresses of your open tabs" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adressen deiner offenen Tabs sehen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver las direcciones de tus pestañas abiertas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir les adresses de vos onglets ouverts"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedere gli indirizzi dei pannelli aperti"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver os endereços das suas abas abertas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видеть адреса открытых вкладок"
+          }
+        }
+      }
+    },
+    "See the pages you open as they load" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiten sehen, die du öffnest, während sie laden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver las páginas que abres mientras cargan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir les pages que vous ouvrez pendant leur chargement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedere le pagine che apri mentre si caricano"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver as páginas que você abre enquanto carregam"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видеть открываемые страницы во время загрузки"
+          }
+        }
+      }
+    },
     "Send" : {
       "localizations" : {
         "de" : {
@@ -13329,6 +13649,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Статус"
+          }
+        }
+      }
+    },
+    "Store unlimited data on this device" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unbegrenzt Daten auf diesem Gerät speichern"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar datos ilimitados en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stocker des données illimitées sur cet appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archiviare dati illimitati su questo dispositivo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar dados ilimitados neste dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хранить неограниченный объём данных на устройстве"
           }
         }
       }
