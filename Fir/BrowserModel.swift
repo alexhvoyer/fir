@@ -795,6 +795,11 @@ final class BrowserModel {
     var searchRequested: SearchRequest?
     /// Set as the search sheet leaves; its question's sheet can only rise once that one has gone.
     var intelligenceRequest: IntelligenceSearchRequest?
+    /// Where the bar draws the page's host, so the search field closing onto the bar lands its text there.
+    /// Not observed: it moves with every swipe.
+    @ObservationIgnored var barHostFrame: CGRect?
+    /// The bar's address capsule, so the field lands on its edges: back and forward narrow it.
+    @ObservationIgnored var barCapsuleFrame: CGRect?
     /// Pages opened from link previews, live in sheets over the tab they came from, each over the last.
     var glances: [Glance] = []
     struct Glance: Identifiable {

@@ -907,6 +907,28 @@ struct TabCountGlyph: View {
     }
 }
 
+private extension View {
+    /// Bar controls the search field in the bar lacks: they fade in after it lands, not in its last frame.
+    func shownAfterSearch(_ searching: Bool) -> some View {
+        animation(.easeOut(duration: 0.25)) { $0.modifier(FrameFade(shown: searching ? 0 : 1)) }
+    }
+}
+
+/// Fades and grows in frame by frame: inside the bar's glass container a plain opacity animation drew only
+/// its last frame.
+private struct FrameFade: ViewModifier, Animatable {
+    var shown: CGFloat
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var animatableData: CGFloat {
+        get { shown }
+        set { shown = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content.opacity(shown).scaleEffect(reduceMotion ? 1 : 0.8 + 0.2 * shown)
+    }
+}
+
 /// A button beside the capsule as the bar collapses: gone by halfway, shrinking slightly where it is.
 private struct FadeInPlace: ViewModifier {
     let progress: CGFloat
@@ -1300,7 +1322,7 @@ private struct PageView: View {
             await tab.checkReaderable()
         }
         .task(id: tab.isReaderable ? tab.pageURL : nil) {
-            guard tab.isReaderable else { return }
+            guard tab.isReaderable, !inlineSearch else { return }
             let id = tab.id
             withAnimation(.smooth(duration: 0.4)) { readerAnnounced = id }
             try? await Task.sleep(for: .seconds(2.5))
@@ -1525,6 +1547,8 @@ private struct PageView: View {
                 intelligenceSearch = browser.intelligenceRequest
                 browser.intelligenceRequest = nil
             }
+            // The field closing onto the bar lands the host, so the bar must show the host, not the announcement.
+            .onChange(of: inlineSearch) { if inlineSearch { readerAnnounced = nil } }
             .onChange(of: sheetsDismissed) {
                 reader = nil
                 showPageSheet = false
@@ -1573,6 +1597,7 @@ private struct PageView: View {
                     if !sideRail {
                         historyButtons(tab, p: p, rel: currentRel, offset: offsets.current)
                             .opacity(max(0, 1 - a * 2))
+                            .shownAfterSearch(inlineSearch)
                             .instantOnChange(of: tab.id)
                         if neighbourOffset != nil, let neighbour = swipeNeighbour {
                             historyButtons(neighbour, p: p, rel: neighbourRel, offset: offsets.neighbour)
@@ -1842,6 +1867,10 @@ private struct PageView: View {
                 }
                 .frame(maxWidth: max(0, hostSlots[tab.id] ?? frame.full - 168))
                 .scaleEffect(1 - (1 - Self.pillScale) * p)
+                // Inside the offset, so the frame includes it.
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+                    if live, compacting == 0 { browser.barHostFrame = $0 }
+                }
                 .offset(x: ((hostOffsets[tab.id] ?? 0) + blankLead(tab)) * (1 - compacting))
                 .opacity(presence)
                 .allowsHitTesting(false)
@@ -1869,7 +1898,11 @@ private struct PageView: View {
         // Inside the glass: outside it, in the glass container, the zoom found no source.
         .modifier(SheetSource(id: "address", namespace: sheetSource, enabled: live))
         .glassEffect(.regular.interactive(), in: .capsule)
-        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { if live { addressFrame = $0 } }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+            guard live else { return }
+            addressFrame = $0
+            if compacting == 0 { browser.barCapsuleFrame = $0 }
+        }
         .offset(x: frame.x)
     }
 
@@ -1957,6 +1990,7 @@ private struct PageView: View {
             // Smart buttons, as in Lens: shown only while the page needs them.
             // On a swipe neighbour too: they move the address, which landed in the wrong place without them.
             smartButtons(tab)
+                .shownAfterSearch(inlineSearch)
             // Keyed on the address, not the loaded page: a tab still loading (restored, or just swiped
             // to) gets them at once, instead of later shifting the address when the page commits.
             if let url = tab.url {
@@ -1965,6 +1999,7 @@ private struct PageView: View {
                 ForEach(barHistory(tab) > 0 ? Array(actions.suffix(1)) : actions) { action in
                     barButton(action, tab: tab, url: url)
                 }
+                .shownAfterSearch(inlineSearch)
             } else if canPaste {
                 // Where the search field has it, so the button stays put as the field lands here.
                 PasteAndGo(engine: engine) { tab.load($0) }

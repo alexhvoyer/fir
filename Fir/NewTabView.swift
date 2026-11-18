@@ -45,6 +45,10 @@ struct NewTabView: View {
     /// An on-screen keyboard is on its way down, so its hiding ends the search, not the fallback timer.
     @State private var keyboardHiding = false
     @State private var keyboardUp = false
+    /// Where the bar's row starts on screen, past any side inset, for lining the field up with the page bar.
+    @State private var inlineBarX: CGFloat = 0
+    /// The page the search opened over, if any.
+    @State private var openedOn: URL?
     @State private var canPaste = false
 
     private var deckSpace: String? {
@@ -88,7 +92,10 @@ struct NewTabView: View {
     var body: some View {
         presented(content)
         .task {
-            if mode == .edit { query = browser.selected.url?.absoluteString ?? "" }
+            if mode == .edit {
+                query = browser.selected.url?.absoluteString ?? ""
+                openedOn = browser.selected.url
+            }
             // Its own task: closing this sheet cancels `.task`, which aborted the workspace fetch.
             Task { await account.sync() }
         }
@@ -105,8 +112,10 @@ struct NewTabView: View {
                     Color(.systemGroupedBackground).opacity(!showsStartPage || !coversStartPage ? 1 : 0).ignoresSafeArea()
                 }
                 .opacity(leaving ? 0 : 1)
-                .allowsHitTesting(!leaving)
                 .animation(.easeOut(duration: 0.25), value: leaving)
+                // Not allowsHitTesting: turning it off wraps the content in a new view, and that move, caught in the
+                // keyboard's animation, dropped the start page and slid it back.
+                .overlay { if leaving { Color.clear.contentShape(.rect).ignoresSafeArea(edges: .top) } }
                 .safeAreaInset(edge: .bottom) { inlineBar }
                 .onAppear {
                     // Under the app lock the keyboard would sit above it and type into the hidden field.
@@ -156,19 +165,16 @@ struct NewTabView: View {
             searchField
                 .padding(.trailing, 16)
                 .frame(height: 48)
+                .overlay { landingHost }
                 .glassEffect(.regular.interactive(), in: .capsule)
             Button(action: close) {
                 // Riding down, the cross turns into the tabs button it lands on, so the bar's swap shows nothing.
                 ZStack {
                     Image(systemName: "xmark")
                         .font(.body.weight(.medium))
-                        .animation(.smooth(duration: 0.3)) {
-                            $0.opacity(leaving ? 0 : 1).scaleEffect(leaving ? 0.5 : 1).blur(radius: leaving ? 4 : 0)
-                        }
+                        .modifier(Morph(shown: !leaving))
                     TabCountGlyph(count: browser.tabs(in: browser.selected.spaceID).count)
-                        .animation(.smooth(duration: 0.3)) {
-                            $0.opacity(leaving ? 1 : 0).scaleEffect(leaving ? 1 : 0.5).blur(radius: leaving ? 0 : 4)
-                        }
+                        .modifier(Morph(shown: leaving))
                 }
                 .frame(width: 48, height: 48)
             }
@@ -177,11 +183,51 @@ struct NewTabView: View {
             // Not interactive: its pressed glow lasted the ride down and vanished at the swap to the bar.
             .glassEffect(.regular, in: .circle)
         }
-        .padding(.horizontal, 16)
+        // On the way down the field's edge moves to the bar capsule's, beside back and forward.
+        .animation(.smooth(duration: 0.3)) { $0.padding(.leading, landingLead) }
+        .padding(.trailing, 16)
         .padding(.top, 8)
         // A gap above the keyboard, at the bottom exactly where the bar sits. Opens with the keyboard's show notice
         // (on focus it hopped first) and closes with the focus, as the field rides down.
         .padding(.bottom, keyboardUp && !leaving ? 8 : 0)
+        // Riding down, a tap on the field focused it again with its text already faded out.
+        .overlay { if leaving { Color.clear.contentShape(.rect) } }
+        .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minX } action: { inlineBarX = $0 }
+    }
+
+    /// Landing on a page's bar: on the way down the field's address turns into the bar's host and menu,
+    /// so the swap to the bar changes nothing.
+    private var landsOnPage: Bool {
+        leaving && editsPage
+    }
+
+    /// Opened over a page, not a blank tab: a blank tab given an address mid-ride has no host in the bar yet.
+    private var editsPage: Bool {
+        inline && openedOn != nil
+    }
+
+    private var landingLead: CGFloat {
+        guard landsOnPage, let capsule = browser.barCapsuleFrame else { return 16 }
+        return max(16, capsule.minX - inlineBarX)
+    }
+
+    /// The bar's host label, drawn where the bar has it.
+    @ViewBuilder private var landingHost: some View {
+        if editsPage, let host = browser.selected.url?.host(), let bar = browser.barHostFrame {
+            GeometryReader { field in
+                HStack(spacing: 6) {
+                    if isPrivate { PrivateMark() }
+                    Text(host).minimumScaleFactor(0.8)
+                    if isPrivate { PrivateMark().hidden() }
+                }
+                .lineLimit(1)
+                .frame(width: bar.width)
+                .position(x: bar.midX - field.frame(in: .global).minX, y: field.size.height / 2)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .modifier(Morph(shown: landsOnPage, scales: false))
+        }
     }
 
     /// In the bar, the keyboard carries the field back down first, as in Safari: removed at once, field and
@@ -377,46 +423,55 @@ struct NewTabView: View {
     private var searchField: some View {
         // In the bar, laid out as the page bar's capsule: its icon in 44 pt, the text right after.
         HStack(spacing: inline ? 0 : nil) {
-            Group {
-                if isPrivate {
-                    PrivateMark()
-                } else {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            ZStack {
+                Group {
+                    if isPrivate {
+                        PrivateMark()
+                    } else {
+                        Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    }
+                }
+                .modifier(Morph(shown: !landsOnPage))
+                if editsPage {
+                    Image(systemName: "line.3.horizontal").modifier(Morph(shown: landsOnPage))
                 }
             }
             .frame(width: inline ? 44 : nil)
-            TextField("Search or enter address", text: $query)
-                .focused($focused)
-                .overlay(alignment: .leading) {
-                    if let autofill, autofill.text.count >= query.count {
-                        (Text(query).foregroundStyle(.clear)
-                            + Text(autofill.text.dropFirst(query.count)).foregroundStyle(.tint)
-                            // The site's name after the address, as Safari shows it.
-                            + Text(autofill.title.map { " — \($0)" } ?? "").foregroundStyle(.secondary))
-                            .lineLimit(1)
-                            .allowsHitTesting(false)
+            Group {
+                TextField("Search or enter address", text: $query)
+                    .focused($focused)
+                    .overlay(alignment: .leading) {
+                        if let autofill, autofill.text.count >= query.count {
+                            (Text(query).foregroundStyle(.clear)
+                                + Text(autofill.text.dropFirst(query.count)).foregroundStyle(.tint)
+                                // The site's name after the address, as Safari shows it.
+                                + Text(autofill.title.map { " — \($0)" } ?? "").foregroundStyle(.secondary))
+                                .lineLimit(1)
+                                .allowsHitTesting(false)
+                        }
                     }
+                    .keyboardType(.webSearch)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.go)
+                    .onSubmit { open(autofill?.url ?? BrowserModel.url(from: query, engine: engine)) }
+                    // Like Safari, the current address starts selected, so typing replaces it. SwiftUI's
+                    // TextSelection didn't apply on first focus; the UIKit field's range does.
+                    .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) {
+                        guard mode == .edit, let field = $0.object as? UITextField else { return }
+                        Task { field.selectedTextRange = field.textRange(from: field.beginningOfDocument, to: field.endOfDocument) }
+                    }
+                    // Zero spacing in the bar would run the text into Clear or Paste.
+                    .padding(.trailing, inline ? 8 : 0)
+                if !query.isEmpty {
+                    Button("Clear", systemImage: "xmark.circle.fill") { query = "" }
+                        .labelStyle(.iconOnly)
+                        .foregroundStyle(.secondary)
+                } else if canPaste {
+                    PasteAndGo(engine: engine) { open($0) }
                 }
-                .keyboardType(.webSearch)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.go)
-                .onSubmit { open(autofill?.url ?? BrowserModel.url(from: query, engine: engine)) }
-                // Like Safari, the current address starts selected, so typing replaces it. SwiftUI's
-                // TextSelection didn't apply on first focus; the UIKit field's range does.
-                .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) {
-                    guard mode == .edit, let field = $0.object as? UITextField else { return }
-                    Task { field.selectedTextRange = field.textRange(from: field.beginningOfDocument, to: field.endOfDocument) }
-                }
-                // Zero spacing in the bar would run the text into Clear or Paste.
-                .padding(.trailing, inline ? 8 : 0)
-            if !query.isEmpty {
-                Button("Clear", systemImage: "xmark.circle.fill") { query = "" }
-                    .labelStyle(.iconOnly)
-                    .foregroundStyle(.secondary)
-            } else if canPaste {
-                PasteAndGo(engine: engine) { open($0) }
             }
+            .modifier(Morph(shown: !landsOnPage, scales: false))
         }
         // Not read in the body: two pasteboard calls on every render of the empty field.
         .onAppear { canPaste = PasteAndGo.clipboardHasText }
@@ -533,6 +588,22 @@ struct NewTabView: View {
         var device = String(clientName[range.upperBound...])
         if let mac = device.range(of: "MacBook") { device = String(device[mac.lowerBound...]) }
         return device.replacingOccurrences(of: "-", with: " ")
+    }
+}
+
+/// Swaps one look for another as the field rides down to the bar: the outgoing one blurs away, and an icon
+/// also shrinks.
+private struct Morph: ViewModifier {
+    let shown: Bool
+    var scales = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content.animation(.smooth(duration: 0.3)) {
+            $0.opacity(shown ? 1 : 0)
+                .scaleEffect(shown || !scales || reduceMotion ? 1 : 0.5)
+                .blur(radius: shown || reduceMotion ? 0 : 4)
+        }
     }
 }
 
