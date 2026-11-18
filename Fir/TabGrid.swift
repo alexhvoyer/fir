@@ -338,7 +338,7 @@ private struct SidewaysPan: UIGestureRecognizerRepresentable {
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
 
     func handleUIGestureRecognizerAction(_ pan: PressPan, context: Context) {
-        let translation = pan.translation(in: pan.view).x
+        let translation = pan.travel
         switch pan.state {
         case .changed: changed(translation)
         case .ended: ended(translation, pan.velocity(in: pan.view).x)
@@ -362,11 +362,20 @@ private final class PressPan: UIPanGestureRecognizer {
     var swipes = true
     var pressed: (Bool) -> Void = { _ in }
     private var down = false
+    private var start: CGPoint?
+
+    /// From where the finger came down, not translation: a pan recognized late, after a busy main
+    /// thread, counts only the moves after it, and a whole flick read as zero.
+    var travel: CGFloat {
+        guard let start else { return 0 }
+        return location(in: view).x - start.x
+    }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesBegan(touches, with: event)
         guard !down else { return }
         down = true
+        start = touches.first?.location(in: view)
         pressed(true)
     }
 
@@ -382,6 +391,7 @@ private final class PressPan: UIPanGestureRecognizer {
 
     override func reset() {
         super.reset()
+        start = nil
         lift()
     }
 

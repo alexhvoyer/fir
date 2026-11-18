@@ -146,14 +146,18 @@ final class SmokeTests: XCTestCase {
     /// with a dead close button.
     func testGridQuickClosesAndEarlyUndo() {
         launch(layout: "grid")
-        open("m")
+        // A closed cell's followers slide up, under a tap already aimed at them. So o goes first and stays
+        // selected, and the closes run from the last cell back.
+        open("o")
+        newTab("m")
         newTab("n")
-        newTab("o")
+        showTabs()
+        cell("Page o").tap()
         showTabs()
         let cells = app.descendants(matching: .any).matching(identifier: "gridCell")
         let before = cells.count
-        cell("Page m").buttons["Close Tab"].tap()
         cell("Page n").buttons["Close Tab"].tap()
+        cell("Page m").buttons["Close Tab"].tap()
         let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == %d", before - 2), object: cells)
         XCTAssertEqual(XCTWaiter().wait(for: [closed], timeout: 5), .completed, "two quick closes close two tabs")
 
