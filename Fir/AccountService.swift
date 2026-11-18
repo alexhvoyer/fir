@@ -5,10 +5,8 @@ import MozillaAppServices
 @MainActor
 @Observable
 final class AccountService {
-    // Firefox for iOS's public OAuth client: Mozilla does not hand out Sync access to third parties.
-    // Fine for a personal build, not for distribution.
-    static let clientID = "1b1a3e44c54fbb58"
-    static let redirectURI = "urn:ietf:wg:oauth:2.0:oob:oauth-redirect-webchannel"
+    static let clientID = MozillaAccount.clientID
+    static let redirectURI = MozillaAccount.redirectURI
     static let contentServer = URL(string: "https://accounts.firefox.com")!
 
     private(set) var manager: FxAccountManager?

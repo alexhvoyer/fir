@@ -20,6 +20,7 @@ Tabs in a Zen workspace sync to the real account. Close tabs in tests only in Pr
 | `TabSwitcherView`, `TabGrid` | Both tab overviews, Workspaces |
 | Sheets (`NewTabView`, `PageSheet`, settings) | Page and bar, Accessibility |
 | Navigation, `BrowserModel`, links | Page and bar, Links in and out, Private and locks, then `fir-security-reviewer` |
+| `FirShare`, `OpenInFir` | Links in and out, then `fir-security-reviewer` |
 | Sync, `ZenSpaces`, `AccountService` | Workspaces and sync |
 | `PasswordAutofill`, `PasswordStore` | Passwords |
 | `Extensions` | Add-ons |
@@ -145,6 +146,12 @@ timing, sync.
 - `sim` Long-press a link: the preview opens, and tapping it opens a glance.
 - `sim` Spotlight text and Shortcuts input are always searched, never opened as an address.
 - `sim` Home Screen quick actions: New Tab and New Private Tab.
+- `sim` Share sheet in Safari: Fir shows the page title and host. Open in Fir opens the link in a new tab in front.
+- `sim` Share sheet signed out: Send to Device asks to sign in to Fir. Signed in: the account's devices are listed.
+- `phone` Send to Device from the share sheet: the tab opens on the chosen device and the sheet closes with a tick.
+- `phone` A link shared as text from a messenger (Telegram) is found, and Open in Fir opens it.
+- `sim` **(security)** Fir's own share sheet on a private tab: Fir's row shows No Link, so the address stays private.
+- `sim` **(security)** A page linking to `firbrowser://open?url=...` does nothing: no dialog, no new tab.
 
 ## Passwords
 

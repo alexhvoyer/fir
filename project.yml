@@ -13,6 +13,10 @@ settings:
 packages:
   MozillaRustComponents:
     path: Packages/MozillaRustComponents
+  # Mozilla's components need it; listed so the app can embed it. Move with Packages/MozillaRustComponents.
+  Glean:
+    url: https://github.com/mozilla/glean-swift
+    exactVersion: 70.3.0
 targets:
   Fir:
     type: application
@@ -23,9 +27,11 @@ targets:
       - Fir
       - Shared
     dependencies:
-      - package: MozillaRustComponents
-        product: MozillaRustComponents
+      - target: FirMozilla
+      - package: Glean
+        product: Glean
       - target: FirWidget
+      - target: FirShare
     entitlements:
       path: Fir/Fir.entitlements
       properties:
@@ -148,3 +154,61 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
+  # Fir in the system share sheet: Open in Fir, and Send to Device with the app's Mozilla sign-in.
+  FirShare:
+    type: app-extension
+    platform: iOS
+    scheme: {}
+    sources:
+      - FirShare
+      - Shared/MozillaAccount.swift
+      - Shared/OpenInFir.swift
+    dependencies:
+      # The app embeds the frameworks; an extension carrying its own copies is rejected on upload.
+      - target: FirMozilla
+        embed: false
+    entitlements:
+      path: FirShare/FirShare.entitlements
+      properties:
+        # The app's own group: its Mozilla sign-in is stored there, so nothing has to move.
+        keychain-access-groups: [$(AppIdentifierPrefix)dev.khvoynitsky.browser]
+    info:
+      path: FirShare/Info.plist
+      properties:
+        CFBundleDisplayName: Fir
+        FirKeychainGroup: $(AppIdentifierPrefix)dev.khvoynitsky.browser
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              # Messengers often share a link as text.
+              NSExtensionActivationSupportsText: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser.Share
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+  # Mozilla's components as one dynamic framework, shared by the app and its share extension.
+  FirMozilla:
+    type: framework
+    platform: iOS
+    sources:
+      - FirMozilla
+    dependencies:
+      - package: MozillaRustComponents
+        product: MozillaRustComponents
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser.Mozilla
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        # Linked by the share extension.
+        APPLICATION_EXTENSION_API_ONLY: YES

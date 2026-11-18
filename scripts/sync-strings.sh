@@ -5,7 +5,7 @@ set -eu
 cd "$(dirname "$0")/.."
 
 builds="${1:-build/uitests}/Build/Intermediates.noindex/Fir.build"
-for target in Fir FirWidget; do
+for target in Fir FirWidget FirShare; do
     data="$(find "$builds" -path "*/$target.build/Objects-normal/*" -name '*.stringsdata' 2>/dev/null)"
     if [ -z "$data" ]; then
         echo "No build of $target under $builds: build for a simulator first." >&2

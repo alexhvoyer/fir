@@ -639,10 +639,7 @@ struct NewTabView: View {
 
     /// "alexh's Zen on Alexanders-MacBook-Pro" -> "MacBook Pro"; "alexh's Zen on PC" -> "PC".
     static func shortName(_ clientName: String) -> String {
-        guard let range = clientName.range(of: " on ", options: .backwards) else { return clientName }
-        var device = String(clientName[range.upperBound...])
-        if let mac = device.range(of: "MacBook") { device = String(device[mac.lowerBound...]) }
-        return device.replacingOccurrences(of: "-", with: " ")
+        MozillaAccount.shortDeviceName(clientName)
     }
 }
 

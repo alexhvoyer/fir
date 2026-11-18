@@ -45,7 +45,8 @@ enum PageShare {
     /// another site: the icon could take the shown page's look and the loading address.
     static func present(_ url: URL, of tab: BrowserTab) {
         let page = !tab.isPrivate && BrowserTab.sameOrigin(tab.webView.url, tab.pageURL)
-        let items: [Any] = page ? [url, tab.webView] : [url]
+        let link = SharedLink(url: url, isPrivate: tab.isPrivate)
+        let items: [Any] = page ? [link, tab.webView] : [link]
         PageDialog.topViewController()?.present(UIActivityViewController(activityItems: items, applicationActivities: nil),
                                                 animated: true)
     }
@@ -55,6 +56,25 @@ enum PageShare {
         if let sheet = PageDialog.topViewController() as? UIActivityViewController {
             sheet.dismiss(animated: false)
         }
+    }
+}
+
+/// A tab's address for the share sheet. Fir's own extension gets none from a private tab: it would carry the
+/// link into a regular tab or to another device. iOS lists that extension here regardless of exclusions.
+private final class SharedLink: NSObject, UIActivityItemSource {
+    let url: URL
+    let isPrivate: Bool
+
+    init(url: URL, isPrivate: Bool) {
+        self.url = url
+        self.isPrivate = isPrivate
+    }
+
+    func activityViewControllerPlaceholderItem(_ controller: UIActivityViewController) -> Any { url }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                itemForActivityType type: UIActivity.ActivityType?) -> Any? {
+        return isPrivate && type?.rawValue == "dev.khvoynitsky.browser.Share" ? nil : url
     }
 }
 

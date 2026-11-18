@@ -109,6 +109,9 @@ struct FirApp: App {
                 .onOpenURL { url in
                     switch url.scheme?.lowercased() {
                     case "firbrowser" where url.host() == "search": browser.searchRequested = .tab
+                    // From the share extension's Open in Fir; web pages only, never file or script addresses.
+                    case "firbrowser" where url.host() == "open":
+                        if let link = OpenInFir.target(of: url) { browser.openLink(link) }
                     case "http", "https":
                         DefaultBrowser.linkArrived()
                         browser.openLink(url)

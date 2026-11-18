@@ -689,6 +689,8 @@ extension BrowserTab: WKNavigationDelegate {
         }
         // An add-on's pages open in its own sheet, never a tab, and no other app opens them.
         if scheme == "webkit-extension" { return (.cancel, preferences) }
+        // Fir's own scheme is for its widget and share extension; a page could bounce a private tab's link through it.
+        if scheme == "firbrowser" { return (.cancel, preferences) }
         // Like Safari: only the page itself may hand off, after asking; a tapped call or draft link
         // skips the question, since iOS confirms calls and drafts need a tap to send.
         // No target frame is a new window, decided for the frame that opened it.
