@@ -15,7 +15,7 @@ enum SearchEngine: String, CaseIterable, Identifiable {
         case .bing: "Bing"
         case .startpage: "Startpage"
         case .kagi: "Kagi"
-        case .custom: String(localized: "Custom")
+        case .custom: Self.customSite?.title ?? String(localized: "Custom")
         }
     }
 
@@ -29,16 +29,17 @@ enum SearchEngine: String, CaseIterable, Identifiable {
         case .kagi: base = "https://kagi.com/search"
         case .custom:
             // An address that doesn't work yet still searches, rather than leaving Return doing nothing.
-            return Self.url(fromTemplate: Self.customTemplate, query: query) ?? Self.duckDuckGo.url(for: query)
+            return Self.url(fromTemplate: Self.customSite?.template ?? "", query: query) ?? Self.duckDuckGo.url(for: query)
         }
         var components = URLComponents(string: base)!
         components.queryItems = [URLQueryItem(name: "q", value: query)]
         return components.url
     }
 
-    /// The custom engine's address, `%s` standing for the query, as in Firefox and Zen.
-    static var customTemplate: String {
-        UserDefaults.standard.string(forKey: SettingsKey.customSearchURL) ?? ""
+    /// The engine from the list chosen as the default, when it isn't one of the cases above.
+    static var customSite: SearchSite? {
+        let id = UserDefaults.standard.string(forKey: SettingsKey.customSearchID) ?? SearchSites.legacyID
+        return SearchSites.saved.site(id)
     }
 
     /// Nil unless the template is a web address with `%s` in it.
@@ -87,6 +88,103 @@ enum SearchEngine: String, CaseIterable, Identifiable {
         else { return [] }
         return list
     }
+}
+
+/// An engine in Settings > Search, built in or added, with the keyword that picks it in the address bar.
+struct SearchSite: Codable, Identifiable, Hashable {
+    /// A built-in engine's own id, such as a `SearchEngine` raw value, or a UUID for one the user added.
+    var id: String
+    var name: String
+    /// The search address, `%s` standing for the query, as in Firefox and Zen.
+    var template: String
+    var keyword: String
+    var quickSearch: Bool
+
+    var isBuiltIn: Bool { SearchSites.builtIn.contains { $0.id == id } }
+    var isValid: Bool { SearchEngine.url(fromTemplate: template, query: "fir") != nil }
+    var title: String { name.isEmpty ? String(localized: "Untitled") : name }
+    var host: String? { URL(string: template.replacingOccurrences(of: "%s", with: "fir"))?.host() }
+    /// What the bar compares against; a stray space typed with the keyword shouldn't turn it off.
+    var trigger: String? {
+        let word = keyword.trimmingCharacters(in: .whitespaces).lowercased()
+        return quickSearch && !word.isEmpty ? word : nil
+    }
+}
+
+/// Every engine in Settings > Search, kept as JSON in the settings.
+struct SearchSites: RawRepresentable, Equatable {
+    var list: [SearchSite]
+
+    init(list: [SearchSite]) { self.list = list }
+
+    /// Built-in engines take name and address from the code, so fixes and the system language reach saved
+    /// lists; ones added in a later version join.
+    init?(rawValue: String) {
+        guard let saved = try? JSONDecoder().decode([SearchSite].self, from: Data(rawValue.utf8)) else { return nil }
+        list = saved.map { site in
+            guard let current = Self.builtIn.first(where: { $0.id == site.id }) else { return site }
+            return SearchSite(id: site.id, name: current.name, template: current.template, keyword: site.keyword,
+                              quickSearch: site.quickSearch)
+        } + Self.builtIn.filter { site in !saved.contains { $0.id == site.id } }
+    }
+
+    var rawValue: String {
+        (try? String(data: JSONEncoder().encode(list), encoding: .utf8)) ?? "[]"
+    }
+
+    func site(_ id: String) -> SearchSite? { list.first { $0.id == id } }
+
+    /// "wiki fir" searches "fir" with the engine whose keyword is "wiki".
+    func quickSearch(_ input: String) -> (site: SearchSite, query: String)? {
+        guard let (site, rest) = keyword(in: input) else { return nil }
+        let query = rest.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty ? nil : (site, query)
+    }
+
+    /// The engine whose keyword starts the text and is followed by a space, and the text after that space.
+    func keyword(in input: String) -> (site: SearchSite, rest: String)? {
+        let text = input.drop { $0.isWhitespace }
+        guard let space = text.firstIndex(where: \.isWhitespace),
+              let site = list.first(where: { $0.trigger == text[..<space].lowercased() && $0.isValid })
+        else { return nil }
+        return (site, String(text[space...].drop { $0.isWhitespace }))
+    }
+
+    static var saved: SearchSites {
+        UserDefaults.standard.string(forKey: SettingsKey.searchSites).flatMap(SearchSites.init(rawValue:)) ?? initial
+    }
+
+    /// The id the single custom address had before the list.
+    static let legacyID = "custom"
+
+    /// The built-in list, plus the custom address saved before the list existed.
+    static var initial: SearchSites {
+        let legacy = UserDefaults.standard.string(forKey: SettingsKey.customSearchURL) ?? ""
+        guard !legacy.isEmpty else { return SearchSites(list: builtIn) }
+        let custom = SearchSite(id: legacyID, name: String(localized: "Custom"), template: legacy, keyword: "", quickSearch: false)
+        return SearchSites(list: builtIn + [custom])
+    }
+
+    /// The usual browser searches have keywords on; YouTube is mostly searched in its app, so it starts off.
+    static let builtIn: [SearchSite] = {
+        let language = Locale.current.language.languageCode?.identifier ?? "en"
+        return [
+            SearchSite(id: SearchEngine.duckDuckGo.rawValue, name: "DuckDuckGo", template: "https://duckduckgo.com/?q=%s",
+                       keyword: "d", quickSearch: true),
+            SearchSite(id: SearchEngine.google.rawValue, name: "Google", template: "https://www.google.com/search?q=%s",
+                       keyword: "g", quickSearch: true),
+            SearchSite(id: SearchEngine.bing.rawValue, name: "Bing", template: "https://www.bing.com/search?q=%s",
+                       keyword: "b", quickSearch: true),
+            SearchSite(id: SearchEngine.startpage.rawValue, name: "Startpage",
+                       template: "https://www.startpage.com/do/search?q=%s", keyword: "sp", quickSearch: false),
+            SearchSite(id: SearchEngine.kagi.rawValue, name: "Kagi", template: "https://kagi.com/search?q=%s",
+                       keyword: "k", quickSearch: false),
+            SearchSite(id: "wikipedia", name: "Wikipedia", template: "https://\(language).wikipedia.org/w/index.php?search=%s",
+                       keyword: "wiki", quickSearch: true),
+            SearchSite(id: "youtube", name: "YouTube", template: "https://www.youtube.com/results?search_query=%s",
+                       keyword: "yt", quickSearch: false),
+        ]
+    }()
 }
 
 enum Appearance: String, CaseIterable, Identifiable {
@@ -218,7 +316,10 @@ enum BarAction: String, CaseIterable, Identifiable {
 
 enum SettingsKey {
     static let searchEngine = "searchEngine"
+    /// The single custom address before the engine list; read once to move it into the list.
     static let customSearchURL = "customSearchURL"
+    static let customSearchID = "customSearchID"
+    static let searchSites = "searchSites"
     static let appearance = "appearance"
     static let accent = "accent"
     static let collapseOnScroll = "collapseOnScroll"

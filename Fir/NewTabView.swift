@@ -25,12 +25,18 @@ struct NewTabView: View {
     @Environment(BrowserModel.self) private var browser
     @Environment(AccountService.self) private var account
     @Environment(\.sheetsCentered) private var centered
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
+    @AppStorage(SettingsKey.searchSites) private var sites = SearchSites.initial
     @AppStorage(SettingsKey.searchSuggestions) private var suggestionsEnabled = true
     @AppStorage(SettingsKey.historySuggestions) private var historyEnabled = true
     @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearchEnabled = true
     @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     @State private var query = ""
+    /// The engine a typed keyword picked; the keyword leaves the text, as Chrome's search chip does.
+    @State private var chip: SearchSite?
+    /// Set when the chip is removed, so "b 52" can be searched as typed until the field is cleared.
+    @State private var keywordsOff = false
     @State private var suggestions: [String] = []
     @State private var historyMatches: [HistoryStore.Entry] = []
     /// The rest of a visited site's address the query starts, shown after the typed text; Go opens it.
@@ -100,6 +106,12 @@ struct NewTabView: View {
             Task { await account.sync() }
         }
         .task(id: query) { await loadSuggestions() }
+        .onChange(of: query) { _, text in
+            if text.isEmpty { keywordsOff = false }
+            guard chip == nil, !keywordsOff, let (site, rest) = sites.keyword(in: text) else { return }
+            chip = site
+            query = rest
+        }
         .sheet(isPresented: $showSignIn) { SignInView() }
     }
 
@@ -282,8 +294,17 @@ struct NewTabView: View {
 
     private var results: some View {
         List {
+            // A keyword search on top, picked out as Go's target, in place of the completed address.
+            if let quick = quickSearch {
+                Button { open(target) } label: {
+                    ResultRow(symbol: "magnifyingglass", title: quick.query, detail: String(localized: "Search \(quick.site.title)"))
+                }
+                .foregroundStyle(.primary)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.primary.opacity(0.08).clipShape(.rect(cornerRadius: 18, style: .continuous)))
+            }
             // The completed address on top, picked out as Go's target, as Safari's Top Hit.
-            if let autofill, !showsStartPage {
+            if let autofill, !showsStartPage, chip == nil {
                 Button { open(autofill.url) } label: {
                     HStack(spacing: 12) {
                         SiteIcon(host: autofill.url.host(), size: 30)
@@ -306,7 +327,7 @@ struct NewTabView: View {
                 .foregroundStyle(.primary)
                 .listRowBackground(Color.clear)
             }
-            if !suggestions.isEmpty {
+            if !suggestions.isEmpty, chip == nil {
                 Section {
                     header("\(engine.name) Suggestions")
                     ForEach(suggestions, id: \.self) { text in
@@ -367,7 +388,8 @@ struct NewTabView: View {
     /// suggestions vanished until the network answered and everything below jumped up and back.
     private func loadSuggestions() async {
         let text = query.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty, text != browser.selected.url?.absoluteString else {
+        // A keyword search goes to its own engine: the default engine's suggestions and history don't apply.
+        guard !text.isEmpty, text != browser.selected.url?.absoluteString, chip == nil else {
             (suggestions, historyMatches, autofill) = ([], [], nil)
             return
         }
@@ -391,6 +413,21 @@ struct NewTabView: View {
         guard !Task.isCancelled else { return }
         // Four, as in Safari: six pushed the tab and history matches under the keyboard.
         suggestions = Array(result.prefix(4))
+    }
+
+    /// "wiki fir": the engine with that keyword, and what to search with it.
+    private var quickSearch: (site: SearchSite, query: String)? {
+        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let chip, !text.isEmpty else { return nil }
+        return (chip, text)
+    }
+
+    /// Where Go leads: the chip's engine, else the completed address, else what was typed.
+    private var target: URL? {
+        if chip != nil {
+            return quickSearch.flatMap { SearchEngine.url(fromTemplate: $0.site.template, query: $0.query) }
+        }
+        return autofill?.url ?? BrowserModel.url(from: query, engine: engine, keywords: !keywordsOff)
     }
 
     /// Until something is typed, as in Safari: the field is empty, or still holds the page's address.
@@ -423,25 +460,41 @@ struct NewTabView: View {
     private var searchField: some View {
         // In the bar, laid out as the page bar's capsule: its icon in 44 pt, the text right after.
         HStack(spacing: inline ? 0 : nil) {
-            ZStack {
-                Group {
-                    if isPrivate {
-                        PrivateMark()
-                    } else {
-                        Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            // The chip takes the magnifier's place; the page bar's icon still lands in the 44 pt slot.
+            ZStack(alignment: .leading) {
+                if let chip {
+                    HStack(spacing: 6) {
+                        if isPrivate { PrivateMark() }
+                        SearchChip(site: chip, fetchIcon: !isPrivate) {
+                            // The keyword goes back as text, as in Chrome.
+                            (query, self.chip, keywordsOff) = ("\(chip.keyword.trimmingCharacters(in: .whitespaces)) \(query)", nil, true)
+                        }
                     }
+                    .padding(.leading, inline ? 8 : 0)
+                    .padding(.trailing, inline ? 6 : 0)
+                    .modifier(Morph(shown: !landsOnPage, scales: false))
+                    .transition(reduceMotion ? .opacity : .modifier(active: Pop(on: false), identity: Pop(on: true)))
+                } else {
+                    Group {
+                        if isPrivate {
+                            PrivateMark()
+                        } else {
+                            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(width: inline ? 44 : nil)
+                    .modifier(Morph(shown: !landsOnPage))
+                    .transition(reduceMotion ? .opacity : .modifier(active: Pop(on: false), identity: Pop(on: true)))
                 }
-                .modifier(Morph(shown: !landsOnPage))
                 if editsPage {
-                    Image(systemName: "line.3.horizontal").modifier(Morph(shown: landsOnPage))
+                    Image(systemName: "line.3.horizontal").frame(width: 44).modifier(Morph(shown: landsOnPage))
                 }
             }
-            .frame(width: inline ? 44 : nil)
             Group {
-                TextField("Search or enter address", text: $query)
+                TextField("Search or enter address", text: $query, prompt: chip.map { Text("Search \($0.title)") })
                     .focused($focused)
                     .overlay(alignment: .leading) {
-                        if let autofill, autofill.text.count >= query.count {
+                        if let autofill, autofill.text.count >= query.count, chip == nil {
                             (Text(query).foregroundStyle(.clear)
                                 + Text(autofill.text.dropFirst(query.count)).foregroundStyle(.tint)
                                 // The site's name after the address, as Safari shows it.
@@ -454,7 +507,7 @@ struct NewTabView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .submitLabel(.go)
-                    .onSubmit { open(autofill?.url ?? BrowserModel.url(from: query, engine: engine)) }
+                    .onSubmit { open(target) }
                     // Like Safari, the current address starts selected, so typing replaces it. SwiftUI's
                     // TextSelection didn't apply on first focus; the UIKit field's range does.
                     .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) {
@@ -464,15 +517,17 @@ struct NewTabView: View {
                     // Zero spacing in the bar would run the text into Clear or Paste.
                     .padding(.trailing, inline ? 8 : 0)
                 if !query.isEmpty {
-                    Button("Clear", systemImage: "xmark.circle.fill") { query = "" }
+                    Button("Clear", systemImage: "xmark.circle.fill") { (query, chip) = ("", nil) }
                         .labelStyle(.iconOnly)
                         .foregroundStyle(.secondary)
-                } else if canPaste {
+                } else if canPaste, chip == nil {
                     PasteAndGo(engine: engine) { open($0) }
                 }
             }
             .modifier(Morph(shown: !landsOnPage, scales: false))
         }
+        // The chip grows in from the left as the magnifier fades, and the text slides over to make room.
+        .animation(.snappy(duration: 0.3), value: chip?.id)
         // Not read in the body: two pasteboard calls on every render of the empty field.
         .onAppear { canPaste = PasteAndGo.clipboardHasText }
         .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
@@ -560,8 +615,8 @@ struct NewTabView: View {
 
     /// A question, not an address, on an iPhone whose model is ready.
     private var offersIntelligenceSearch: Bool {
-        intelligenceSearchEnabled && !showsStartPage && IntelligenceSearch.isAvailable
-            && BrowserModel.url(from: query, engine: engine) == engine.url(for: query.trimmingCharacters(in: .whitespacesAndNewlines))
+        intelligenceSearchEnabled && !showsStartPage && IntelligenceSearch.isAvailable && chip == nil
+            && BrowserModel.url(from: query, engine: engine, keywords: !keywordsOff) == engine.url(for: query.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     /// The search opens in a tab as any other does; the answer is read from its results.
@@ -662,6 +717,41 @@ private final class HeldFieldDelegate: NSObject, UITextFieldDelegate {
 
     func textFieldShouldEndEditing(_ field: UITextField) -> Bool {
         return !holds() && original?.textFieldShouldEndEditing?(field) != false
+    }
+}
+
+/// The chip's and the magnifier's way in and out: Morph's blur and scale, from the field's leading edge.
+private struct Pop: ViewModifier {
+    let on: Bool
+
+    func body(content: Content) -> some View {
+        content.opacity(on ? 1 : 0)
+            .scaleEffect(on ? 1 : 0.6, anchor: .leading)
+            .blur(radius: on ? 0 : 4)
+    }
+}
+
+/// The engine a keyword picked, in the field; a tap turns it back into text.
+private struct SearchChip: View {
+    let site: SearchSite
+    let fetchIcon: Bool
+    let remove: () -> Void
+
+    var body: some View {
+        Button(action: remove) {
+            HStack(spacing: 4) {
+                SiteIcon(host: site.host, size: 16, fetch: fetchIcon)
+                // A long name of an added engine mustn't crowd out the query.
+                Text(site.title).lineLimit(1).frame(maxWidth: 120)
+                Image(systemName: "xmark").imageScale(.small).foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
+        .fixedSize()
+        .accessibilityLabel(Text("Search \(site.title)"))
+        .accessibilityHint(Text("Searches with the default engine instead"))
     }
 }
 

@@ -1468,9 +1468,13 @@ final class BrowserModel {
     func goForward() { selected.webView.goForward() }
 
     /// Input with a scheme, or a dot and no spaces, is an address; anything else is a search query.
-    static func url(from input: String, engine: SearchEngine) -> URL? {
+    static func url(from input: String, engine: SearchEngine, keywords: Bool = true) -> URL? {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
+        // A keyword first, as in Firefox: "g example.com" searches for it rather than opening it.
+        if keywords, let quick = SearchSites.saved.quickSearch(text), let url = SearchEngine.url(fromTemplate: quick.site.template, query: quick.query) {
+            return url
+        }
         if !text.contains(" ") {
             if text.contains("://") {
                 if let url = URL(string: text), url.host() != nil { return url }

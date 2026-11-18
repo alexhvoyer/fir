@@ -144,38 +144,39 @@ private struct GeneralSettingsView: View {
 
 private struct SearchSettingsView: View {
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
-    @AppStorage(SettingsKey.customSearchURL) private var customSearchURL = ""
+    @AppStorage(SettingsKey.customSearchID) private var customID = SearchSites.legacyID
+    @AppStorage(SettingsKey.searchSites) private var sites = SearchSites.initial
     @AppStorage(SettingsKey.searchSuggestions) private var searchSuggestions = true
     @AppStorage(SettingsKey.historySuggestions) private var historySuggestions = true
     @AppStorage(SettingsKey.intelligenceSearch) private var intelligenceSearch = true
+    @State private var editing: String?
 
     var body: some View {
         List {
-            Section("Search Engine") {
-                Picker("Search Engine", selection: $engine) {
-                    ForEach(SearchEngine.allCases) { Text($0.name).tag($0) }
+            Section {
+                Picker("Search Engine", selection: defaultID) {
+                    ForEach(sites.list.filter { $0.isValid || $0.id == defaultID.wrappedValue }) { Text($0.title).tag($0.id) }
                 }
-                .pickerStyle(.inline)
-                .labelsHidden()
+                .pickerStyle(.navigationLink)
             }
-            if engine == .custom {
-                Section {
-                    TextField(text: $customSearchURL, prompt: Text(verbatim: "https://example.org/search?q=%s")) {
-                        Text("Search Address")
-                    }
-                    .keyboardType(.URL)
-                    .textContentType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                } footer: {
-                    // Interpolated: a bare %s in the text would be read as a format specifier.
-                    let mark = "%s"
-                    if SearchEngine.url(fromTemplate: customSearchURL, query: "fir") != nil {
-                        Text("Type \(mark) where the search goes.")
-                    } else {
-                        Text("Needs a web address with \(mark) where the search goes. Until then, Fir searches with DuckDuckGo.")
+            Section {
+                ForEach(sites.list) { site in
+                    NavigationLink {
+                        SearchSiteEditor(sites: $sites, id: site.id, onDelete: deleted)
+                    } label: {
+                        LabeledContent(site.title, value: site.trigger ?? String(localized: "Off"))
                     }
                 }
+                Button("Add Search Engine", systemImage: "plus") {
+                    let site = SearchSite(id: UUID().uuidString, name: "", template: "", keyword: "", quickSearch: true)
+                    sites.list.append(site)
+                    editing = site.id
+                }
+            } header: {
+                Text("Search Engines")
+            } footer: {
+                let example = "wiki fir"
+                Text("Type a keyword and a space in the address bar, like “\(example)”, to search with that engine.")
             }
             Section {
                 Toggle("Search Engine Suggestions", isOn: $searchSuggestions)
@@ -194,6 +195,112 @@ private struct SearchSettingsView: View {
             }
         }
         .navigationTitle("Search")
+        // Only for an engine just added: the rows push their own editors.
+        .navigationDestination(item: $editing) { id in
+            SearchSiteEditor(sites: $sites, id: id, onDelete: deleted)
+        }
+        // An added engine left without an address is dropped on the way back.
+        .onChange(of: editing) { old, new in
+            guard new == nil, let old, let site = sites.site(old), !site.isBuiltIn, site.template.isEmpty
+            else { return }
+            sites.list.removeAll { $0.id == old }
+        }
+    }
+
+    /// The default goes back to DuckDuckGo when its engine is deleted.
+    private func deleted(_ id: String) {
+        if engine == .custom, customID == id { engine = .duckDuckGo }
+    }
+
+    /// Built-in engines with suggestions are their own setting; any other from the list is the custom one.
+    private var defaultID: Binding<String> {
+        Binding {
+            // A custom default whose engine is gone searches DuckDuckGo, so the picker says so.
+            engine != .custom ? engine.rawValue : sites.site(customID) == nil ? SearchEngine.duckDuckGo.rawValue : customID
+        } set: { id in
+            if let preset = SearchEngine(rawValue: id), preset != .custom {
+                engine = preset
+            } else {
+                customID = id
+                engine = .custom
+            }
+        }
+    }
+}
+
+/// One engine's name, address and keyword; a built-in one keeps its name and address.
+private struct SearchSiteEditor: View {
+    @Binding var sites: SearchSites
+    let id: String
+    let onDelete: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        if let index = sites.list.firstIndex(where: { $0.id == id }) {
+            let site = $sites.list[index]
+            Form {
+                Section {
+                    LabeledContent("Name") {
+                        if site.wrappedValue.isBuiltIn {
+                            Text(site.wrappedValue.name)
+                        } else {
+                            TextField("Name", text: site.name).multilineTextAlignment(.trailing)
+                        }
+                    }
+                }
+                if !site.wrappedValue.isBuiltIn {
+                    Section {
+                        TextField(text: site.template, prompt: Text(verbatim: "https://example.org/search?q=%s")) {
+                            Text("Search Address")
+                        }
+                        .keyboardType(.URL)
+                        .textContentType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    } header: {
+                        Text("Search Address")
+                    } footer: {
+                        // Interpolated: a bare %s in the text would be read as a format specifier.
+                        let mark = "%s"
+                        if site.wrappedValue.template.isEmpty || site.wrappedValue.isValid {
+                            Text("Type \(mark) where the search goes.")
+                        } else {
+                            Text("Needs a web address with \(mark) where the search goes. Until then, Fir searches with DuckDuckGo.")
+                        }
+                    }
+                }
+                Section {
+                    Toggle("Quick Search", isOn: site.quickSearch)
+                    LabeledContent("Keyword") {
+                        TextField("Keyword", text: site.keyword, prompt: Text(verbatim: "wiki"))
+                            .multilineTextAlignment(.trailing)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                    .disabled(!site.wrappedValue.quickSearch)
+                } footer: {
+                    if sharesKeyword(site.wrappedValue) {
+                        Text("Another engine has this keyword; the one higher in the list is used.")
+                    }
+                }
+                if !site.wrappedValue.isBuiltIn {
+                    Section {
+                        Button("Delete Search Engine", role: .destructive) {
+                            sites.list.remove(at: index)
+                            onDelete(id)
+                            dismiss()
+                        }
+                    }
+                }
+            }
+            .navigationTitle(site.wrappedValue.name.isEmpty ? String(localized: "New Search Engine") : site.wrappedValue.name)
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func sharesKeyword(_ site: SearchSite) -> Bool {
+        guard let trigger = site.trigger else { return false }
+        return sites.list.contains { $0.id != site.id && $0.trigger == trigger }
     }
 }
 

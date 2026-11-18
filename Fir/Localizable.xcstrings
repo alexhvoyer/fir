@@ -1000,46 +1000,6 @@
         }
       }
     },
-    "A blank tab offers to paste what you copied." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ein leerer Tab bietet an, Kopiertes einzusetzen."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una pestaña vacía ofrece pegar lo que copiaste."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un onglet vide propose de coller ce que vous avez copié."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un pannello vuoto propone di incollare ciò che hai copiato."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uma aba vazia oferece colar o que você copiou."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пустая вкладка предлагает вставить скопированное."
-          }
-        }
-      }
-    },
     "A demo of the tab gestures" : {
       "localizations" : {
         "de" : {
@@ -1156,6 +1116,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Короткий список изменений после крупного обновления."
+          }
+        }
+      }
+    },
+    "A zoomed page still fits the screen width." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine gezoomte Seite passt weiter in die Bildschirmbreite."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una página con zoom sigue cabiendo a lo ancho."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une page zoomée tient toujours dans la largeur de l’écran."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una pagina con zoom resta larga quanto lo schermo."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma página com zoom continua cabendo na largura da tela."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страница в любом масштабе помещается по ширине экрана."
           }
         }
       }
@@ -1403,6 +1403,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить «%@»"
+          }
+        }
+      }
+    },
+    "Add Search Engine" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suchmaschine hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir buscador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un moteur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi motore di ricerca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar buscador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить поисковую систему"
+          }
+        }
+      }
+    },
+    "Add one by its address, or pick Kagi." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge eine per Adresse hinzu oder wähle Kagi."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade uno por su dirección o elige Kagi."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez-en un par son adresse ou choisissez Kagi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungine uno dal suo indirizzo o scegli Kagi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione um pelo endereço ou escolha o Kagi."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте свою по адресу или выберите Kagi."
           }
         }
       }
@@ -1923,6 +2003,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Раздражители — это окна подписок и предложения открыть приложение, чаты, запросы уведомлений и кнопки соцсетей. Чтобы выключить блокировку на одном сайте, воспользуйтесь меню страницы."
+          }
+        }
+      }
+    },
+    "Another engine has this keyword; the one higher in the list is used." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine andere Suchmaschine hat dieses Schlüsselwort; die weiter oben in der Liste wird verwendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otro buscador tiene esta palabra clave; se usa el que está más arriba en la lista."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un autre moteur utilise ce mot-clé ; celui placé plus haut dans la liste l’emporte."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un altro motore usa questa parola chiave; viene usato quello più in alto nell’elenco."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outro buscador tem esta palavra-chave; vale o que está mais acima na lista."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это ключевое слово есть у другой поисковой системы; используется та, что выше в списке."
+          }
+        }
+      }
+    },
+    "Any search engine" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jede Suchmaschine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cualquier buscador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les moteurs de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualsiasi motore di ricerca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer buscador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Любая поисковая система"
           }
         }
       }
@@ -4333,6 +4493,46 @@
         }
       }
     },
+    "Delete Search Engine" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suchmaschine löschen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar buscador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer le moteur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina motore di ricerca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar buscador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить поисковую систему"
+          }
+        }
+      }
+    },
     "Delete Workspace" : {
       "localizations" : {
         "de" : {
@@ -5693,46 +5893,6 @@
         }
       }
     },
-    "Fir on iPad" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir auf dem iPad"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir en el iPad"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir sur iPad"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir su iPad"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir no iPad"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir на iPad"
-          }
-        }
-      }
-    },
     "Fir opens ready to type. The page you were reading stays behind the search." : {
       "localizations" : {
         "de" : {
@@ -5809,46 +5969,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "После крупного обновления Fir показывает короткий список изменений. Он остаётся в настройках в разделе «О программе»."
-          }
-        }
-      }
-    },
-    "Fir speaks your language" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir spricht deine Sprache"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir habla tu idioma"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir parle votre langue"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir parla la tua lingua"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Fir fala seu idioma"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fir на вашем языке"
           }
         }
       }
@@ -6813,46 +6933,6 @@
         }
       }
     },
-    "In every orientation, with Safari's keyboard shortcuts." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In jeder Ausrichtung, mit den Tastaturkurzbefehlen von Safari."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En cualquier orientación, con los atajos de teclado de Safari."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dans toutes les orientations, avec les raccourcis clavier de Safari."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In ogni orientamento, con le abbreviazioni da tastiera di Safari."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Em qualquer orientação, com os atalhos de teclado do Safari."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "В любой ориентации, с сочетаниями клавиш Safari."
-          }
-        }
-      }
-    },
     "In iOS Settings, choose Fir under Apps > Default Apps > Browser App. Links from other apps then open here." : {
       "localizations" : {
         "de" : {
@@ -7413,6 +7493,46 @@
         }
       }
     },
+    "Keyword" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schlüsselwort"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palabra clave"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot-clé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parola chiave"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palavra-chave"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ключевое слово"
+          }
+        }
+      }
+    },
     "Larger Text" : {
       "localizations" : {
         "de" : {
@@ -7689,46 +7809,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Смотрю результаты"
-          }
-        }
-      }
-    },
-    "Made for iPhone Duo" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gemacht für das iPhone Duo"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hecho para el iPhone Duo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conçu pour l'iPhone Duo"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pensato per iPhone Duo"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Feito para o iPhone Duo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сделан для iPhone Duo"
           }
         }
       }
@@ -8169,6 +8249,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Новая частная вкладка"
+          }
+        }
+      }
+    },
+    "New Search Engine" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Suchmaschine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo buscador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau moteur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo motore di ricerca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo buscador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая поисковая система"
           }
         }
       }
@@ -8893,46 +9013,6 @@
         }
       }
     },
-    "Now in Spanish, French, German, Italian, Russian and Portuguese." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jetzt auf Spanisch, Französisch, Deutsch, Italienisch, Russisch und Portugiesisch."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ahora en español, francés, alemán, italiano, ruso y portugués."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Désormais en espagnol, français, allemand, italien, russe et portugais."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ora in spagnolo, francese, tedesco, italiano, russo e portoghese."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Agora em espanhol, francês, alemão, italiano, russo e português."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Теперь на испанском, французском, немецком, итальянском, русском и португальском."
-          }
-        }
-      }
-    },
     "OK" : {
       "localizations" : {
         "de" : {
@@ -9653,6 +9733,46 @@
         }
       }
     },
+    "Page Zoom like Safari" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seitenzoom wie in Safari"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom de la página como en Safari"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom de la page comme dans Safari"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom pagina come in Safari"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom da Página como no Safari"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Масштаб страницы как в Safari"
+          }
+        }
+      }
+    },
     "Pages from History" : {
       "localizations" : {
         "de" : {
@@ -9889,46 +10009,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пароли и история удалятся с этого iPhone. Всё, что уже синхронизировано, останется в аккаунте Mozilla."
-          }
-        }
-      }
-    },
-    "Paste and Go in the bar" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einsetzen und öffnen in der Leiste"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pegar e ir en la barra"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coller et accéder dans la barre"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Incolla e vai nella barra"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Colar e Acessar na barra"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "«Вставить и перейти» в строке"
           }
         }
       }
@@ -10489,6 +10569,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Фиолетовый"
+          }
+        }
+      }
+    },
+    "Quick Search" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schnellsuche"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Búsqueda rápida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recherche rapide"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricerca rapida"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca rápida"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Быстрый поиск"
           }
         }
       }
@@ -11333,6 +11453,46 @@
         }
       }
     },
+    "Search %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %@ suchen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher sur %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca su %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar no %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Искать в %@"
+          }
+        }
+      }
+    },
     "Search Address" : {
       "localizations" : {
         "de" : {
@@ -11449,6 +11609,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подсказки поисковой системы"
+          }
+        }
+      }
+    },
+    "Search Engines" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suchmaschinen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moteurs de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motori di ricerca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поисковые системы"
           }
         }
       }
@@ -11729,6 +11929,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сразу поиск или стартовая страница с закреплёнными и частыми сайтами и историей."
+          }
+        }
+      }
+    },
+    "Searches with the default engine instead" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sucht stattdessen mit der Standardsuchmaschine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca con el buscador predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recherche avec le moteur par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca con il motore predefinito"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca com o buscador padrão"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Искать в поисковой системе по умолчанию"
           }
         }
       }
@@ -13933,46 +14173,6 @@
         }
       }
     },
-    "The controls sit in the camera column on both screens." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Die Bedienelemente sitzen auf beiden Bildschirmen in der Kameraspalte."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los controles, en la columna de la cámara en ambas pantallas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les commandes dans la colonne de la caméra, sur les deux écrans."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I controlli nella colonna della fotocamera, su entrambi gli schermi."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Os controles ficam na coluna da câmera, nas duas telas."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кнопки в колонке камеры на обоих экранах."
-          }
-        }
-      }
-    },
     "The filter lists didn't compile." : {
       "localizations" : {
         "de" : {
@@ -14773,46 +14973,6 @@
         }
       }
     },
-    "Turn off Save and Fill Passwords in Settings > Passwords." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schalte „Passwörter sichern und ausfüllen“ unter Einstellungen > Passwörter aus."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desactiva Guardar y rellenar contraseñas en Ajustes > Contraseñas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Désactivez Enregistrer et remplir les mots de passe dans Réglages > Mots de passe."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Disattiva Salva e compila password in Impostazioni > Password."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desative Salvar e Preencher Senhas em Ajustes > Senhas."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выключите «Сохранять и подставлять пароли» в Настройках > Пароли."
-          }
-        }
-      }
-    },
     "Turn off the Fir lock" : {
       "localizations" : {
         "de" : {
@@ -15089,6 +15249,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Поставьте %@ на место запроса."
+          }
+        }
+      }
+    },
+    "Type a keyword and a space in the address bar, like “%@”, to search with that engine." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geben Sie in der Adressleiste ein Schlüsselwort und ein Leerzeichen ein, etwa „%@“, um mit dieser Suchmaschine zu suchen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe una palabra clave y un espacio en la barra de direcciones, como «%@», para buscar con ese buscador."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez un mot-clé et une espace dans la barre d’adresse, par exemple « %@ », pour chercher avec ce moteur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrivi una parola chiave e uno spazio nella barra degli indirizzi, ad esempio «%@», per cercare con quel motore."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite uma palavra-chave e um espaço na barra de endereço, como “%@”, para buscar com esse buscador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите ключевое слово и пробел в адресной строке, например «%@», чтобы искать в этой поисковой системе."
+          }
+        }
+      }
+    },
+    "Type a keyword and a space, like “wiki fir”." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib ein Stichwort und ein Leerzeichen ein, etwa „wiki fir“."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe una palabra clave y un espacio, como «wiki fir»."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez un mot-clé et une espace, comme « wiki fir »."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digita una parola chiave e uno spazio, come «wiki fir»."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite uma palavra-chave e um espaço, como “wiki fir”."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите ключ и пробел, например «wiki fir»."
           }
         }
       }
@@ -15849,46 +16089,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подставить «%@»"
-          }
-        }
-      }
-    },
-    "Use your own password manager" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nutze deinen eigenen Passwort-Manager"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa tu propio gestor de contraseñas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utilisez votre gestionnaire de mots de passe"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa il tuo gestore di password"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use seu próprio gerenciador de senhas"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Свой менеджер паролей"
           }
         }
       }

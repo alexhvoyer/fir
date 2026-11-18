@@ -3,7 +3,7 @@ import SwiftUI
 /// The list shown once after an update. It has its own number: raise `list` and rewrite `items` only
 /// when an update has something to tell, so most builds pass quietly.
 enum WhatsNew {
-    static let list = 3
+    static let list = 4
 
     struct Item: Identifiable {
         let symbol: String
@@ -14,16 +14,12 @@ enum WhatsNew {
 
     @MainActor static var items: [Item] {
         [
-            Item(symbol: "globe", title: String(localized: "Fir speaks your language"),
-                 detail: String(localized: "Now in Spanish, French, German, Italian, Russian and Portuguese.")),
-            Item(symbol: "ipad", title: String(localized: "Fir on iPad"),
-                 detail: String(localized: "In every orientation, with Safari's keyboard shortcuts.")),
-            Item(symbol: "rectangle.split.2x1", title: String(localized: "Made for iPhone Duo"),
-                 detail: String(localized: "The controls sit in the camera column on both screens.")),
-            Item(symbol: "key.fill", title: String(localized: "Use your own password manager"),
-                 detail: String(localized: "Turn off Save and Fill Passwords in Settings > Passwords.")),
-            Item(symbol: "doc.on.clipboard", title: String(localized: "Paste and Go in the bar"),
-                 detail: String(localized: "A blank tab offers to paste what you copied.")),
+            Item(symbol: "magnifyingglass", title: String(localized: "Any search engine"),
+                 detail: String(localized: "Add one by its address, or pick Kagi.")),
+            Item(symbol: "bolt.fill", title: String(localized: "Quick Search"),
+                 detail: String(localized: "Type a keyword and a space, like “wiki fir”.")),
+            Item(symbol: "plus.magnifyingglass", title: String(localized: "Page Zoom like Safari"),
+                 detail: String(localized: "A zoomed page still fits the screen width.")),
         ]
     }
 

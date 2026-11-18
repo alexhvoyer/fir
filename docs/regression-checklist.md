@@ -194,9 +194,16 @@ timing, sync.
 - `sim` What's New shows once after an update (`-whatsNewSeen` one below the current list), and never on a fresh
   install.
 - `sim` Every settings page opens and closes, and each picker changes the app straight away. New Tab is under Tabs.
-- `sim` Search > Kagi: typing shows Kagi Suggestions. Custom: the address field appears; an address without `%s` (or
-  empty) says DuckDuckGo is used meanwhile; `https://html.duckduckgo.com/html/?q=%s` with `fir & tree #1` searches
-  for exactly that. In Russian the footer fits.
+- `sim` Search > Search Engine Kagi: typing shows Kagi Suggestions. Add Search Engine: an address without `%s` says
+  DuckDuckGo is used meanwhile; `https://html.duckduckgo.com/html/?q=%s` with `fir & tree #1` searches for exactly
+  that. Going back with no address drops the new engine. In Russian the footers fit.
+- `sim` Quick search, sheet and Start Page bar: `wiki` and a space turn into a Wikipedia chip in place of the magnifier
+  and leave the field empty ("Search Wikipedia"); `fir` then shows "fir, Search Wikipedia" and opens Wikipedia.
+  Tapping the chip puts `wiki ` back as text and the search goes to the default engine; `b 52 bomber` that way
+  searches DuckDuckGo, not Bing. Clear removes the chip. A long engine name is cut short. `yt fir` stays text until
+  YouTube's Quick Search is on. An added engine (`oh`, `https://oceanhero.today/web?q=%s`) works as a chip and as the
+  default; deleting it while it is the default goes back to DuckDuckGo.
+- `phone` Typing `g` and a space quickly, then the query: the `g` never stays in the text next to the chip.
 
 ## iPad
 
