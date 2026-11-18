@@ -55,7 +55,8 @@ struct TabSwitcherView: View {
             // Never Private as the fallback: it put that page, or its Face ID, in place of the real one.
             let selected = items.firstIndex { $0.id == selectionID } ?? 1
             // Workspaces sit side by side, as in Safari: the switcher's drag slides them under the finger.
-            SpacePager(index: scrub ?? CGFloat(selected), ids: items.map(\.id), width: geo.size.width) { id in
+            SpacePager(index: scrub ?? CGFloat(selected), ids: items.map(\.id), width: geo.size.width,
+                       bleed: carouselEdges.isEmpty ? 0 : max(geo.safeAreaInsets.leading, geo.safeAreaInsets.trailing)) { id in
                 page(id, live: id == items[selected].id)
             }
         }
@@ -195,9 +196,9 @@ struct TabSwitcherView: View {
                                     folderMenu: folderMenu, tabMenu: tabMenu, space: zenSpace(of:),
                                     onCardFrame: onCardFrame, onOpen: onOpen)
                         } else if live {
-                            deck
+                            deck.ignoresSafeArea(.container, edges: carouselEdges)
                         } else {
-                            deckPreview(tabs)
+                            deckPreview(tabs).ignoresSafeArea(.container, edges: carouselEdges)
                         }
                     }
                     // Room for an open folder's name over its card's title.
@@ -206,6 +207,10 @@ struct TabSwitcherView: View {
             }
         }
     }
+
+    /// On its side, sliding cards run to the screen's edges: cut at the safe area, they left a strip. The Duo's
+    /// column has its own setting.
+    private var carouselEdges: Edge.Set { railWidth == 0 ? .horizontal : [] }
 
     /// Close to the screen's own shape, like Yab, so a card reads as the page shrunk. On its side the deck
     /// is short, so cards take its height instead.
@@ -913,6 +918,8 @@ private struct SpacePager<Page: View>: View, Animatable {
     var index: CGFloat
     let ids: [String]
     let width: CGFloat
+    /// How far a page's cards may run past its sides, into the side safe areas.
+    var bleed: CGFloat = 0
     @ViewBuilder let page: (String) -> Page
 
     var animatableData: CGFloat {
@@ -929,9 +936,9 @@ private struct SpacePager<Page: View>: View, Animatable {
                 // covered the neighbour sliding in there. Not top and bottom, where the space's tint
                 // runs on under the bars.
                 page(ids[i])
-                    .mask { Rectangle().padding(.vertical, -2000) }
+                    .mask { Rectangle().padding(.vertical, -2000).padding(.horizontal, -bleed) }
                     .id(ids[i])
-                    .offset(x: (CGFloat(i) - index) * (width + 24))
+                    .offset(x: (CGFloat(i) - index) * (width + 24 + 2 * bleed))
             }
         }
     }

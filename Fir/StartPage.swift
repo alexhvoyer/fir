@@ -303,7 +303,9 @@ struct BlankTab: View {
             GeometryReader { geo in
                 let window = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.keyWindow
                 let full = window?.bounds.size ?? geo.size
-                let scale = min(1, geo.size.width / full.width)
+                // Fills its card as a page's snapshot does, by width or height: by width alone, a card on its side
+                // showed more than the landing page, which jumped.
+                let scale = min(1, max(geo.size.width / full.width, geo.size.height / full.height))
                 let safe = window?.safeAreaInsets ?? .zero
                 let padding = insets ?? EdgeInsets(top: safe.top, leading: safe.left, bottom: 0, trailing: safe.right)
                 StartPage(spaceID: spaceID, onPullUp: {}, onOpen: { tab?.load($0) },
@@ -316,8 +318,10 @@ struct BlankTab: View {
                     .safeAreaPadding(tab == nil ? EdgeInsets() : padding)
                     // A copy gets plain padding: through the safe area its content jumped as it moved under the status bar.
                     .padding(tab == nil ? padding : EdgeInsets())
-                    .frame(width: geo.size.width / scale, height: geo.size.height / scale)
+                    .frame(width: full.width, height: geo.size.height / scale)
                     .scaleEffect(scale, anchor: .topLeading)
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                    .clipped()
                     .allowsHitTesting(tab != nil)
             }
             .ignoresSafeArea(edges: tab == nil ? [] : .all)

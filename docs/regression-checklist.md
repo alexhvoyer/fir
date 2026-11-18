@@ -51,6 +51,8 @@ timing, sync.
 
 - `sim` The address bar shows the committed host. While a cross-origin page loads, it keeps the old one.
 - `sim` Search sheet from the bar grows out of the address capsule. With Reduce Motion it slides up as a plain sheet.
+- `sim` **(was broken)** Dark mode on a light page: the search sheet and the page menu grow out of the bar's glass and
+  melt back into it. Closing used to shrink into the bar as a black capsule.
 - `sim` With New Tab set to Start Page, tapping the address puts the field in the bar's place with no sheet; it rides
   up on the keyboard. Cancel, or putting the keyboard away, brings the bar back. Landscape still uses the sheet.
 - `sim` **(was broken)** Start Page mode: Cancel or Return takes the keyboard down with the field riding on it, then the
@@ -101,6 +103,8 @@ timing, sync.
 ## Tab overview: Grid
 
 - `sim` The page grows out of its cell and shrinks back into it, landing exactly on the cell.
+- `sim` **(was broken)** Scroll so the current cell is off centre, then open it: the grid stays still while the page
+  grows. It used to jump to centre the cell at the tap.
 - `sim` **(was broken)** After closing a page, its cell shows its picture and the selected outline. A LazyVGrid kept
   the picture hidden.
 - `sim` Swipe a cell left past a third of its width: it slides off and closes. A shorter swipe returns it.
@@ -258,6 +262,8 @@ Record each Duo screen on its own: `xcrun simctl io <udid> recordVideo --display
 - `sim` Landscape: the bar moves to the top and the tab strip shows.
 - `sim` **(was broken)** Landscape with more tabs than fit: the strip's chips, favicons included, end at its capsule.
 - `sim` Landscape strip: one tab shows no strip; two to four tabs share its whole width, titles centred; more scroll.
+- `sim` **(was broken)** iPhone on its side, Cards: cards slide to the screen's edges, not cut at the side safe areas; the bar and buttons stay inside. Grid stays inside.
+- `sim` **(was broken)** iPhone on its side: opening a card and going back to the overview show no white side stripes, and neither a web page nor the start page jumps at either end (start page mode and search sheet mode).
 - `sim` Larger Dynamic Type sizes don't break the bar or the grid titles.
 - `sim` In Russian and German (launch argument `-AppleLanguages (ru)` or `(de)`), onboarding, the page menu and every
   settings page show no English, and long lines wrap instead of being cut. New interface text goes into the catalogs with

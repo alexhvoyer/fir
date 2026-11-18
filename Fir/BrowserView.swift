@@ -12,6 +12,11 @@ struct BrowserView: View {
     @Environment(\.horizontalSizeClass) private var widthClass
     /// The camera column's width beside the page; zero without one.
     @State private var railWidth: CGFloat = 0
+    /// The web view's side insets within `page`: a notch side and the other on an iPhone on its side. The Duo's
+    /// page already stops at its column.
+    @State private var pageSides = EdgeInsets()
+    /// The live start page's top inset; in landscape it also clears the bar, which its card copy doesn't.
+    @State private var startPageTop: CGFloat = 0
     @State private var pageShown = true
     /// Shrink toward the card: 0 = full screen, 1 = card size and crop.
     @State private var progress: CGFloat = 0
@@ -81,6 +86,9 @@ struct BrowserView: View {
     // A fixed-duration ease felt even-paced.
     private let settle = Animation.spring(response: 0.34, dampingFraction: 0.88)
     private let swipeCommit = Animation.spring(response: 0.32, dampingFraction: 0.92)
+    /// How much lower the live start page sits than its card copy: in landscape it clears the bar. The search
+    /// sheet mode's sprig ignores the bar.
+    private var startPageDrop: CGFloat { newTabStyle == .page ? max(0, startPageTop - pageSides.top) : 0 }
     /// Growing a page out of its card and shrinking it back; Reduce Motion cuts straight to the end.
     private var cardMorph: Animation? { reduceMotion ? nil : settle }
     static let swipeGap: CGFloat = 10
@@ -224,6 +232,7 @@ struct BrowserView: View {
                 onShowTabs: closePage,
                 onSearchOpen: showPageAtOnce,
                 onSearchLeave: unrecede,
+                onStartPageTop: { startPageTop = $0 },
                 onNewTab: startNewTab
             )
             .overlay {
@@ -246,6 +255,10 @@ struct BrowserView: View {
         .environment(\.sheetsCentered, UIDevice.current.userInterfaceIdiom == .pad && widthClass == .regular)
         .onChange(of: screen.width > screen.height && !Self.sideRail(safeInsets), initial: true) { barOnTop = $1 }
         .onChange(of: Self.sideRail(safeInsets) ? safeInsets.trailing : 0, initial: true) { railWidth = $1 }
+        .onChange(of: [safeInsets.top, safeInsets.leading, Self.sideRail(safeInsets) ? 0 : safeInsets.trailing],
+                  initial: true) {
+            pageSides = EdgeInsets(top: $1[0], leading: $1[1], bottom: 0, trailing: $1[2])
+        }
         // Over the bottom bar, on the page and on the deck.
         .overlay(alignment: .bottom) {
             UndoCloseCapsule()
@@ -348,14 +361,17 @@ struct BrowserView: View {
                 } else if swipeX != 0, let neighbour = swipeNeighbour {
                     PageImage(image: neighbour.snapshot, host: neighbour.isPrivate ? nil : neighbour.url?.host(),
                               blank: neighbour.url == nil, space: neighbour.spaceID, offset: neighbour.startPageOffset,
-                              failed: neighbour)
+                              failed: neighbour, sides: pageSides, sideFill: neighbour.sideFill,
+                              blankDrop: startPageDrop)
                         .frame(width: page.width, height: page.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
                         .offset(x: swipeX + (swipeX > 0 ? -1 : 1) * (page.width + Self.swipeGap))
                 }
                 PageImage(image: cover, view: coverView, host: browser.selected.isPrivate ? nil : browser.selected.url?.host(),
                           blank: browser.selected.url == nil, space: browser.selected.spaceID,
-                          offset: browser.selected.startPageOffset, failed: browser.selected)
+                          offset: browser.selected.startPageOffset, failed: browser.selected,
+                          sides: pageSides, sideFill: browser.selected.sideFill, progress: progress,
+                          blankDrop: startPageDrop)
                     .frame(width: page.width, height: page.height)
                     .clipShape(PageMask(progress: progress, minRadius: swipeRadius, crop: CGSize(width: card.width / k, height: card.height / k), scale: k,
                              cardRadius: cardRadius))
@@ -394,7 +410,7 @@ struct BrowserView: View {
             .allowsHitTesting(false)
             .transition(.identity)
         } else if let veil {
-            PageImage(image: veil, host: nil)
+            PageImage(image: veil, host: nil, sides: pageSides, sideFill: browser.selected.sideFill)
                 .frame(width: page.width, height: page.height)
                 .transition(.opacity)
                 .allowsHitTesting(false)
@@ -1031,24 +1047,54 @@ private struct PageImage: View {
     var offset: CGFloat = 0
     /// Its failure screen is drawn over the web view, so no snapshot of the page has it.
     var failed: BrowserTab? = nil
+    /// The web view's place in the page and what fills beside it, as live: otherwise it landed with white
+    /// stripes and a sideways jump.
+    var sides = EdgeInsets()
+    var sideFill = Color.white
+    /// 0 laid out as the live page, 1 as its card, which starts at the web view's edge; moved between
+    /// them, or it jumped at one end.
+    var progress: CGFloat = 0
+    var blankDrop: CGFloat = 0
 
     var body: some View {
-        Color.white.overlay(alignment: .top) {
-            if let image {
-                Image(uiImage: image).resizable().scaledToFit()
-            } else if blank {
-                BlankTab(spaceID: space, offset: offset)
-            } else if view == nil {
-                SiteIcon(host: host, size: 56).padding(.top, 180)
+        sideFill.overlay(alignment: .top) {
+            if blank, image == nil {
+                Color(.systemGroupedBackground).overlay(alignment: .top) {
+                    BlankTab(spaceID: space, offset: offset).offset(y: blankDrop * (1 - progress))
+                }
+                .overlay(alignment: .top) { snapshotView }
+            } else {
+                Color.white.overlay(alignment: .top) {
+                    if let image {
+                        Image(uiImage: image).resizable().scaledToFit()
+                    } else if view == nil {
+                        SiteIcon(host: host, size: 56).padding(.top, 180)
+                    }
+                }
+                .overlay(alignment: .top) { snapshotView }
+                .padding(.leading, sides.leading)
+                .padding(.trailing, sides.trailing)
+                .offset(x: -sides.leading * progress)
             }
-        }
-        // The live snapshot over the saved image: it draws a few frames late, and white showed meanwhile.
-        .overlay(alignment: .top) {
-            if let view { SnapshotHost(view: view) }
         }
         .overlay {
             if let failed, failed.loadFailure != nil { LoadFailurePage(tab: failed) }
         }
+    }
+
+    /// The live snapshot over the saved image: it draws a few frames late, and white showed meanwhile.
+    @ViewBuilder private var snapshotView: some View {
+        if let view { SnapshotHost(view: view) }
+    }
+}
+
+extension BrowserTab {
+    /// Beside the page in side safe areas, its own colour, as Safari: a fixed grey read as black bars beside
+    /// dark pages.
+    var sideFill: Color {
+        if loadFailure != nil { return Color(.systemBackground) }
+        if url != nil, let color = pageBackground { return Color(uiColor: color) }
+        return Color(.systemGroupedBackground)
     }
 }
 
@@ -1150,6 +1196,8 @@ private struct PageView: View {
     let onSearchOpen: () -> Void
     /// The search sheet started to go, before SwiftUI clears its binding.
     let onSearchLeave: () -> Void
+    /// The start page's top inset as laid out live, for its copy in transitions.
+    let onStartPageTop: (CGFloat) -> Void
     /// A new tab, as the new-tab style has it.
     let onNewTab: () -> Void
 
@@ -1184,8 +1232,6 @@ private struct PageView: View {
     @State private var reader: ReaderArticle?
     @State private var showPageSheet = false
     @State private var intelligenceSearch: IntelligenceSearchRequest?
-    /// What opened the page sheet, the menu button or the address, for it to grow out of.
-    @State private var pageSheetSource = "menu"
     /// When a long press opened the sheet; the tap that ends the same touch is ignored.
     @State private var longPressed = Date.distantPast
     private var justLongPressed: Bool { Date.now.timeIntervalSince(longPressed) < 0.8 }
@@ -1251,11 +1297,7 @@ private struct PageView: View {
                 // Fills the side cutouts the page keeps clear of (the Duo's camera column, a notch side) with what
                 // is under them, as Safari: a fixed grey read as black bars beside dark pages.
                 if insets.leading > 0 || insets.trailing > 0 {
-                    Group {
-                        if tab.loadFailure != nil { Color(.systemBackground) }
-                        else if tab.url != nil, let color = tab.pageBackground { Color(uiColor: color) }
-                        else { Color(.systemGroupedBackground) }
-                    }
+                    tab.sideFill
                     // Fades with the bar: it spans the screen and hid the deck behind a shrinking page.
                     .opacity(chromeOpacity)
                 }
@@ -1339,6 +1381,7 @@ private struct PageView: View {
         .ignoresSafeArea()
         // Restored tabs load their page only once shown.
         .onChange(of: browser.selectedID, initial: true) { browser.selected.loadIfNeeded() }
+        .onChange(of: pageInsets(insets).top, initial: true) { onStartPageTop($1) }
         // Only a real load: sites rewrite their address while scrolling, which kept popping the bar open.
         .onChange(of: tab.pageURL) { if tab.isLoading { withAnimation(.snappy) { expand() } } }
         .onChange(of: browser.selectedID) { expand() }
@@ -1403,7 +1446,7 @@ private struct PageView: View {
                       offersEssentials: folderEditor.offersEssentials(tab)) {
                 pageAction = $0
             }
-            .modifier(ZoomFromSource(id: pageSheetSource, namespace: sheetSource))
+            .modifier(ZoomFromSource(id: "address", namespace: sheetSource))
         }
         .onChange(of: tab.readerRequest) {
             guard tab.readerRequest != nil else { return }
@@ -1631,27 +1674,26 @@ private struct PageView: View {
                                 .allowsHitTesting(false)
                         }
                     }
-                    GlassEffectContainer(spacing: 20) {
-                        ZStack(alignment: .leading) {
-                            tabCapsule(tab, live: true, p: p, s: s, width: geo.size.width, rel: currentRel,
-                                       vanish: Self.vanish(currentRel) * Self.leaving(a), offset: offsets.current)
-                            if neighbourOffset != nil {
-                                Group {
-                                    if let neighbour = swipeNeighbour {
-                                        // Compact while it comes in; it opens as a released swipe carries it home.
-                                        tabCapsule(neighbour, live: false, p: p, s: 1 - a, width: geo.size.width,
-                                                   rel: neighbourRel, vanish: Self.vanish(neighbourRel),
-                                                   offset: offsets.neighbour)
-                                    } else {
-                                        newTabCapsule(p: p, s: 1, width: geo.size.width,
-                                                      vanish: Self.vanish(neighbourRel), offset: offsets.neighbour)
-                                    }
+                    // No GlassEffectContainer: inside one the capsule's glass could not be a zoom source.
+                    ZStack(alignment: .leading) {
+                        tabCapsule(tab, live: true, p: p, s: s, width: geo.size.width, rel: currentRel,
+                                   vanish: Self.vanish(currentRel) * Self.leaving(a), offset: offsets.current)
+                        if neighbourOffset != nil {
+                            Group {
+                                if let neighbour = swipeNeighbour {
+                                    // Compact while it comes in; it opens as a released swipe carries it home.
+                                    tabCapsule(neighbour, live: false, p: p, s: 1 - a, width: geo.size.width,
+                                               rel: neighbourRel, vanish: Self.vanish(neighbourRel),
+                                               offset: offsets.neighbour)
+                                } else {
+                                    newTabCapsule(p: p, s: 1, width: geo.size.width,
+                                                  vanish: Self.vanish(neighbourRel), offset: offsets.neighbour)
                                 }
-                                .allowsHitTesting(false)
                             }
+                            .allowsHitTesting(false)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     trailingButtons(p: p)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
@@ -1846,8 +1888,7 @@ private struct PageView: View {
         (labelWidths[tab.id] ?? 160) + 40
     }
 
-    /// Text and icons end at the tabs button while a capsule slides under it; the glass merges with the
-    /// button's. A mask on the glass itself has no effect inside a GlassEffectContainer.
+    /// Text and icons end at the tabs button while a capsule slides under it.
     private var contentLimit: CGFloat {
         collapse > 0 ? .infinity : trailingButtonsMinX - 4
     }
@@ -1915,16 +1956,14 @@ private struct PageView: View {
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded { _ in
             guard live else { return }
             longPressed = .now
-            pageSheetSource = "address"
             showPageSheet = true
         })
         .haptic(.impact(weight: .medium), trigger: showPageSheet) { _, new in new && live }
-        // Loading progress runs along the field's bottom edge, as in Safari. Inside the glass: an
-        // overlay outside it is drawn under the container's glass.
+        // Loading progress runs along the field's bottom edge, as in Safari.
         .overlay(alignment: .bottom) { LoadingLine(tab: tab) }
-        // Inside the glass: outside it, in the glass container, the zoom found no source.
-        .modifier(SheetSource(id: "address", namespace: sheetSource, enabled: live))
         .glassEffect(.regular.interactive(), in: .capsule)
+        // On the glass, so sheets morph glass to glass: inside it UIKit filled the morph with black.
+        .modifier(SheetSource(id: "address", namespace: sheetSource, enabled: live))
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
             guard live else { return }
             addressFrame = $0
@@ -1983,18 +2022,12 @@ private struct PageView: View {
                     .accessibilityElement()
                     .accessibilityLabel("Page Menu")
                     .accessibilityAddTraits(.isButton)
-                    .accessibilityAction {
-                        pageSheetSource = "address"
-                        showPageSheet = true
-                    }
+                    .accessibilityAction { showPageSheet = true }
             } else {
-                Button("Page Menu", systemImage: "line.3.horizontal") {
-                    pageSheetSource = "menu"
-                    showPageSheet = true
-                }
-                .labelStyle(.iconOnly)
-                .frame(width: 44, height: 48)
-                .modifier(SheetSource(id: "menu", namespace: sheetSource, enabled: live))
+                // The sheet grows out of the whole bar: the button has no glass of its own for the zoom to morph into.
+                Button("Page Menu", systemImage: "line.3.horizontal") { showPageSheet = true }
+                    .labelStyle(.iconOnly)
+                    .frame(width: 44, height: 48)
             }
             // The label itself is drawn by hostLabel, which survives into the pill; this keeps its place.
             // A tap edits the address; a long press opens the page sheet.

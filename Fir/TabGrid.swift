@@ -66,7 +66,8 @@ struct TabGrid: View {
                 // Under the page the grid keeps the selected cell in view, so the page has a cell to land on.
                 .onChange(of: browser.selectedID) { if !holdsPosition { reveal(in: proxy) } }
                 .onChange(of: holdsPosition) { if !holdsPosition { reveal(in: proxy) } }
-                .onChange(of: hiddenTab) { if hiddenTab != nil { reveal(in: proxy) } }
+                // Not while a page grows out of its cell: the grid jumped under it. It centres once the page covers it.
+                .onChange(of: hiddenTab) { if hiddenTab != nil, !holdsPosition { reveal(in: proxy) } }
                 .onChange(of: expandedFolder) { if hiddenTab != nil { reveal(in: proxy) } }
             }
         }
