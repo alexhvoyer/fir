@@ -197,6 +197,12 @@ timing, sync.
 - `sim` **(was broken)** An add-on's settings open in a sheet from Settings > Extensions > the add-on > Extension
   Settings, and from the page menu. A link out of that sheet opens in a tab.
 - `sim` Disabling and removing an add-on takes effect without restarting.
+- `sim` Page menu > Extensions opens a page in the sheet listing every add-on, switched-off ones too. Each opens the
+  same page as in Settings, with Open for add-ons that have a settings page. Back and swipe back return; removing
+  the last add-on shows No Extensions.
+- `sim` With Dark Reader on a light page (info.cern.ch), turning off Allow on info.cern.ch on its page in the sheet
+  reloads the page light; another site stays dark, and so does info.cern.ch's state after a relaunch. Settings >
+  Extensions > Dark Reader lists the site under Off on These Sites; swiping it to Allow darkens the page again.
 - `sim` Installing Privacy Badger (`privacy-badger17`) lists "See the addresses of your open tabs" and "See the pages
   you open as they load" under "It will also be able to:"; Cancel installs nothing.
 

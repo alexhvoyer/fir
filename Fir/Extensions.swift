@@ -13,6 +13,8 @@ final class ExtensionManager: NSObject {
         let name: String
         let version: String
         var isEnabled: Bool
+        /// Sites (as SiteSettings names them) where it is switched off.
+        var deniedSites: Set<String> = []
         let context: WKWebExtensionContext
         var errors: [String] { context.errors.map(\.localizedDescription) }
         var hasSettings: Bool { context.optionsPageURL != nil }
@@ -37,7 +39,8 @@ final class ExtensionManager: NSObject {
         let index = UserDefaults.standard.array(forKey: Self.indexKey) as? [[String: Any]] ?? []
         for entry in index {
             guard let id = entry["id"] as? String else { continue }
-            try? await add(id: id, enabled: entry["enabled"] as? Bool ?? true)
+            try? await add(id: id, enabled: entry["enabled"] as? Bool ?? true,
+                           deniedSites: Set(entry["deniedSites"] as? [String] ?? []))
         }
     }
 
@@ -114,6 +117,26 @@ final class ExtensionManager: NSObject {
         saveIndex()
     }
 
+    /// Pages already open on the site keep what the add-on did until they reload.
+    func setAllowed(_ allowed: Bool, for id: String, on site: String) {
+        guard let index = installed.firstIndex(where: { $0.id == id }) else { return }
+        Self.apply(allowed, on: site, to: installed[index].context)
+        if allowed { installed[index].deniedSites.remove(site) } else { installed[index].deniedSites.insert(site) }
+        saveIndex()
+    }
+
+    /// A denial outranks the sites granted at install. Allowing again restores the grant when the add-on asked
+    /// for exactly this site, since the denial replaced it.
+    private static func apply(_ allowed: Bool, on site: String, to context: WKWebExtensionContext) {
+        let requested = context.webExtension.allRequestedMatchPatterns
+        for host in [site, "www." + site] {
+            guard let pattern = try? WKWebExtension.MatchPattern(string: "*://\(host)/*") else { continue }
+            let status: WKWebExtensionContext.PermissionStatus =
+                allowed ? (requested.contains(pattern) ? .grantedExplicitly : .unknown) : .deniedExplicitly
+            context.setPermissionStatus(status, for: pattern)
+        }
+    }
+
     func remove(_ id: String) {
         guard let index = installed.firstIndex(where: { $0.id == id }) else { return }
         try? controller.unload(installed[index].context)
@@ -173,7 +196,7 @@ final class ExtensionManager: NSObject {
         entry.context.performAction(for: browser?.selected.isPrivate == false ? browser?.selected : nil)
     }
 
-    private func add(id: String, enabled: Bool) async throws {
+    private func add(id: String, enabled: Bool, deniedSites: Set<String> = []) async throws {
         let webExtension = try await WKWebExtension(resourceBaseURL: file(id))
         let context = WKWebExtensionContext(for: webExtension)
         // Stable across launches, so the extension keeps its storage.
@@ -184,12 +207,14 @@ final class ExtensionManager: NSObject {
         for pattern in webExtension.allRequestedMatchPatterns {
             context.setPermissionStatus(.grantedExplicitly, for: pattern)
         }
+        for site in deniedSites { Self.apply(false, on: site, to: context) }
         if enabled { try controller.load(context) }
         installed.append(Installed(
             id: id,
             name: webExtension.displayName ?? String(localized: "Extension"),
             version: webExtension.version ?? "",
             isEnabled: enabled,
+            deniedSites: deniedSites,
             context: context
         ))
     }
@@ -210,7 +235,9 @@ final class ExtensionManager: NSObject {
     }
 
     private func saveIndex() {
-        UserDefaults.standard.set(installed.map { ["id": $0.id, "enabled": $0.isEnabled] }, forKey: Self.indexKey)
+        UserDefaults.standard.set(installed.map {
+            ["id": $0.id, "enabled": $0.isEnabled, "deniedSites": $0.deniedSites.sorted()] as [String: Any]
+        }, forKey: Self.indexKey)
     }
 
     /// Packages aren't signature-checked here, so only Mozilla's reviewed store is trusted to serve them.

@@ -7,7 +7,6 @@ import WebKit
 struct ConnectionSecurityView: View {
     let tab: BrowserTab
     @State private var report: ConnectionReport?
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         List {
@@ -41,29 +40,8 @@ struct ConnectionSecurityView: View {
                 ProgressView().frame(maxWidth: .infinity)
             }
         }
-        // Its own header, not the navigation bar, so the back button leaves with the page on a swipe back.
-        // A bar, not an inset: the system fades the list scrolling under it.
-        .safeAreaBar(edge: .top) { header }
-        .toolbar(.hidden, for: .navigationBar)
+        .sheetPageHeader(Text("Connection Security"))
         .task { report = await ConnectionReport.make(for: tab) }
-    }
-
-    private var header: some View {
-        ZStack {
-            Text("Connection Security").font(.headline)
-            HStack {
-                Button("Back", systemImage: "chevron.left") { dismiss() }
-                    .labelStyle(.iconOnly)
-                    .font(.title3.weight(.medium))
-                    .frame(width: 44, height: 44)
-                    .glassEffect(.regular.interactive(), in: .circle)
-                    .foregroundStyle(.primary)
-                Spacer()
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 4)
     }
 
     private func summary(_ report: ConnectionReport) -> some View {
@@ -208,6 +186,42 @@ private enum DER {
             offset = set.end
         }
         return nil
+    }
+}
+
+extension View {
+    /// In the page sheet a pushed page draws its own header, so the back button leaves with it on a swipe
+    /// back. A bar fades the list scrolling under it.
+    @ViewBuilder func sheetPageHeader(_ title: Text, when inSheet: Bool = true) -> some View {
+        if inSheet {
+            safeAreaBar(edge: .top) { SheetPageHeader(title: title) }
+                .toolbar(.hidden, for: .navigationBar)
+        } else {
+            navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+private struct SheetPageHeader: View {
+    let title: Text
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            title.font(.headline).lineLimit(1).padding(.horizontal, 52)
+            HStack {
+                Button("Back", systemImage: "chevron.left") { dismiss() }
+                    .labelStyle(.iconOnly)
+                    .font(.title3.weight(.medium))
+                    .frame(width: 44, height: 44)
+                    .glassEffect(.regular.interactive(), in: .circle)
+                    .foregroundStyle(.primary)
+                Spacer()
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
+        .padding(.bottom, 4)
     }
 }
 

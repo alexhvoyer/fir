@@ -7,7 +7,7 @@ import Translation
 struct PageSheet: View {
     enum Action {
         case find, reader, pin, essential, translate(Locale.Language), showOriginal, downloads, settings
-        case send(Device), extensionSettings(String)
+        case send(Device)
     }
 
     let tab: BrowserTab
@@ -51,25 +51,11 @@ struct PageSheet: View {
                     Stepper(value: Binding(get: { site.zoom }, set: setZoom), in: 0.5...3, step: 0.1) {
                         LabeledContent("Page Zoom", value: site.zoom.formatted(.percent.precision(.fractionLength(0))))
                     }
-                    let extensions = ExtensionManager.shared.installed.filter(\.isEnabled)
-                    if !extensions.isEmpty, !tab.isPrivate {
-                        Menu {
-                            ForEach(extensions) { item in
-                                if item.hasSettings {
-                                    Menu(item.name) {
-                                        Button("Open", systemImage: "puzzlepiece.extension") {
-                                            ExtensionManager.shared.performAction(item.id)
-                                        }
-                                        Button("Settings", systemImage: "gearshape") { finish(.extensionSettings(item.id)) }
-                                    }
-                                } else {
-                                    Button(item.name) { ExtensionManager.shared.performAction(item.id) }
-                                }
-                            }
-                        } label: {
+                    if !ExtensionManager.shared.installed.isEmpty, !tab.isPrivate {
+                        // A page, not a menu: testers looked for each add-on's switch and settings here.
+                        NavigationLink { PageExtensionsView(tab: tab) } label: {
                             Label("Extensions", systemImage: "puzzlepiece.extension")
                         }
-                        .tint(.primary)
                     }
                 }
                 Section("Settings for This Site") {
