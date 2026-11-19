@@ -280,7 +280,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nuovo pannello privato"
+            "value" : "Nuova scheda privata"
           }
         },
         "es" : {
@@ -320,7 +320,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nuovo pannello"
+            "value" : "Nuova scheda"
           }
         },
         "es" : {
