@@ -1204,6 +1204,7 @@ private struct PageView: View {
     @Environment(BrowserModel.self) private var browser
     @AppStorage(SettingsKey.collapseOnScroll) private var collapseOnScroll = true
     @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = true
+    @AppStorage(SettingsKey.cornerButton) private var cornerButton = CornerButton.tabs
     @AppStorage(SettingsKey.barActions) private var barActions = BarAction.encode(BarAction.defaults)
     @AppStorage(SettingsKey.translateTarget) private var translateTarget = ""
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
@@ -1364,7 +1365,7 @@ private struct PageView: View {
                             iconButton("plus", action: onNewTab)
                                 .frame(width: 48, height: 48)
                                 .glassEffect(.regular.interactive(), in: .circle)
-                            tabsButton
+                            tabsButton()
                                 .glassEffect(.regular.interactive(), in: .circle)
                         }
                         .instantOnChange(of: tab.id)
@@ -1801,7 +1802,8 @@ private struct PageView: View {
                     .glassEffect(.regular.interactive(), in: .circle)
             }
             if !sideRail {
-                tabsButton
+                // Landscape already has its own + beside it.
+                tabsButton(plus: cornerButton == .newTab && !landscape)
                     .glassEffect(.regular.interactive(), in: .circle)
             }
         }
@@ -2141,11 +2143,16 @@ private struct PageView: View {
         }
     }
 
-    private var tabsButton: some View {
+    /// `plus`: a tap opens a new tab, as in Arc Search, and the tabs move into the menu.
+    private func tabsButton(plus: Bool = false) -> some View {
         // Tap shows the tabs; long press opens the menu from the button itself, as in Safari. A context
         // menu instead lifted the label out of its glass circle.
         Menu {
-            Button("New Tab", systemImage: "plus.square.on.square") { newTab(private: false) }
+            if plus {
+                Button("Show All Tabs", systemImage: "square.on.square") { onShowTabs() }
+            } else {
+                Button("New Tab", systemImage: "plus.square.on.square") { newTab(private: false) }
+            }
             Button("New Private Tab", systemImage: "eyes") { newTab(private: true) }
             if !browser.recentlyClosed.isEmpty {
                 Menu("Recently Closed", systemImage: "arrow.uturn.backward") {
@@ -2188,14 +2195,18 @@ private struct PageView: View {
             Button(current.fromZenFolder ? "Unload Tab" : "Close Tab", systemImage: current.fromZenFolder ? "moon.zzz" : "xmark",
                    role: current.fromZenFolder ? nil : .destructive) { browser.close(browser.selected) }
         } label: {
-            TabCountGlyph(count: browser.tabs(in: browser.selected.spaceID).count)
-                .frame(width: 48, height: 48)
+            if plus {
+                Image(systemName: "plus").frame(width: 48, height: 48)
+            } else {
+                TabCountGlyph(count: browser.tabs(in: browser.selected.spaceID).count)
+                    .frame(width: 48, height: 48)
+            }
         } primaryAction: {
-            onShowTabs()
+            if plus { onNewTab() } else { onShowTabs() }
         }
-        .accessibilityLabel("Tabs")
-        .accessibilityValue("\(browser.tabs(in: browser.selected.spaceID).count)")
-        .accessibilityIdentifier("tabs")
+        .accessibilityLabel(plus ? "New Tab" : "Tabs")
+        .accessibilityValue(plus ? "" : "\(browser.tabs(in: browser.selected.spaceID).count)")
+        .accessibilityIdentifier(plus ? "newTab" : "tabs")
         .foregroundStyle(.primary)
     }
 

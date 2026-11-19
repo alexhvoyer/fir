@@ -262,6 +262,20 @@ enum NewTabStyle: String, CaseIterable, Identifiable {
     }
 }
 
+/// What the bar's tabs button does in portrait, where no separate + sits beside it.
+enum CornerButton: String, CaseIterable, Identifiable {
+    case tabs, newTab
+
+    var id: Self { self }
+
+    var name: String {
+        switch self {
+        case .tabs: String(localized: "Show Tabs")
+        case .newTab: String(localized: "New Tab")
+        }
+    }
+}
+
 /// How the tab overview lays out a workspace's tabs.
 enum TabLayout: String, CaseIterable, Identifiable {
     case deck, grid
@@ -337,6 +351,7 @@ enum SettingsKey {
     static let swipeAnywhere = "swipeAnywhere"
     static let newTabStyle = "newTabStyle"
     static let tabLayout = "tabLayout"
+    static let cornerButton = "cornerButton"
     static let barActions = "barActions"
     static let translateTarget = "translateTarget"
     static let intelligenceSearch = "intelligenceSearch"

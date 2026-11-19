@@ -8613,6 +8613,46 @@
         }
       }
     },
+    "New Tab puts + in its place. Swipe up on the address bar for your tabs, or touch and hold + for the tab menu." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„Neuer Tab“ setzt + an seine Stelle. Wische auf der Adressleiste nach oben für deine Tabs oder halte + gedrückt für das Tab-Menü."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva pestaña pone + en su lugar. Desliza hacia arriba en la barra de direcciones para ver tus pestañas o mantén pulsado + para el menú de pestañas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvel onglet le remplace par +. Balayez vers le haut sur la barre d’adresse pour vos onglets, ou maintenez + pour le menu des onglets."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo pannello mette + al suo posto. Scorri verso l’alto sulla barra degli indirizzi per i pannelli, o tieni premuto + per il menu dei pannelli."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova Aba coloca + no lugar. Deslize para cima na barra de endereço para ver as abas, ou toque e segure + para o menu de abas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Новая вкладка» ставит на её место +. Смахните вверх по адресной строке, чтобы увидеть вкладки, или удерживайте +, чтобы открыть меню вкладок."
+          }
+        }
+      }
+    },
     "New Workspace" : {
       "localizations" : {
         "de" : {
@@ -12813,6 +12853,46 @@
         }
       }
     },
+    "Show All Tabs" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Tabs zeigen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar todas las pestañas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher tous les onglets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra tutti i pannelli"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Todas as Abas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать все вкладки"
+          }
+        }
+      }
+    },
     "Show Next Tab" : {
       "localizations" : {
         "de" : {
@@ -12969,6 +13049,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Предыдущая вкладка"
+          }
+        }
+      }
+    },
+    "Show Tabs" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs zeigen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar pestañas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher les onglets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra pannelli"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Abas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать вкладки"
           }
         }
       }
@@ -14569,6 +14689,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Вкладки"
+          }
+        }
+      }
+    },
+    "Tabs Button" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tab-Taste"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Botón de pestañas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bouton des onglets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulsante pannelli"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Botão de Abas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кнопка вкладок"
           }
         }
       }

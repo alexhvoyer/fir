@@ -75,6 +75,7 @@ struct TabsSettingsView: View {
     @AppStorage(SettingsKey.clearTabsAfter) private var clear = TabLifetime.never
     @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
     @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
+    @AppStorage(SettingsKey.cornerButton) private var cornerButton = CornerButton.tabs
 
     var body: some View {
         List {
@@ -84,6 +85,13 @@ struct TabsSettingsView: View {
                 }
             } footer: {
                 Text("Search Sheet opens search at once. Start Page shows your pinned and frequent sites and history; tap the address bar to search, and the keyboard comes up right away.")
+            }
+            Section {
+                Picker("Tabs Button", selection: $cornerButton) {
+                    ForEach(CornerButton.allCases) { Text($0.name).tag($0) }
+                }
+            } footer: {
+                Text("New Tab puts + in its place. Swipe up on the address bar for your tabs, or touch and hold + for the tab menu.")
             }
             Section {
                 Picker("Tab Overview", selection: $tabLayout) {

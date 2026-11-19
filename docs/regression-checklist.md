@@ -55,6 +55,8 @@ timing, sync.
   melt back into it. Closing used to shrink into the bar as a black capsule.
 - `sim` With New Tab set to Start Page, tapping the address puts the field in the bar's place with no sheet; it rides
   up on the keyboard. Cancel, or putting the keyboard away, brings the bar back. Landscape still uses the sheet.
+- `sim` Settings > Tabs > Tabs Button > New Tab: in portrait the tab count becomes +, a tap opens a new tab, and touch
+  and hold shows the menu with Show All Tabs on top. Landscape and the Duo's column keep the tab count beside their +.
 - `sim` **(was broken)** Start Page mode: Cancel or Return takes the keyboard down with the field riding on it, then the
   field fades into the bar. Removed at once, both vanished in one frame.
 - `sim` **(was broken)** Start Page mode on a page, Cancel: the start page or results stay put while they fade (they
