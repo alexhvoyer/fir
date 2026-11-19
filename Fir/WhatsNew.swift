@@ -3,7 +3,7 @@ import SwiftUI
 /// The list shown once after an update. It has its own number: raise `list` and rewrite `items` only
 /// when an update has something to tell, so most builds pass quietly.
 enum WhatsNew {
-    static let list = 4
+    static let list = 5
 
     struct Item: Identifiable {
         let symbol: String
@@ -14,12 +14,16 @@ enum WhatsNew {
 
     @MainActor static var items: [Item] {
         [
-            Item(symbol: "magnifyingglass", title: String(localized: "Any search engine"),
-                 detail: String(localized: "Add one by its address, or pick Kagi.")),
-            Item(symbol: "bolt.fill", title: String(localized: "Quick Search"),
-                 detail: String(localized: "Type a keyword and a space, like “wiki fir”.")),
-            Item(symbol: "plus.magnifyingglass", title: String(localized: "Page Zoom like Safari"),
-                 detail: String(localized: "A zoomed page still fits the screen width.")),
+            Item(symbol: "square.and.arrow.up", title: String(localized: "Share to Fir"),
+                 detail: String(localized: "Open links in Fir or send them to a device from any app.")),
+            Item(symbol: "puzzlepiece.extension", title: String(localized: "Extensions per site"),
+                 detail: String(localized: "Turn one off for a site from the page menu.")),
+            Item(symbol: "plus", title: String(localized: "A + for new tabs"),
+                 detail: String(localized: "Put it in place of the tab count in Settings > Tabs.")),
+            Item(symbol: "iphone", title: String(localized: "Better on iPhone Duo"),
+                 detail: String(localized: "Pages fill the camera column; the open screen gets a wider grid.")),
+            Item(symbol: "pencil", title: String(localized: "Your device's name"),
+                 detail: String(localized: "Rename this iPhone for Send Tab in Settings > Sync.")),
         ]
     }
 

@@ -1000,6 +1000,46 @@
         }
       }
     },
+    "A + for new tabs" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un + para pestañas nuevas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un + pour les nouveaux onglets"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein + für neue Tabs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un + per nuovi pannelli"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ для новых вкладок"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um + para novas abas"
+          }
+        }
+      }
+    },
     "A demo of the tab gestures" : {
       "localizations" : {
         "de" : {
@@ -1116,46 +1156,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Короткий список изменений после крупного обновления."
-          }
-        }
-      }
-    },
-    "A zoomed page still fits the screen width." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eine gezoomte Seite passt weiter in die Bildschirmbreite."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una página con zoom sigue cabiendo a lo ancho."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une page zoomée tient toujours dans la largeur de l’écran."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una pagina con zoom resta larga quanto lo schermo."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uma página com zoom continua cabendo na largura da tela."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Страница в любом масштабе помещается по ширине экрана."
           }
         }
       }
@@ -1443,46 +1443,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить поисковую систему"
-          }
-        }
-      }
-    },
-    "Add one by its address, or pick Kagi." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Füge eine per Adresse hinzu oder wähle Kagi."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añade uno por su dirección o elige Kagi."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoutez-en un par son adresse ou choisissez Kagi."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiungine uno dal suo indirizzo o scegli Kagi."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicione um pelo endereço ou escolha o Kagi."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавьте свою по адресу или выберите Kagi."
           }
         }
       }
@@ -2127,46 +2087,6 @@
         }
       }
     },
-    "Any search engine" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jede Suchmaschine"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cualquier buscador"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tous les moteurs de recherche"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qualsiasi motore di ricerca"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qualquer buscador"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Любая поисковая система"
-          }
-        }
-      }
-    },
     "App Icon" : {
       "localizations" : {
         "de" : {
@@ -2523,6 +2443,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Вернуться к странице"
+          }
+        }
+      }
+    },
+    "Better on iPhone Duo" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mejor en iPhone Duo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mieux sur iPhone Duo"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Besser auf dem iPhone Duo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meglio su iPhone Duo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лучше на iPhone Duo"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Melhor no iPhone Duo"
           }
         }
       }
@@ -5609,6 +5569,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Расширения"
+          }
+        }
+      }
+    },
+    "Extensions per site" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensiones por sitio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensions par site"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erweiterungen pro Website"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estensioni per sito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расширения по сайтам"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensões por site"
           }
         }
       }
@@ -9973,6 +9973,46 @@
         }
       }
     },
+    "Open links in Fir or send them to a device from any app." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre enlaces en Fir o envíalos a un dispositivo desde cualquier app."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez des liens dans Fir ou envoyez-les à un appareil depuis n’importe quelle app."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne Links in Fir oder sende sie aus jeder App an ein Gerät."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri i link in Fir o inviali a un dispositivo da qualsiasi app."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывайте ссылки в Fir или отправляйте на устройство из любого приложения."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abra links no Fir ou envie para um dispositivo de qualquer app."
+          }
+        }
+      }
+    },
     "Open this page in another app?" : {
       "localizations" : {
         "de" : {
@@ -10173,46 +10213,6 @@
         }
       }
     },
-    "Page Zoom like Safari" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seitenzoom wie in Safari"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zoom de la página como en Safari"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zoom de la page comme dans Safari"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zoom pagina come in Safari"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zoom da Página como no Safari"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Масштаб страницы как в Safari"
-          }
-        }
-      }
-    },
     "Pages also fill the camera column. Its buttons float over the page and hide as you scroll." : {
       "localizations" : {
         "de" : {
@@ -10249,6 +10249,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Страницы занимают и колонку камеры. Её кнопки висят поверх страницы и прячутся при прокрутке."
+          }
+        }
+      }
+    },
+    "Pages fill the camera column; the open screen gets a wider grid." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las páginas ocupan la columna de la cámara; abierto, la cuadrícula es más ancha."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pages occupent la colonne de la caméra ; ouvert, la grille est plus large."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiten füllen die Kameraspalte; aufgeklappt ist das Raster breiter."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pagine riempiono la colonna della fotocamera; da aperto la griglia è più ampia."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страницы заходят под колонку камеры, а в раскрытом виде сетка шире."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As páginas ocupam a coluna da câmera; aberto, a grade fica mais larga."
           }
         }
       }
@@ -11053,6 +11093,46 @@
         }
       }
     },
+    "Put it in place of the tab count in Settings > Tabs." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ponlo en lugar del contador de pestañas en Ajustes > Pestañas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettez-le à la place du nombre d’onglets dans Réglages > Onglets."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setze es in Einstellungen > Tabs statt der Tab-Anzahl."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettilo al posto del numero di pannelli in Impostazioni > Pannelli."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поставьте его вместо счётчика вкладок в Настройки > Вкладки."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coloque-o no lugar da contagem de abas em Ajustes > Abas."
+          }
+        }
+      }
+    },
     "Put text on your clipboard" : {
       "localizations" : {
         "de" : {
@@ -11729,6 +11809,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Удаляет cookie, кэш и хранилища сайтов. Вы выйдете из аккаунтов на сайтах."
+          }
+        }
+      }
+    },
+    "Rename this iPhone for Send Tab in Settings > Sync." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia el nombre de este iPhone para Enviar pestaña en Ajustes > Sincronización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renommez cet iPhone pour Envoyer l’onglet dans Réglages > Synchronisation."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benenne dieses iPhone für „Tab senden“ in Einstellungen > Sync um."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rinomina questo iPhone per Invia pannello in Impostazioni > Sincronizzazione."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переименуйте этот iPhone для отправки вкладок в Настройки > Синхронизация."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renomeie este iPhone para Enviar Aba em Ajustes > Sincronização."
           }
         }
       }
@@ -12849,6 +12969,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Поделиться"
+          }
+        }
+      }
+    },
+    "Share to Fir" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir con Fir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager vers Fir"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Fir teilen"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Condividi con Fir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправка в Fir"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartilhar com o Fir"
           }
         }
       }
@@ -16013,6 +16173,46 @@
         }
       }
     },
+    "Turn one off for a site from the page menu." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactiva una en un sitio desde el menú de la página."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivez-en une sur un site depuis le menu de la page."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schalte eine im Seitenmenü für eine Website aus."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattivane una su un sito dal menu della pagina."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выключайте расширение на отдельном сайте из меню страницы."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desative uma em um site pelo menu da página."
+          }
+        }
+      }
+    },
     "Turning one off stops it on this iPhone only; Zen keeps syncing it. Which devices' tabs show is under Workspaces." : {
       "localizations" : {
         "de" : {
@@ -16129,46 +16329,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Введите ключевое слово и пробел в адресной строке, например «%@», чтобы искать в этой поисковой системе."
-          }
-        }
-      }
-    },
-    "Type a keyword and a space, like “wiki fir”." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gib ein Stichwort und ein Leerzeichen ein, etwa „wiki fir“."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escribe una palabra clave y un espacio, como «wiki fir»."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tapez un mot-clé et une espace, comme « wiki fir »."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Digita una parola chiave e uno spazio, come «wiki fir»."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Digite uma palavra-chave e um espaço, como “wiki fir”."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Введите ключ и пробел, например «wiki fir»."
           }
         }
       }
@@ -17809,6 +17969,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Соединение с %@ не зашифровано. Не вводите здесь пароли и номера карт."
+          }
+        }
+      }
+    },
+    "Your device's name" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El nombre de tu dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le nom de votre appareil"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Name deines Geräts"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il nome del dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя устройства"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O nome do seu dispositivo"
           }
         }
       }
