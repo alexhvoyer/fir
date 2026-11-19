@@ -1002,6 +1002,12 @@
     },
     "A + for new tabs" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein + für neue Tabs"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1014,28 +1020,22 @@
             "value" : "Un + pour les nouveaux onglets"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ein + für neue Tabs"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un + per nuovi pannelli"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ для новых вкладок"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Um + para novas abas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ для новых вкладок"
           }
         }
       }
@@ -1767,6 +1767,46 @@
         }
       }
     },
+    "All History" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo el historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout l’historique"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesamter Verlauf"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutta la cronologia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всю историю"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo o Histórico"
+          }
+        }
+      }
+    },
     "Allow" : {
       "localizations" : {
         "de" : {
@@ -2449,6 +2489,12 @@
     },
     "Better on iPhone Duo" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Besser auf dem iPhone Duo"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2461,28 +2507,22 @@
             "value" : "Mieux sur iPhone Duo"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Besser auf dem iPhone Duo"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Meglio su iPhone Duo"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Лучше на iPhone Duo"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Melhor no iPhone Duo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лучше на iPhone Duo"
           }
         }
       }
@@ -3163,46 +3203,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Очистить данные сайтов"
-          }
-        }
-      }
-    },
-    "Clear all history?" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gesamten Verlauf löschen?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Borrar todo el historial?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Effacer tout l’historique ?"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancellare tutta la cronologia?"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Limpar todo o histórico?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Очистить всю историю?"
           }
         }
       }
@@ -5575,6 +5575,12 @@
     },
     "Extensions per site" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erweiterungen pro Website"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5587,28 +5593,22 @@
             "value" : "Extensions par site"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erweiterungen pro Website"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Estensioni per sito"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Расширения по сайтам"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Extensões por site"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расширения по сайтам"
           }
         }
       }
@@ -7853,6 +7853,86 @@
         }
       }
     },
+    "Last 15 Minutes" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 15 minutos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 dernières minutes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzte 15 Minuten"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultimi 15 minuti"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последние 15 минут"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 15 Minutos"
+          }
+        }
+      }
+    },
+    "Last 30 Minutes" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 30 minutos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 dernières minutes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzte 30 Minuten"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultimi 30 minuti"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последние 30 минут"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 30 Minutos"
+          }
+        }
+      }
+    },
     "Last Error" : {
       "localizations" : {
         "de" : {
@@ -7889,6 +7969,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Последняя ошибка"
+          }
+        }
+      }
+    },
+    "Last Hour" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Última hora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dernière heure"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzte Stunde"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultima ora"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последний час"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Última Hora"
           }
         }
       }
@@ -9493,6 +9613,46 @@
         }
       }
     },
+    "Off, pages you open in regular tabs aren't added to History. What's there now stays until you clear it." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivado, las páginas que abras en pestañas normales no se añaden al historial. Lo que ya hay se queda hasta que lo borres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivé, les pages ouvertes dans les onglets normaux ne sont pas ajoutées à l’historique. Ce qui s’y trouve reste jusqu’à ce que vous l’effaciez."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus: Seiten in normalen Tabs werden nicht zum Verlauf hinzugefügt. Was schon drin ist, bleibt, bis du es löschst."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se disattivato, le pagine aperte nei pannelli normali non vengono aggiunte alla cronologia. Quello che c’è già resta finché non lo cancelli."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если выключено, страницы из обычных вкладок не попадают в историю. То, что уже есть, остаётся, пока вы её не очистите."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativado, as páginas abertas em abas normais não entram no histórico. O que já existe fica até você limpar."
+          }
+        }
+      }
+    },
     "Offers to read a search's first results and write one answer with its sources, on this iPhone. Answers can get things wrong." : {
       "localizations" : {
         "de" : {
@@ -9975,6 +10135,12 @@
     },
     "Open links in Fir or send them to a device from any app." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne Links in Fir oder sende sie aus jeder App an ein Gerät."
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -9987,28 +10153,22 @@
             "value" : "Ouvrez des liens dans Fir ou envoyez-les à un appareil depuis n’importe quelle app."
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öffne Links in Fir oder sende sie aus jeder App an ein Gerät."
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apri i link in Fir o inviali a un dispositivo da qualsiasi app."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открывайте ссылки в Fir или отправляйте на устройство из любого приложения."
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Abra links no Fir ou envie para um dispositivo de qualquer app."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывайте ссылки в Fir или отправляйте на устройство из любого приложения."
           }
         }
       }
@@ -10255,6 +10415,12 @@
     },
     "Pages fill the camera column; the open screen gets a wider grid." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiten füllen die Kameraspalte; aufgeklappt ist das Raster breiter."
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -10267,28 +10433,22 @@
             "value" : "Les pages occupent la colonne de la caméra ; ouvert, la grille est plus large."
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seiten füllen die Kameraspalte; aufgeklappt ist das Raster breiter."
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le pagine riempiono la colonna della fotocamera; da aperto la griglia è più ampia."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Страницы заходят под колонку камеры, а в раскрытом виде сетка шире."
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "As páginas ocupam a coluna da câmera; aberto, a grade fica mais larga."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страницы заходят под колонку камеры, а в раскрытом виде сетка шире."
           }
         }
       }
@@ -11095,6 +11255,12 @@
     },
     "Put it in place of the tab count in Settings > Tabs." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setze es in Einstellungen > Tabs statt der Tab-Anzahl."
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -11107,28 +11273,22 @@
             "value" : "Mettez-le à la place du nombre d’onglets dans Réglages > Onglets."
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Setze es in Einstellungen > Tabs statt der Tab-Anzahl."
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mettilo al posto del numero di pannelli in Impostazioni > Pannelli."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Поставьте его вместо счётчика вкладок в Настройки > Вкладки."
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coloque-o no lugar da contagem de abas em Ajustes > Abas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поставьте его вместо счётчика вкладок в Настройки > Вкладки."
           }
         }
       }
@@ -11613,6 +11773,46 @@
         }
       }
     },
+    "Remember History" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordar historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mémoriser l’historique"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf speichern"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricorda cronologia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запоминать историю"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lembrar Histórico"
+          }
+        }
+      }
+    },
     "Remove" : {
       "localizations" : {
         "de" : {
@@ -11815,6 +12015,12 @@
     },
     "Rename this iPhone for Send Tab in Settings > Sync." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benenne dieses iPhone für „Tab senden“ in Einstellungen > Sync um."
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -11827,28 +12033,22 @@
             "value" : "Renommez cet iPhone pour Envoyer l’onglet dans Réglages > Synchronisation."
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Benenne dieses iPhone für „Tab senden“ in Einstellungen > Sync um."
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rinomina questo iPhone per Invia pannello in Impostazioni > Sincronizzazione."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переименуйте этот iPhone для отправки вкладок в Настройки > Синхронизация."
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Renomeie este iPhone para Enviar Aba em Ajustes > Sincronização."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переименуйте этот iPhone для отправки вкладок в Настройки > Синхронизация."
           }
         }
       }
@@ -12975,6 +13175,12 @@
     },
     "Share to Fir" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Fir teilen"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -12987,28 +13193,22 @@
             "value" : "Partager vers Fir"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mit Fir teilen"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Condividi con Fir"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отправка в Fir"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compartilhar com o Fir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправка в Fir"
           }
         }
       }
@@ -16175,6 +16375,12 @@
     },
     "Turn one off for a site from the page menu." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schalte eine im Seitenmenü für eine Website aus."
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -16187,28 +16393,22 @@
             "value" : "Désactivez-en une sur un site depuis le menu de la page."
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schalte eine im Seitenmenü für eine Website aus."
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disattivane una su un sito dal menu della pagina."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выключайте расширение на отдельном сайте из меню страницы."
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desative uma em um site pelo menu da página."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выключайте расширение на отдельном сайте из меню страницы."
           }
         }
       }
@@ -17975,6 +18175,12 @@
     },
     "Your device's name" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Name deines Geräts"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -17987,28 +18193,22 @@
             "value" : "Le nom de votre appareil"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Der Name deines Geräts"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il nome del dispositivo"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Имя устройства"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "O nome do seu dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя устройства"
           }
         }
       }

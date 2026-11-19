@@ -15,8 +15,11 @@ struct FirApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     private var lockCovers: Bool { lock.isLocked || (AppLock.isEnabled && scenePhase != .active) }
-    /// iOS photographs the screen for the app switcher and keeps the image on disk.
-    private var privateCovers: Bool { browser.selected.isPrivate && scenePhase != .active }
+    /// iOS keeps the app switcher's screenshot on disk. The overview can show private cards, and a private
+    /// search sheet its query, with a regular tab selected.
+    private var privateCovers: Bool {
+        BrowserModel.showsPrivate(selected: browser.selected, space: browser.space) && scenePhase != .active
+    }
     private var coverTitle: LocalizedStringKey { lockCovers ? "Fir is Locked" : "Private Browsing" }
 
     /// Never a private tab's page, or anything while Fir is locked.

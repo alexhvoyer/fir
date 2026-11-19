@@ -49,15 +49,21 @@ final class PasswordAutofill: NSObject {
     func fill(_ login: Login) async {
         guard let offer, let webView = offer.webView else { return }
         if AppLock.isAvailable, !(await AppLock.authenticate(reason: String(localized: "Fill your password"))) { return }
-        // Checked in the same call: a frame keeps its identity when its page navigates to another site.
-        _ = try? await webView.callAsyncJavaScript(
-            "if (location.origin === origin) window.__zenFill(username, password)",
-            arguments: ["username": login.username, "password": login.password, "origin": offer.origin],
-            in: offer.frame, contentWorld: Self.world
-        )
+        await Self.fill(username: login.username, password: login.password, origin: offer.origin,
+                        in: webView, frame: offer.frame)
         self.offer = nil
         // Use counts sync to other devices; a private tab leaves none.
         if webView.configuration.websiteDataStore.isPersistent { Task.detached { PasswordStore.shared?.touch(login) } }
+    }
+
+    /// Fills only while the frame is still on `origin`: checked in the same call, since a frame keeps its
+    /// identity when its page navigates to another site.
+    static func fill(username: String, password: String, origin: String, in webView: WKWebView, frame: WKFrameInfo?) async {
+        _ = try? await webView.callAsyncJavaScript(
+            "if (location.origin === origin) window.__zenFill(username, password)",
+            arguments: ["username": username, "password": password, "origin": origin],
+            in: frame, contentWorld: world
+        )
     }
 
     func save(_ prompt: SavePrompt) async {

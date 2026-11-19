@@ -8,6 +8,7 @@ struct PrivacySettingsView: View {
     @State private var lockPrivateTabs = UserDefaults.standard.bool(forKey: SettingsKey.lockPrivateTabs)
     @AppStorage(SettingsKey.globalPrivacyControl) private var globalPrivacyControl = true
     @AppStorage(SettingsKey.hardenPrivateTabs) private var hardenPrivateTabs = false
+    @AppStorage(SettingsKey.rememberHistory) private var rememberHistory = true
     @State private var confirmClear = false
     @State private var cleared = false
     private let blocker = ContentBlocker.shared
@@ -60,6 +61,11 @@ struct PrivacySettingsView: View {
                 Text(AppLock.isAvailable
                      ? "Private tabs lock when you leave Private or Fir. Locking Fir asks when you open it, and hides the page in the app switcher."
                      : "Set up Face ID or a passcode on this iPhone to lock Fir.")
+            }
+            Section {
+                Toggle("Remember History", isOn: $rememberHistory)
+            } footer: {
+                Text("Off, pages you open in regular tabs aren't added to History. What's there now stays until you clear it.")
             }
             Section {
                 Button("Clear Website Data", role: .destructive) { confirmClear = true }

@@ -331,8 +331,10 @@ final class BrowserTab: NSObject, Identifiable {
     }
 
     func retryFailedLoad() {
-        guard let url = loadFailure?.url else { return }
+        guard let failure = loadFailure, let url = failure.url else { return }
         load(url)
+        // Kept until the retry commits or fails: cleared at once, the blank page flashed between tries.
+        loadFailure = failure
     }
 
     func dismissLoadFailure() { loadFailure = nil }
@@ -772,7 +774,7 @@ extension BrowserTab: WKNavigationDelegate {
         if !isPrivate {
             Task { await adoptPageIcons() }
             // The committed address: webView.url can already be the next page, still loading.
-            if let url = pageURL {
+            if let url = pageURL, UserDefaults.standard.bool(forKey: SettingsKey.rememberHistory, default: true) {
                 let title = webView.title
                 Task.detached(priority: .utility) { HistoryStore.shared?.recordVisit(url, title: title) }
             }
@@ -863,6 +865,11 @@ final class BrowserModel {
         }
     }
     static let privateSpace = "private"
+
+    /// Something private can be on screen: a private tab, or the overview or a search sheet showing Private.
+    static func showsPrivate(selected: BrowserTab, space: String?) -> Bool {
+        selected.isPrivate || space == privateSpace
+    }
     /// Private tabs are hidden behind Face ID until unlocked.
     private(set) var privateLocked = false
     @ObservationIgnored private var unlockingPrivate = false

@@ -9,8 +9,9 @@ systems sit behind `#available`.
 - `project.yml` is the source of the Xcode project and `Fir/Info.plist`. `Fir.xcodeproj` is generated and ignored.
 - Run `xcodegen generate` after changing `project.yml` or adding a file.
 - `Packages/MozillaRustComponents` is generated Mozilla code. Leave it alone.
-- `FirTests` covers code that parses untrusted input (`ZipExtractor`). Everything else is verified on the simulator
-  and, for feel, on a phone.
+- `FirTests`, hosted in Fir, covers code that parses untrusted input (`ZipExtractor`) and security checks: the
+  autofill origin, add-on site denial, the private cover. Everything else is verified on the simulator and, for feel,
+  on a phone.
 
 ## Commands
 

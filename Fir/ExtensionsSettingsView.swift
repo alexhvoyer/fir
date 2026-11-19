@@ -98,12 +98,12 @@ private struct ExtensionDetailView: View {
                     Toggle("Enabled", isOn: Binding(get: { item.isEnabled }, set: { manager.setEnabled($0, for: id) }))
                     // The popup, which the page sheet's menu used to offer beside the settings page.
                     if tab != nil, item.hasSettings {
-                        Button("Open", systemImage: "puzzlepiece.extension") { manager.performAction(id) }
+                        Button("Open", systemImage: "puzzlepiece.extension") { manager.performAction(id, for: tab) }
                             .disabled(!item.isEnabled)
                     }
                     // Without a settings page, an add-on keeps its settings in its popup, as Dark Reader does.
                     Button("Extension Settings", systemImage: "gearshape") {
-                        if item.hasSettings { manager.openSettings(id) } else { manager.performAction(id) }
+                        if item.hasSettings { manager.openSettings(id) } else { manager.performAction(id, for: tab) }
                     }
                     .disabled(!item.isEnabled)
                 } footer: {

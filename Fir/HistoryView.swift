@@ -31,8 +31,10 @@ struct HistoryView: View {
         .toolbar {
             Button("Clear", role: .destructive) { confirmClear = true }.disabled(entries.isEmpty)
         }
-        .confirmationDialog("Clear all history?", isPresented: $confirmClear, titleVisibility: .visible) {
-            Button("Clear History", role: .destructive) { clear() }
+        .confirmationDialog("Clear History", isPresented: $confirmClear, titleVisibility: .visible) {
+            ForEach(ClearSpan.allCases, id: \.self) { span in
+                Button(span.name, role: .destructive) { clear(span) }
+            }
         } message: {
             Text(account.isSignedIn ? "With history sync on, this can also clear it in Zen." : "")
         }
@@ -94,8 +96,38 @@ struct HistoryView: View {
         Task.detached(priority: .utility) { HistoryStore.shared?.delete(entry.url) }
     }
 
-    private func clear() {
-        entries = []
-        Task.detached(priority: .utility) { HistoryStore.shared?.deleteAll() }
+    private func clear(_ span: ClearSpan) {
+        Task {
+            await Task.detached(priority: .userInitiated) {
+                if let start = span.start { HistoryStore.shared?.deleteVisits(since: start) } else { HistoryStore.shared?.deleteAll() }
+            }.value
+            await reload()
+        }
+    }
+}
+
+/// How far back Clear History goes: the last few minutes, today, or all of it.
+private enum ClearSpan: CaseIterable {
+    case quarterHour, halfHour, hour, today, all
+
+    var name: LocalizedStringKey {
+        switch self {
+        case .quarterHour: "Last 15 Minutes"
+        case .halfHour: "Last 30 Minutes"
+        case .hour: "Last Hour"
+        case .today: "Today"
+        case .all: "All History"
+        }
+    }
+
+    /// Nil clears everything.
+    var start: Date? {
+        switch self {
+        case .quarterHour: .now.addingTimeInterval(-15 * 60)
+        case .halfHour: .now.addingTimeInterval(-30 * 60)
+        case .hour: .now.addingTimeInterval(-60 * 60)
+        case .today: Calendar.current.startOfDay(for: .now)
+        case .all: nil
+        }
     }
 }

@@ -55,6 +55,8 @@ timing, sync.
   melt back into it. Closing used to shrink into the bar as a black capsule.
 - `sim` With New Tab set to Start Page, tapping the address puts the field in the bar's place with no sheet; it rides
   up on the keyboard. Cancel, or putting the keyboard away, brings the bar back. Landscape still uses the sheet.
+- `sim` **(was broken)** A page printing `100svh` and `100lvh` shows less than the screen height, as in Safari. They were
+  the whole screen, and a site menu that tall ran under the bar out of reach. `100vh` stays the full height.
 - `sim` Settings > Tabs > Tabs Button > New Tab: in portrait the tab count becomes +, a tap opens a new tab, and touch
   and hold shows the menu with Show All Tabs on top. Landscape and the Duo's column keep the tab count beside their +.
 - `sim` **(was broken)** Start Page mode: Cancel or Return takes the keyboard down with the field riding on it, then the
@@ -139,12 +141,20 @@ timing, sync.
 
 - `phone` Private tabs lock with Face ID when the app goes to the background. The lock covers sheets.
 - `sim` Nothing from a private tab shows in history, Spotlight, Handoff, snapshots or Live Activities.
+- `sim` Privacy & Security > Remember History off: new pages don't appear in Settings > History; older entries stay.
+  History > Clear offers Last 15 Minutes, 30 Minutes, Last Hour, Today and All History; each removes only that span.
 - `sim` Closing the last private tab clears its data. The Private section shows its empty page.
+- `sim` **(was broken)** With a regular tab selected, the overview on Private covers the app switcher with Private
+  Browsing, as a private tab does. It used to show the private cards.
 - `phone` The app lock, when on, shows over everything on launch and on return.
 - `phone` Turning a lock off asks for Face ID.
 
 ## Links in and out
 
+- `sim` **(was broken)** "Continue with Google" (a page's window opened empty, then sent to Google) shows Google's page
+  in a new tab. It used to bring up the search sheet, and sign-in waited until that was closed.
+- `sim` **(was broken)** Offline, Try Again keeps the error page up while it retries. It used to flash a blank page on
+  every tap. Back online, Try Again loads the page.
 - `phone` With Fir as the default browser, a link from another app opens in a new tab in front of any open sheet.
 - `sim` A link to another app (for example the App Store) asks first. `tel`, `mailto`, `sms` and `facetime` links
   don't ask.
@@ -205,6 +215,7 @@ timing, sync.
 - `sim` With Dark Reader on a light page (info.cern.ch), turning off Allow on info.cern.ch on its page in the sheet
   reloads the page light; another site stays dark, and so does info.cern.ch's state after a relaunch. Settings >
   Extensions > Dark Reader lists the site under Off on These Sites; swiping it to Allow darkens the page again.
+- `sim` Dark Reader's popup on a site it's off on shows no address (about:), and its own site button there does nothing.
 - `sim` Installing Privacy Badger (`privacy-badger17`) lists "See the addresses of your open tabs" and "See the pages
   you open as they load" under "It will also be able to:"; Cancel installs nothing.
 

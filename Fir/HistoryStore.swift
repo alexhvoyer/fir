@@ -90,6 +90,11 @@ final class HistoryStore: @unchecked Sendable {
         try? api.getWriter().deleteVisitsFor(url: url.absoluteString)
     }
 
+    /// Visits from `start` until now, for clearing the last few minutes or today.
+    func deleteVisits(since start: Date) {
+        try? api.getWriter().deleteVisitsBetween(start: PlacesTimestamp(start.timeIntervalSince1970 * 1000), end: Self.now)
+    }
+
     func deleteAll() {
         try? api.getWriter().deleteEverythingHistory()
     }

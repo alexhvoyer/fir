@@ -88,6 +88,37 @@ final class SmokeTests: XCTestCase {
         XCTAssert(page("g").waitForNonExistence(timeout: 5), "the private tab closes")
     }
 
+    /// Nothing private survives Fir being killed: no private tab in either overview section, and its page
+    /// not in History.
+    func testPrivateTabGoneAfterRelaunch() {
+        launch(layout: "grid")
+        open("q")
+        tabsButton.press(forDuration: 1)
+        app.buttons["New Private Tab"].tap()
+        type("r")
+        XCTAssert(page("r").waitForExistence(timeout: Self.pageLoad), "the private tab loads")
+
+        app.terminate()
+        launch(layout: "grid")
+        XCTAssertFalse(page("r").waitForExistence(timeout: 3), "the private page is not on screen")
+        showTabs()
+        XCTAssert(cell("Page q").waitForExistence(timeout: 5), "the regular tab is back")
+        XCTAssertFalse(cell("Page r").exists, "no private tab among the regular ones")
+        // The workspace switcher draws its labels as text under one gesture, not as buttons.
+        app.staticTexts["Private"].firstMatch.tap()
+        XCTAssertFalse(cell("Page r").waitForExistence(timeout: 2), "no private tab in Private")
+
+        app.buttons["Settings"].firstMatch.tap()
+        XCTAssert(app.navigationBars["Settings"].waitForExistence(timeout: 5), "Settings opens")
+        app.staticTexts["History"].firstMatch.tap()
+        // A row is one button whose label joins the title and the host.
+        let row = { (title: String) in
+            self.app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
+        }
+        XCTAssert(row("Page q").waitForExistence(timeout: 5), "History lists the regular page")
+        XCTAssertFalse(row("Page r").exists, "and not the private one")
+    }
+
     /// In start-page mode the address is edited in the bar, with no sheet: the keyboard comes up, a page
     /// opens in the same tab, and Cancel puts the bar back.
     func testStartPageSearchInBar() {

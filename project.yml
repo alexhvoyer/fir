@@ -110,7 +110,9 @@ targets:
       testTargets: [FirTests]
     sources:
       - FirTests
-      - Fir/ZipExtractor.swift
+    # Hosted in Fir, so tests reach the app's code with @testable import.
+    dependencies:
+      - target: Fir
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.khvoynitsky.browser.Tests

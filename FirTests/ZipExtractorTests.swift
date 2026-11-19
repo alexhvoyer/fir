@@ -1,6 +1,7 @@
 import Compression
 import Foundation
 import Testing
+@testable import Fir
 
 /// Add-on packages come from the network, so every check here is a hostile archive.
 @Suite final class ZipExtractorTests {

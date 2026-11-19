@@ -352,6 +352,7 @@ enum SettingsKey {
     static let newTabStyle = "newTabStyle"
     static let tabLayout = "tabLayout"
     static let cornerButton = "cornerButton"
+    static let rememberHistory = "rememberHistory"
     static let barActions = "barActions"
     static let translateTarget = "translateTarget"
     static let intelligenceSearch = "intelligenceSearch"

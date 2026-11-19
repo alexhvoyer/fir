@@ -127,7 +127,7 @@ final class ExtensionManager: NSObject {
 
     /// A denial outranks the sites granted at install. Allowing again restores the grant when the add-on asked
     /// for exactly this site, since the denial replaced it.
-    private static func apply(_ allowed: Bool, on site: String, to context: WKWebExtensionContext) {
+    static func apply(_ allowed: Bool, on site: String, to context: WKWebExtensionContext) {
         let requested = context.webExtension.allRequestedMatchPatterns
         for host in [site, "www." + site] {
             guard let pattern = try? WKWebExtension.MatchPattern(string: "*://\(host)/*") else { continue }
@@ -190,10 +190,12 @@ final class ExtensionManager: NSObject {
         return top
     }
 
-    /// The toolbar action, as a menu entry: shows the extension's popup if it has one.
-    func performAction(_ id: String) {
+    /// Shows the add-on's popup. The tab gets temporary access, so only the page the user is on, never a
+    /// private tab or a site it's switched off on.
+    func performAction(_ id: String, for tab: BrowserTab?) {
         guard let entry = installed.first(where: { $0.id == id }) else { return }
-        entry.context.performAction(for: browser?.selected.isPrivate == false ? browser?.selected : nil)
+        let denied = SiteSettings.site(tab?.pageURL).map(entry.deniedSites.contains) ?? false
+        entry.context.performAction(for: tab?.isPrivate == false && !denied ? tab : nil)
     }
 
     private func add(id: String, enabled: Bool, deniedSites: Set<String> = []) async throws {
@@ -385,8 +387,13 @@ extension BrowserTab: WKWebExtensionTab {
 
     /// None for a tab not loaded yet: asking every tab made them all, and there is no page to script.
     func webView(for context: WKWebExtensionContext) -> WKWebView? { existingWebView }
-    func title(for context: WKWebExtensionContext) -> String? { title }
-    func url(for context: WKWebExtensionContext) -> URL? { url }
+    // The `tabs` permission shows every tab's address and title; a site the add-on is switched off on keeps both.
+    func title(for context: WKWebExtensionContext) -> String? { isDenied(to: context) ? nil : title }
+    func url(for context: WKWebExtensionContext) -> URL? { isDenied(to: context) ? nil : url }
+
+    private func isDenied(to context: WKWebExtensionContext) -> Bool {
+        url.map { context.permissionStatus(for: $0) == .deniedExplicitly } ?? false
+    }
     func isLoadingComplete(for context: WKWebExtensionContext) -> Bool { !isLoading }
 
     func isSelected(for context: WKWebExtensionContext) -> Bool {

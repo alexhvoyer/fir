@@ -76,10 +76,11 @@ struct BrowserView: View {
     @State private var whatsNewPending = WhatsNew.isDue
 
     /// A tab without a page is on screen, nothing over it: search opens, as there is nothing else to do.
-    /// Not while Undo is offered, which the sheet would cover.
+    /// Not while Undo is offered, which the sheet would cover, nor in a page's popup: its page is coming,
+    /// and search over it held up sign-in windows.
     private var blankShown: Bool {
-        pageShown && !transitioning && browser.selected.url == nil && browser.undo == nil && onboardingDone && !whatsNewPending
-            && newTabStyle == .sheet
+        pageShown && !transitioning && browser.selected.url == nil && browser.selected.openerID == nil && browser.undo == nil
+            && onboardingDone && !whatsNewPending && newTabStyle == .sheet
     }
 
     // Safari's curve: a quick start and a soft settle, full screen in about 0.2 s on a 2026 recording.
@@ -935,8 +936,13 @@ struct TabCountGlyph: View {
     let count: Int
 
     var body: some View {
-        Text("\(count)")
+        // The square keeps its size at any text size, so the number stops growing at the default and shrinks to fit.
+        Text(count > 99 ? "99+" : "\(count)")
             .font(.footnote.weight(.semibold))
+            .dynamicTypeSize(...DynamicTypeSize.large)
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+            .padding(.horizontal, 2)
             .frame(width: 22, height: 22)
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineWidth: 1.5))
     }
@@ -1308,14 +1314,14 @@ private struct PageView: View {
                 // headers sit below the status bar, fixed bottom menus above the bar, and content
                 // scrolls under both. The bottom inset shrinks only while the bar is collapsed.
                 // Swapped for its snapshot in one frame: caught in a drag's animation, the two cross-faded.
-                WebHost(browser: browser, insets: pageInsets(insets))
+                WebHost(browser: browser, insets: pageInsets(insets), viewport: viewportInsets(insets))
                     // Clear of side cutouts, as Safari lays out: the iPhone Duo's camera column and the
                     // notch side in landscape. Top and bottom stay obscured insets, under which content scrolls.
                     .padding(.leading, insets.leading)
                     .padding(.trailing, trailing)
                     .opacity(liveHidden ? 0 : 1)
                     .animation(nil, value: liveHidden)
-                if tab.url == nil {
+                if tab.url == nil, tab.openerID == nil {
                     BlankTab(spaceID: tab.spaceID, tab: tab,
                              insets: EdgeInsets(top: pageInsets(insets).top, leading: insets.leading,
                                                 bottom: 0, trailing: trailing),
@@ -1591,6 +1597,18 @@ private struct PageView: View {
         return UIEdgeInsets(top: insets.top, left: 0, bottom: bottom.rounded(), right: 0)
     }
 
+    /// The page's obscured edges with the bar collapsed and expanded, for the sizes of vh, lvh and svh. Unset, they
+    /// were the whole screen, and a menu 100vh tall ran under the bar out of reach.
+    private func viewportInsets(_ insets: EdgeInsets) -> (min: UIEdgeInsets, max: UIEdgeInsets) {
+        let full = pageInsets(insets)
+        guard !landscape, insets.bottom > 0 else { return (full, full) }
+        var collapsed = full
+        collapsed.bottom = Self.collapsedInset
+        var expanded = full
+        expanded.bottom = Self.barHeight + insets.bottom
+        return (collapsed, expanded)
+    }
+
     /// The search the sheet shows: all but the one in the bar.
     private var sheetSearch: Binding<NewTabView.Mode?> {
         Binding(get: { inlineSearch ? nil : search }, set: { search = $0 })
@@ -1723,7 +1741,12 @@ private struct PageView: View {
     /// The bar width a tab's back and forward take beside its capsule.
     private func historyWidth(_ tab: BrowserTab) -> CGFloat {
         let history = barHistory(tab)
-        return history > 0 ? CGFloat(history) * 44 + 10 : 0
+        return history > 0 ? historyButtonWidth(tab) * CGFloat(history) + 10 : 0
+    }
+
+    /// A lone back button is as wide as it is tall, so its glass is a circle like the tabs button's, not an oval.
+    private func historyButtonWidth(_ tab: BrowserTab) -> CGFloat {
+        barHistory(tab) == 1 ? 48 : 44
     }
 
     /// Where a tab's capsule sits in the bar, before any swipe offset.
@@ -1835,12 +1858,14 @@ private struct PageView: View {
         if tab.canGoBack || tab.canGoForward {
             HStack(spacing: 0) {
                 if tab.canGoBack {
-                    historyButton("chevron.backward", items: tab.webView.backForwardList.backList.reversed(), tab: tab) {
+                    historyButton("chevron.backward", items: tab.webView.backForwardList.backList.reversed(), tab: tab,
+                                  width: historyButtonWidth(tab)) {
                         browser.goBack()
                     }
                 }
                 if tab.canGoForward {
-                    historyButton("chevron.forward", items: tab.webView.backForwardList.forwardList, tab: tab) {
+                    historyButton("chevron.forward", items: tab.webView.backForwardList.forwardList, tab: tab,
+                                  width: historyButtonWidth(tab)) {
                         browser.goForward()
                     }
                 }
@@ -2283,7 +2308,7 @@ private struct PageView: View {
 
     /// Back or forward; a long press lists the pages that way, nearest first, as in Safari.
     private func historyButton(_ symbol: String, items: [WKBackForwardListItem], tab: BrowserTab,
-                               action: @escaping () -> Void) -> some View {
+                               width: CGFloat = 44, action: @escaping () -> Void) -> some View {
         Menu {
             ForEach(items, id: \.self) { item in
                 Button(item.title?.isEmpty == false ? item.title! : item.url.host() ?? item.url.absoluteString) {
@@ -2291,7 +2316,7 @@ private struct PageView: View {
                 }
             }
         } label: {
-            Image(systemName: symbol).frame(width: 44, height: 48)
+            Image(systemName: symbol).frame(width: width, height: 48)
         } primaryAction: {
             action()
         }
@@ -2414,6 +2439,7 @@ private struct PageView: View {
 private struct WebHost: UIViewRepresentable {
     let browser: BrowserModel
     let insets: UIEdgeInsets
+    let viewport: (min: UIEdgeInsets, max: UIEdgeInsets)
 
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -2438,6 +2464,9 @@ private struct WebHost: UIViewRepresentable {
         for case let webView as WKWebView in container.subviews {
             if webView === selected, webView.isHidden { FrameMeter.mark("web view shown \(webView.url?.host() ?? "-")") }
             webView.isHidden = webView !== selected
+            if webView.minimumViewportInset != viewport.min || webView.maximumViewportInset != viewport.max {
+                webView.setMinimumViewportInset(viewport.min, maximumViewportInset: viewport.max)
+            }
             // Not every step of a bar collapse: a hidden page gets its final insets when it is shown.
             if webView !== selected, webView.obscuredContentInsets.top != insets.top { InsetAnimator.apply(insets, to: webView) }
         }
