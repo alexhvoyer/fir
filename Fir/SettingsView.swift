@@ -95,7 +95,7 @@ private struct GeneralSettingsView: View {
     @AppStorage(SettingsKey.keyboardAtLaunch) private var keyboardAtLaunch = false
     @AppStorage(SettingsKey.swipeAnywhere) private var swipeAnywhere = false
     @AppStorage(SettingsKey.whatsNew) private var whatsNew = true
-    @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = false
+    @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = true
     @Environment(\.hasSideColumn) private var hasSideColumn
     @State private var isDefault: Bool?
 

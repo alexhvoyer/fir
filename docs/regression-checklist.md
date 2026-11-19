@@ -247,7 +247,7 @@ Record each Duo screen on its own: `xcrun simctl io <udid> recordVideo --display
   out of that button and back into it.
 - `sim` **(was broken)** On the Duo outer screen the camera column takes the page's colour, dark and light, and the
   error page's; a blank tab keeps the start page's grey.
-- `sim` Settings > General > Full-Width Pages shows only on the Duo. On: pages and the start page run under the
+- `sim` Settings > General > Full-Width Pages shows only on the Duo and starts on. On: pages and the start page run under the
   camera column, and so do the deck's cards; + and Tabs (Settings and + on the deck) float over them, the bottom bars
   stay clear of the column, and shrinking into the deck and back has no jump. Off: page and deck stop at the column.
 - `sim` **(was broken)** On the Duo, shrinking a light page (Wikipedia) into the deck shows the deck behind it, not

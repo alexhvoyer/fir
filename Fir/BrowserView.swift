@@ -70,7 +70,7 @@ struct BrowserView: View {
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = false
     @State private var onboardingRequested = false
     @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
-    @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = false
+    @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = true
     @State private var showWhatsNew = WhatsNew.isDue
     /// Stays true until the sheet is fully gone: another one asked for while it leaves would be lost.
     @State private var whatsNewPending = WhatsNew.isDue
@@ -1203,7 +1203,7 @@ private struct PageView: View {
 
     @Environment(BrowserModel.self) private var browser
     @AppStorage(SettingsKey.collapseOnScroll) private var collapseOnScroll = true
-    @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = false
+    @AppStorage(SettingsKey.fullWidthPages) private var fullWidthPages = true
     @AppStorage(SettingsKey.barActions) private var barActions = BarAction.encode(BarAction.defaults)
     @AppStorage(SettingsKey.translateTarget) private var translateTarget = ""
     @AppStorage(SettingsKey.searchEngine) private var engine = SearchEngine.duckDuckGo
