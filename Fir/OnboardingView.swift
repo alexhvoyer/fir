@@ -14,6 +14,7 @@ struct OnboardingView: View {
     @AppStorage(SettingsKey.whatsNew) private var whatsNew = true
     @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
+    @AppStorage(SettingsKey.cornerButton) private var cornerButton = CornerButton.tabs
     @State private var blockAds = ContentBlocker.shared.isEnabled
     @State private var pageWidth: CGFloat = 0
 
@@ -201,6 +202,17 @@ struct OnboardingView: View {
                     }
                     Divider()
                     Toggle("Search Suggestions", isOn: $searchSuggestions)
+                }
+                SettingsGroup("Tabs", footer: "New Tab puts + in its place. Swipe up on the address bar for your tabs, or touch and hold + for the tab menu.") {
+                    HStack {
+                        Text("Tabs Button")
+                        Spacer()
+                        Picker("Tabs Button", selection: $cornerButton) {
+                            ForEach(CornerButton.allCases) { Text($0.name).tag($0) }
+                        }
+                        .labelsHidden()
+                        .tint(.secondary)
+                    }
                 }
                 SettingsGroup("Privacy", footer: "Private tabs leave nothing behind. You can also lock Fir with Face ID in Settings.") {
                     Toggle("Block Ads & Trackers", isOn: $blockAds)

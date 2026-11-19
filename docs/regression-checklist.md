@@ -211,7 +211,7 @@ timing, sync.
 ## Onboarding and settings
 
 - `sim` Fresh install (`-onboardingDone NO`): every page shows, the choices on New tabs and Your tabs stick, and Skip
-  works from any page.
+  works from any page. Make it yours sets Tabs Button too; New Tab there shows + in the bar after Start Browsing.
 - `sim` **(was broken)** New tabs and Your tabs: a quick tap on either choice animates both sketches both ways (sheet,
   fan, tiles, size, border), and the tick on the choice left goes at once. Search Sheet and Cards used to jump.
 - `sim` What's New shows once after an update (`-whatsNewSeen` one below the current list), and never on a fresh
