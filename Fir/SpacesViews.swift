@@ -423,21 +423,78 @@ struct ZenSpaceHeader: View {
     }
 }
 
-/// A workspace's essentials, then its pinned tabs: a row above the deck, or a column beside it on a wide screen.
+/// A workspace's essentials or its pinned tabs: a row above the deck, or a column beside it on a wide screen.
 struct ZenSpacePins: View {
     let space: ZenWorkspaces.Space
     let essentials: [ZenWorkspaces.Tab]
     let onOpen: (URL) -> Void
     var column = false
+    /// Workspaces showing their pinned tabs instead of essentials, comma-separated.
+    @AppStorage("pinsShownSpaces") private var pinsShownSpaces = ""
 
     var body: some View {
-        // A folder's tabs are cards in the deck.
-        let pins = essentials + space.tabs
+        // A folder's tabs are cards in the deck. One kind at a time: after many essentials, pins sat off-screen.
+        let both = !essentials.isEmpty && !space.tabs.isEmpty
+        let showsPins = essentials.isEmpty || both && pinsShownSpaces.split(separator: ",").contains { $0 == space.id }
+        let pins = showsPins ? space.tabs : essentials
         if !pins.isEmpty {
-            PinGrid(urls: pins.map { ($0.id, $0.url) }, removeTitle: { id in
-                essentials.contains { $0.id == id } ? String(localized: "Remove from Essentials") : String(localized: "Unpin")
-            }, pinnedIDs: Set(pins.dropFirst(essentials.count).map(\.id)), singleRow: !column, column: column, onOpen: onOpen)
+            // First in the row, so it scrolls away with the tiles: once scrolling, which kind is plain.
+            let kindSwitch = both ? AnyView(PinsKindSwitch(showsPins: Binding(get: { showsPins }, set: { pins in
+                var ids = pinsShownSpaces.split(separator: ",").map(String.init).filter { $0 != space.id }
+                if pins { ids.append(space.id) }
+                pinsShownSpaces = ids.joined(separator: ",")
+            }), vertical: column)) : nil
+            PinGrid(urls: pins.map { ($0.id, $0.url) }, removeTitle: { _ in
+                showsPins ? String(localized: "Unpin") : String(localized: "Remove from Essentials")
+            }, pinnedIDs: showsPins ? Set(pins.map(\.id)) : [], singleRow: !column, leading: kindSwitch,
+                    column: column, onOpen: onOpen)
         }
+    }
+}
+
+/// Essentials or pinned tabs, as tall as a pin tile. Not a segmented Picker: it can't be that tall, and on
+/// launch it wrote its first segment back, forgetting the choice.
+private struct PinsKindSwitch: View {
+    @Binding var showsPins: Bool
+    /// Stacked in the wide screen's column, side by side in the row.
+    let vertical: Bool
+    private static let half: CGFloat = 44
+
+    var body: some View {
+        let layout = vertical ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout(spacing: 0))
+        let shift = showsPins ? Self.half : 0
+        layout {
+            half(pins: false, "Essentials", systemImage: "star")
+            // Tilted like the pin on a pinned tile.
+            half(pins: true, "Pinned", systemImage: "pin", tilt: 45)
+        }
+        // One thumb that slides: a matched pair swapped places without moving once the switch became glass.
+        .background(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.primary.opacity(0.14))
+                .frame(width: Self.half, height: Self.half)
+                .offset(x: vertical ? 0 : shift, y: vertical ? shift : 0)
+                .animation(.snappy, value: showsPins)
+        }
+        .padding(4)
+        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16, style: .continuous))
+    }
+
+    private func half(pins: Bool, _ title: LocalizedStringKey, systemImage: String, tilt: Double = 0) -> some View {
+        let on = showsPins == pins
+        return Button {
+            showsPins = pins
+        } label: {
+            Label { Text(title) } icon: { Image(systemName: systemImage).rotationEffect(.degrees(tilt)) }
+                .labelStyle(.iconOnly)
+                .symbolVariant(on ? .fill : .none)
+                .contentTransition(.symbolEffect(.replace))
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(on ? .primary : .secondary)
+                .frame(width: Self.half, height: Self.half)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
 

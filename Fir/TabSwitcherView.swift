@@ -973,30 +973,39 @@ struct PinGrid: View {
     var pinnedIDs: Set<String> = []
     /// One row that scrolls sideways once there are more than four, for tight places like the deck.
     var singleRow = false
+    /// Stands first and scrolls away with the tiles, such as the essentials/pinned switch.
+    var leading: AnyView? = nil
     /// One column that scrolls, beside the deck on a wide screen, as Zen keeps pins in its sidebar.
     var column = false
     let onOpen: (URL) -> Void
     @Environment(AccountService.self) private var account
+    @State private var leadingWidth: CGFloat = 0
 
     var body: some View {
         if column {
             ScrollView {
                 VStack(spacing: 8) {
+                    leading
                     ForEach(urls, id: \.id) { tile($0) }
                 }
             }
             .scrollIndicators(.hidden)
             .frame(width: Self.columnWidth)
-        } else if singleRow, urls.count > 4 {
+        } else if singleRow, urls.count > 4 || leading != nil {
+            // With a leading view, always this branch: switching between a long and a short list kept the
+            // view, so a switch there could animate instead of being built anew.
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
-                    // Four and a half visible, so the cut-off tile shows there's more.
-                    ForEach(urls, id: \.id) { tile($0).containerRelativeFrame(.horizontal, count: 9, span: 2, spacing: 8) }
+                    if let leading {
+                        leading.onGeometryChange(for: CGFloat.self) { $0.size.width } action: { leadingWidth = $0 }
+                    }
+                    ForEach(urls, id: \.id) { tile($0).containerRelativeFrame(.horizontal) { length, _ in rowTileWidth(length) } }
                 }
                 .scrollTargetLayout()
             }
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.viewAligned)
+            .scrollDisabled(urls.count <= 4)
             // The header's padding stays the resting inset, but tiles scroll out to the screen's edges.
             .scrollClipDisabled()
         } else {
@@ -1005,6 +1014,13 @@ struct PinGrid: View {
                 ForEach(urls, id: \.id) { tile($0) }
             }
         }
+    }
+
+    /// Four and a half once they scroll, so the cut-off tile shows there's more; up to four share what's left.
+    private func rowTileWidth(_ length: CGFloat) -> CGFloat {
+        if urls.count > 4 { return (length - 8 * 8) / 9 * 2 + 8 }
+        let count = CGFloat(urls.count)
+        return max(0, (length - leadingWidth - 8 * count) / count)
     }
 
     private func tile(_ item: (id: String, url: URL?)) -> some View {
