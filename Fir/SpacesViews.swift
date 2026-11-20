@@ -263,6 +263,7 @@ struct ZenSpacePage: View {
     var barButtonsWidth: CGFloat?
 
     var body: some View {
+        // Never on its side: a wide screen puts the pins in a column beside the lists instead.
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Same title and spacing as ZenSpaceHeader, so switching to a space with tabs doesn't jump.
@@ -273,13 +274,7 @@ struct ZenSpacePage: View {
                                 removeTitle: { _ in String(localized: "Remove from Essentials") }, onOpen: onOpen)
                     }
                 }
-                if !space.tabs.isEmpty { section(title: nil, tabs: space.tabs) }
-                ForEach(space.folders) { section(title: $0.name, tabs: $0.tabs) }
-                if space.tabs.isEmpty && space.folders.allSatisfy(\.tabs.isEmpty) {
-                    Text("No pinned tabs or folders in this space. Tabs you open here stay in it, on this iPhone only.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+                ZenSpaceSections(space: space, onOpen: onOpen)
             }
             .padding(.horizontal, 20)
         }
@@ -291,6 +286,24 @@ struct ZenSpacePage: View {
             LinearGradient(colors: [(space.color ?? .clear).opacity(0.35), .clear], startPoint: .top, endPoint: .center)
                 .ignoresSafeArea()
                 .padding(.horizontal, -ZenSpaceHeader.tintOverreach)
+        }
+    }
+}
+
+/// A workspace's pinned tabs and folders as lists, for its page without tabs.
+struct ZenSpaceSections: View {
+    let space: ZenWorkspaces.Space
+    let onOpen: (URL) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            if !space.tabs.isEmpty { section(title: nil, tabs: space.tabs) }
+            ForEach(space.folders) { section(title: $0.name, tabs: $0.tabs) }
+            if space.tabs.isEmpty && space.folders.allSatisfy(\.tabs.isEmpty) {
+                Text("No pinned tabs or folders in this space. Tabs you open here stay in it, on this iPhone only.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -379,6 +392,8 @@ struct ZenSpaceHeader: View {
     /// The width the top bar's buttons take on the right of the row the title shares; nil where the bar has
     /// no buttons (the Duo's sit in its column, on its side in the bottom bar) and the title keeps its own place.
     var barButtonsWidth: CGFloat?
+    /// Off where the pins stand in a column beside the deck instead.
+    var pinsInRow = true
     @Environment(\.isLandscape) private var landscape
 
     /// Past any side safe area, for the space's tint: the pager's mask trims it. Reaching the sides through
@@ -386,18 +401,14 @@ struct ZenSpaceHeader: View {
     static let tintOverreach: CGFloat = 200
 
     var body: some View {
-        // A folder's tabs are cards in the deck below.
-        let pins = essentials + space.tabs
         VStack(alignment: .leading, spacing: ZenSpaceTitle.spacing(barButtonsWidth)) {
             // On its side it rose off the screen anyway: hidden, not removed, so the deck keeps its height.
             ZenSpaceTitle(space: space, barButtonsWidth: barButtonsWidth)
                 .opacity(landscape ? 0 : 1)
                 .accessibilityHidden(landscape)
-            // On its side the deck has no height to spare for the pins.
-            if !pins.isEmpty, !landscape {
-                PinGrid(urls: pins.map { ($0.id, $0.url) }, removeTitle: { id in
-                    essentials.contains { $0.id == id } ? String(localized: "Remove from Essentials") : String(localized: "Unpin")
-                }, pinnedIDs: Set(pins.dropFirst(essentials.count).map(\.id)), singleRow: true, onOpen: onOpen)
+            // On a wide screen the pins stand in a column beside the deck instead.
+            if pinsInRow {
+                ZenSpacePins(space: space, essentials: essentials, onOpen: onOpen)
             }
         }
         .padding(.horizontal, 20)
@@ -408,6 +419,24 @@ struct ZenSpaceHeader: View {
             LinearGradient(colors: [(space.color ?? .clear).opacity(0.35), .clear], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
                 .padding(.horizontal, -Self.tintOverreach)
+        }
+    }
+}
+
+/// A workspace's essentials, then its pinned tabs: a row above the deck, or a column beside it on a wide screen.
+struct ZenSpacePins: View {
+    let space: ZenWorkspaces.Space
+    let essentials: [ZenWorkspaces.Tab]
+    let onOpen: (URL) -> Void
+    var column = false
+
+    var body: some View {
+        // A folder's tabs are cards in the deck.
+        let pins = essentials + space.tabs
+        if !pins.isEmpty {
+            PinGrid(urls: pins.map { ($0.id, $0.url) }, removeTitle: { id in
+                essentials.contains { $0.id == id } ? String(localized: "Remove from Essentials") : String(localized: "Unpin")
+            }, pinnedIDs: Set(pins.dropFirst(essentials.count).map(\.id)), singleRow: !column, column: column, onOpen: onOpen)
         }
     }
 }

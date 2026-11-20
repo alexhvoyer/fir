@@ -61,7 +61,8 @@ struct TabSwitcherView: View {
             // Workspaces sit side by side, as in Safari: the switcher's drag slides them under the finger.
             SpacePager(index: scrub ?? CGFloat(selected), ids: items.map(\.id), width: geo.size.width,
                        bleed: carouselEdges.isEmpty ? 0 : max(geo.safeAreaInsets.leading, geo.safeAreaInsets.trailing)) { id in
-                page(id, live: id == items[selected].id)
+                // Wider than tall (an iPhone on its side, the open Duo): the pins stand in a column.
+                page(id, live: id == items[selected].id, wide: geo.size.width > geo.size.height)
             }
         }
         .safeAreaInset(edge: .top, spacing: Self.barGap) { topBar }
@@ -177,7 +178,7 @@ struct TabSwitcherView: View {
 
     /// A switcher entry's page. Only the selected one is live; a neighbour sliding in is drawn as it will
     /// look, with its deck centred on its newest tab, as the live one will be.
-    @ViewBuilder private func page(_ id: String, live: Bool) -> some View {
+    @ViewBuilder private func page(_ id: String, live: Bool, wide: Bool) -> some View {
         let zen = account.zenWorkspaces
         if id.hasPrefix(Self.devicePrefix) {
             if let client = account.recentClients.first(where: { Self.devicePrefix + $0.clientId == id }) {
@@ -192,26 +193,42 @@ struct TabSwitcherView: View {
                 PrivateLockedPage(asks: live).environment(\.colorScheme, .dark)
             } else if space == BrowserModel.privateSpace, tabs.isEmpty {
                 PrivateEmptyPage().environment(\.colorScheme, .dark)
-            } else if let zen, let current, tabs.isEmpty {
+            } else if let zen, let current, tabs.isEmpty, !wide {
                 ZenSpacePage(space: current, essentials: zen.essentials(in: current), onOpen: open,
                              barButtonsWidth: topBarButtonsWidth)
             } else {
+                // Only with pins to show: an empty column must not hold the deck's tucked cards back.
+                let pinsColumn = wide && current.map { !$0.tabs.isEmpty || !(zen?.essentials(in: $0).isEmpty ?? true) } == true
                 VStack(spacing: 0) {
                     if let zen, let current {
                         ZenSpaceHeader(space: current, essentials: zen.essentials(in: current), onOpen: open,
-                                       barButtonsWidth: topBarButtonsWidth)
+                                       barButtonsWidth: topBarButtonsWidth, pinsInRow: !wide)
                     }
-                    Group {
-                        if tabLayout == .grid {
-                            TabGrid(tabs: live ? browser.spaceTabs : tabs, live: live, hiddenTab: hiddenTab,
-                                    holdsPosition: holdsPosition, expandedFolder: $expandedFolder,
-                                    folderJump: live ? folderJump : nil,
-                                    folderMenu: folderMenu, tabMenu: tabMenu, space: zenSpace(of:),
-                                    onCardFrame: onCardFrame, onOpen: onOpen)
-                        } else if live {
-                            deck.ignoresSafeArea(.container, edges: carouselEdges)
-                        } else {
-                            deckPreview(tabs).ignoresSafeArea(.container, edges: carouselEdges)
+                    HStack(alignment: .top, spacing: 12) {
+                        if pinsColumn, let zen, let current {
+                            ZenSpacePins(space: current, essentials: zen.essentials(in: current), onOpen: open, column: true)
+                                .padding(.leading, 20)
+                        }
+                        Group {
+                            if tabs.isEmpty, let current {
+                                // A workspace without tabs: its pinned tabs and folders as lists, beside the column.
+                                ScrollView {
+                                    ZenSpaceSections(space: current, onOpen: open)
+                                        .padding(.trailing, 20)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .scrollIndicators(.hidden)
+                            } else if tabLayout == .grid {
+                                TabGrid(tabs: live ? browser.spaceTabs : tabs, live: live, hiddenTab: hiddenTab,
+                                        holdsPosition: holdsPosition, expandedFolder: $expandedFolder,
+                                        folderJump: live ? folderJump : nil,
+                                        folderMenu: folderMenu, tabMenu: tabMenu, space: zenSpace(of:),
+                                        onCardFrame: onCardFrame, onOpen: onOpen)
+                            } else if live {
+                                deck(keepsLeft: pinsColumn).ignoresSafeArea(.container, edges: carouselEdges)
+                            } else {
+                                deckPreview(tabs, keepsLeft: pinsColumn).ignoresSafeArea(.container, edges: carouselEdges)
+                            }
                         }
                     }
                     // Room for an open folder's name over its card's title. Smaller beside the top bar's
@@ -233,10 +250,11 @@ struct TabSwitcherView: View {
         return CGSize(width: width, height: landscape ? size.height * 0.84 : min(width * 2.05, size.height * 0.84))
     }
 
-    private func deckPreview(_ tabs: [BrowserTab]) -> some View {
+    private func deckPreview(_ tabs: [BrowserTab], keepsLeft: Bool) -> some View {
         GeometryReader { geo in
             let card = cardSize(in: geo.size)
             let step = card.width * 0.92
+            let tuck = tuckLimit(keepsLeft, deck: geo.size.width, card: card.width)
             // Centred where the live deck will be: on the selected tab if it's here, else the newest.
             let layout = DeckLayout(tabs, folder: browser.folder, expanded: nil)
             let focus = tabs.first { $0.id == browser.selectedID }.map { layout.slot[$0.id] ?? 0 } ?? layout.count - 1
@@ -251,7 +269,7 @@ struct TabSwitcherView: View {
                         .equatable()
                         .modifier(StackDepth(depth: depth))
                         .scaleEffect(rel < 0 ? max(0.86, 1 + rel * 0.05) : 1)
-                        .offset(x: rel < 0 ? rel * step * 0.25 : rel * step)
+                        .offset(x: rel < 0 ? max(rel * step * 0.25, tuck) : rel * step)
                         .zIndex(Double(slot) - Double(depth) * 0.01)
                 }
             }
@@ -260,13 +278,20 @@ struct TabSwitcherView: View {
         .allowsHitTesting(false)
     }
 
-    private var deck: some View {
+    /// How far left a tucked card may go. Beside the pins column they gather at the deck's edge: clipping
+    /// the deck instead hid the folder headings' secondary-styled parts.
+    private func tuckLimit(_ keepsLeft: Bool, deck width: CGFloat, card: CGFloat) -> CGFloat {
+        keepsLeft ? -(width - card) / 2 : -.infinity
+    }
+
+    private func deck(keepsLeft: Bool) -> some View {
         GeometryReader { geo in
             let card = cardSize(in: geo.size)
             let cardWidth = card.width
             let cardHeight = card.height
             // Later cards slide in from the right over a mostly visible focused card, as in Yab.
             let step = cardWidth * 0.92
+            let tuck = tuckLimit(keepsLeft, deck: geo.size.width, card: cardWidth)
             let layout = deckLayout
             let focused = focusedSlot
             let position = pagePosition(in: layout) ?? progress
@@ -298,7 +323,7 @@ struct TabSwitcherView: View {
                         .equatable()
                         .modifier(StackDepth(depth: depth))
                         .scaleEffect((rel < 0 ? max(0.86, 1 + rel * 0.05) : 1) * (1 + lift / 1800) * (1 + pull / 600))
-                        .offset(x: rel < 0 ? rel * step * 0.25 : rel * step, y: lift + pull)
+                        .offset(x: rel < 0 ? max(rel * step * 0.25, tuck) : rel * step, y: lift + pull)
                         .opacity(max(0, 1 + Double(lift) / 320))
                         .zIndex(Double(slot) - Double(depth) * 0.01)
                         .onTapGesture {
@@ -937,6 +962,7 @@ struct PinTile: View {
 
 /// Pins laid out like Zen's essentials grid: up to five per row, filling the width.
 struct PinGrid: View {
+    static let columnWidth: CGFloat = 52
     let urls: [(id: String, url: URL?)]
     /// For Zen's pins and essentials: the long-press title that removes the one with this record id.
     var removeTitle: ((String) -> String?)? = nil
@@ -944,11 +970,21 @@ struct PinGrid: View {
     var pinnedIDs: Set<String> = []
     /// One row that scrolls sideways once there are more than four, for tight places like the deck.
     var singleRow = false
+    /// One column that scrolls, beside the deck on a wide screen, as Zen keeps pins in its sidebar.
+    var column = false
     let onOpen: (URL) -> Void
     @Environment(AccountService.self) private var account
 
     var body: some View {
-        if singleRow, urls.count > 4 {
+        if column {
+            ScrollView {
+                VStack(spacing: 8) {
+                    ForEach(urls, id: \.id) { tile($0) }
+                }
+            }
+            .scrollIndicators(.hidden)
+            .frame(width: Self.columnWidth)
+        } else if singleRow, urls.count > 4 {
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
                     // Four and a half visible, so the cut-off tile shows there's more.

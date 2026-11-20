@@ -107,6 +107,10 @@ timing, sync.
   buttons sit in the column, the title keeps its own place with room above it, not pressed to the top edge.
 - `sim` **(was broken)** Switch between a Zen workspace with tabs and one without (its page of pins): the title and
   the essentials stay at the same height, on iPhone and on the Duo. The empty page's title sat about 40 pt lower.
+- `sim` iPhone on its side and the open Duo: a Zen workspace's essentials and pinned tabs stand in a column on the
+  left, inside the safe area (clear of the island either way round); the cards' tucked stack stays right of it, and
+  folder headings keep their icon, count and chevron. A workspace without tabs lists its pinned tabs and folders
+  beside the column. iPhone upright and the closed Duo keep the row above the cards. No title on an iPhone on its side.
 - `sim` **(was broken)** iPhone on its side, switch workspaces: when the slide stops, the tint fills both sides
   at once and the page doesn't jump. A side stayed untinted for ~150 ms and the page jumped ~36 pt.
 - `sim` After a cold launch, a tab not opened yet loads when its card is tapped or it is swiped to, with its bar buttons.
