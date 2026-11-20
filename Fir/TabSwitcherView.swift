@@ -225,9 +225,12 @@ struct TabSwitcherView: View {
                                         folderMenu: folderMenu, tabMenu: tabMenu, space: zenSpace(of:),
                                         onCardFrame: onCardFrame, onOpen: onOpen)
                             } else if live {
-                                deck(keepsLeft: pinsColumn).ignoresSafeArea(.container, edges: carouselEdges)
+                                // Not into the side safe areas on a wide page: their reach arrived a side at a
+                                // time as a switch settled, and the centred cards jumped ~40 pt and back.
+                                deck(keepsLeft: pinsColumn).ignoresSafeArea(.container, edges: wide ? [] : carouselEdges)
                             } else {
-                                deckPreview(tabs, keepsLeft: pinsColumn).ignoresSafeArea(.container, edges: carouselEdges)
+                                deckPreview(tabs, keepsLeft: pinsColumn)
+                                    .ignoresSafeArea(.container, edges: wide ? [] : carouselEdges)
                             }
                         }
                     }

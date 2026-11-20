@@ -111,6 +111,9 @@ timing, sync.
   left, inside the safe area (clear of the island either way round); the cards' tucked stack stays right of it, and
   folder headings keep their icon, count and chevron. A workspace without tabs lists its pinned tabs and folders
   beside the column. iPhone upright and the closed Duo keep the row above the cards. No title on an iPhone on its side.
+- `sim` **(was broken)** iPhone on its side, switch to a workspace with tabs: once the slide stops the cards stay put.
+  They jumped ~30 pt sideways for a few frames (phone: stayed shifted) as the deck went live. Also switch to the
+  local tabs page ("N Tabs", no pins column): it kept the jump after the workspaces were fixed.
 - `sim` **(was broken)** iPhone on its side, switch workspaces: when the slide stops, the tint fills both sides
   at once and the page doesn't jump. A side stayed untinted for ~150 ms and the page jumped ~36 pt.
 - `sim` After a cold launch, a tab not opened yet loads when its card is tapped or it is swiped to, with its bar buttons.
