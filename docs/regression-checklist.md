@@ -107,6 +107,8 @@ timing, sync.
   buttons sit in the column, the title keeps its own place with room above it, not pressed to the top edge.
 - `sim` **(was broken)** Switch between a Zen workspace with tabs and one without (its page of pins): the title and
   the essentials stay at the same height, on iPhone and on the Duo. The empty page's title sat about 40 pt lower.
+- `sim` **(was broken)** iPhone on its side, switch workspaces: when the slide stops, the tint fills both sides
+  at once and the page doesn't jump. A side stayed untinted for ~150 ms and the page jumped ~36 pt.
 - `sim` After a cold launch, a tab not opened yet loads when its card is tapped or it is swiped to, with its bar buttons.
   Restored tabs get their web view only then; closing one that never loaded works and Undo brings it back.
 - `sim` **(was broken)** Close a blank tab and tap Undo with Recently Closed empty: the tab comes back. It crashed.

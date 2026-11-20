@@ -26,6 +26,8 @@ struct SpaceSwitcher: View {
     @State private var dragOrigin: CGPoint?
     /// Down while a finger is on the strip; a drag the system cancels never reaches onEnded.
     @GestureState private var touching = false
+    /// Counts settles, so only the latest one's completion makes its target the selection.
+    @State private var settles = 0
 
     var body: some View {
         GeometryReader { geo in
@@ -155,11 +157,17 @@ struct SpaceSwitcher: View {
     /// Slides labels and pages to `target` together, then makes it the selection in one still update.
     private func settle(on target: String, from start: CGFloat?) {
         if scrub == nil { scrub = start }
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+        settles += 1
+        let settle = settles
+        // Finished once the spring stops: at logical completion the pages were still ~36 pt short, and the
+        // still update jumped them, leaving one screen edge unfilled.
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.9), completionCriteria: .removed) {
             lift = 0
             position = centers[target]
             scrub = index(of: target)
         } completion: {
+            // A drag or settle that began meanwhile owns the strip now and finishes the job itself.
+            guard settle == settles, dragOrigin == nil else { return }
             var still = Transaction()
             still.disablesAnimations = true
             withTransaction(still) {
@@ -282,6 +290,7 @@ struct ZenSpacePage: View {
             // A wash of the space's theme colour, like Zen's own sidebar.
             LinearGradient(colors: [(space.color ?? .clear).opacity(0.35), .clear], startPoint: .top, endPoint: .center)
                 .ignoresSafeArea()
+                .padding(.horizontal, -ZenSpaceHeader.tintOverreach)
         }
     }
 
@@ -372,6 +381,10 @@ struct ZenSpaceHeader: View {
     var barButtonsWidth: CGFloat?
     @Environment(\.isLandscape) private var landscape
 
+    /// Past any side safe area, for the space's tint: the pager's mask trims it. Reaching the sides through
+    /// ignoresSafeArea alone lagged a slide, leaving a side untinted for a moment.
+    static let tintOverreach: CGFloat = 200
+
     var body: some View {
         // A folder's tabs are cards in the deck below.
         let pins = essentials + space.tabs
@@ -394,6 +407,7 @@ struct ZenSpaceHeader: View {
         .background(alignment: .top) {
             LinearGradient(colors: [(space.color ?? .clear).opacity(0.35), .clear], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
+                .padding(.horizontal, -Self.tintOverreach)
         }
     }
 }
