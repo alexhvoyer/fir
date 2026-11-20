@@ -1251,9 +1251,9 @@ final class BrowserModel {
         save()
     }
 
-    /// A blank tab in the deck's workspace, not yet in front: + on a page slides it in, then selects it.
-    func appendBlank() -> BrowserTab {
-        let tab = BrowserTab(url: nil, spaceID: space, dataStore: dataStore(for: space))
+    /// A blank tab, not yet in front: + or a swipe past the last tab slides it in, then selects it.
+    func appendBlank(in spaceID: String?) -> BrowserTab {
+        let tab = BrowserTab(url: nil, spaceID: spaceID, dataStore: dataStore(for: spaceID))
         tabs.append(tab)
         save()
         return tab

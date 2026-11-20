@@ -219,6 +219,7 @@ struct BrowserView: View {
                 inlineSearch: inlineSearch,
                 sheetSource: sheetSource,
                 liveHidden: transitioning,
+                inFront: pageShown,
                 sheetsDismissed: sheetsDismissed,
                 chromeOpacity: max(0, 1 - progress * 2.5),
                 swipeX: swipeX,
@@ -608,7 +609,7 @@ struct BrowserView: View {
         transitionID += 1
         beginTransition()
         // A real tab, so its bar opens as it lands like a swiped-to one's; a stand-in's stayed short, then jumped.
-        let tab = browser.appendBlank()
+        let tab = browser.appendBlank(in: browser.space)
         plusTab = tab
         slideHome(tab, to: -(page.width + Self.swipeGap))
     }
@@ -703,11 +704,10 @@ struct BrowserView: View {
             FrameMeter.mark("swipe to new tab")
             swipeCommits += 1
             guard newTabStyle == .sheet else {
-                // The start page slid in on the placeholder; the new tab takes its place.
-                withAnimation(swipeCommit) { swipeX = -width } completion: {
-                    browser.open(nil, in: browser.selected.spaceID)
-                    showPageAtOnce()
-                }
+                // A real tab from here on, as + makes: the placeholder's bar stayed short, then jumped wide.
+                let tab = browser.appendBlank(in: browser.selected.spaceID)
+                plusTab = tab
+                slideHome(tab, to: -width)
                 return
             }
             swipedToNewTab = true
@@ -1027,11 +1027,9 @@ private struct SheetSource: ViewModifier {
     let enabled: Bool
 
     func body(content: Content) -> some View {
-        if enabled {
-            content.matchedTransitionSource(id: id, in: namespace)
-        } else {
-            content
-        }
+        // Always applied, under another id when off: a branch rebuilt the capsule, glass and all, as a
+        // neighbour became current.
+        content.matchedTransitionSource(id: enabled ? id : "\(id).off", in: namespace)
     }
 }
 
@@ -1205,6 +1203,8 @@ private struct PageView: View {
     let inlineSearch: Bool
     let sheetSource: Namespace.ID
     let liveHidden: Bool
+    /// The page is in front, not hidden behind the deck.
+    let inFront: Bool
     let sheetsDismissed: Int
     let chromeOpacity: Double
     let swipeX: CGFloat
@@ -1338,7 +1338,7 @@ private struct PageView: View {
                 // headers sit below the status bar, fixed bottom menus above the bar, and content
                 // scrolls under both. The bottom inset shrinks only while the bar is collapsed.
                 // Swapped for its snapshot in one frame: caught in a drag's animation, the two cross-faded.
-                WebHost(browser: browser, insets: pageInsets(insets), viewport: viewportInsets(insets))
+                WebHost(browser: browser, inFront: inFront, insets: pageInsets(insets), viewport: viewportInsets(insets))
                     // Clear of side cutouts, as Safari lays out: the iPhone Duo's camera column and the
                     // notch side in landscape. Top and bottom stay obscured insets, under which content scrolls.
                     .padding(.leading, insets.leading)
@@ -1717,21 +1717,21 @@ private struct PageView: View {
                     }
                     // No GlassEffectContainer: inside one the capsule's glass could not be a zoom source.
                     ZStack(alignment: .leading) {
-                        tabCapsule(tab, live: true, p: p, s: s, width: geo.size.width, rel: currentRel,
-                                   vanish: Self.vanish(currentRel) * Self.leaving(a), offset: offsets.current)
-                        if neighbourOffset != nil {
-                            Group {
-                                if let neighbour = swipeNeighbour {
-                                    // Compact while it comes in; it opens as a released swipe carries it home.
-                                    tabCapsule(neighbour, live: false, p: p, s: 1 - a, width: geo.size.width,
-                                               rel: neighbourRel, vanish: Self.vanish(neighbourRel),
-                                               offset: offsets.neighbour)
-                                } else {
-                                    newTabCapsule(p: p, s: 1, width: geo.size.width,
-                                                  vanish: Self.vanish(neighbourRel), offset: offsets.neighbour)
-                                }
-                            }
-                            .allowsHitTesting(false)
+                        // Keyed by tab, so a landing neighbour stays the same view as it becomes current: rebuilt,
+                        // its glass and paste control redrew a frame late on a phone.
+                        ForEach(capsuleTabs) { shown in
+                            let current = shown.id == tab.id
+                            // A neighbour is compact while it comes in; it opens as a released swipe carries it home.
+                            tabCapsule(shown, live: current, p: p, s: current ? s : 1 - a, width: geo.size.width,
+                                       rel: current ? currentRel : neighbourRel,
+                                       vanish: current ? Self.vanish(currentRel) * Self.leaving(a) : Self.vanish(neighbourRel),
+                                       offset: current ? offsets.current : offsets.neighbour)
+                                .allowsHitTesting(current)
+                        }
+                        if neighbourOffset != nil, swipeNeighbour == nil {
+                            newTabCapsule(p: p, s: 1, width: geo.size.width,
+                                          vanish: Self.vanish(neighbourRel), offset: offsets.neighbour)
+                                .allowsHitTesting(false)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1751,6 +1751,12 @@ private struct PageView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             canPaste = PasteAndGo.clipboardHasText
         }
+    }
+
+    /// The selected tab, then the swipe neighbour while one is beside it.
+    private var capsuleTabs: [BrowserTab] {
+        guard neighbourOffset != nil, let neighbour = swipeNeighbour else { return [browser.selected] }
+        return [browser.selected, neighbour]
     }
 
     private var trailingWidth: CGFloat { sideRail ? 0 : landscape ? 106 : 48 }
@@ -2462,6 +2468,7 @@ private struct PageView: View {
 /// tab exists, only hidden, so returning to a tab doesn't make WebKit rebuild its page.
 private struct WebHost: UIViewRepresentable {
     let browser: BrowserModel
+    let inFront: Bool
     let insets: UIEdgeInsets
     let viewport: (min: UIEdgeInsets, max: UIEdgeInsets)
 
@@ -2471,7 +2478,32 @@ private struct WebHost: UIViewRepresentable {
         return view
     }
 
-    func makeCoordinator() -> InsetAnimator { InsetAnimator() }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    @MainActor final class Coordinator {
+        let insets = InsetAnimator()
+        private var pending: (view: ObjectIdentifier, task: Task<Void, Never>)?
+
+        /// Shows a page selected behind the deck once the deck is likely still.
+        func showSoon(_ webView: WKWebView) {
+            guard pending?.view != ObjectIdentifier(webView) else { return }
+            cancelShow()
+            let task = Task { [weak self, weak webView] in
+                try? await Task.sleep(for: .milliseconds(700))
+                guard !Task.isCancelled else { return }
+                self?.pending = nil
+                guard let webView, webView.superview != nil, webView.isHidden else { return }
+                FrameMeter.mark("web view shown \(webView.url?.host() ?? "-")")
+                webView.isHidden = false
+            }
+            pending = (ObjectIdentifier(webView), task)
+        }
+
+        func cancelShow() {
+            pending?.task.cancel()
+            pending = nil
+        }
+    }
 
     func updateUIView(_ container: UIView, context: Context) {
         let selected = browser.selected.webView
@@ -2483,18 +2515,23 @@ private struct WebHost: UIViewRepresentable {
         if selected.superview !== container {
             selected.frame = container.bounds
             selected.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            selected.isHidden = true
             container.addSubview(selected)
         }
         for case let webView as WKWebView in container.subviews {
-            if webView === selected, webView.isHidden { FrameMeter.mark("web view shown \(webView.url?.host() ?? "-")") }
-            webView.isHidden = webView !== selected
+            // Behind the deck a newly selected page is shown a moment later: at once, as after closing the
+            // selected tab, WebKit's work stalled the deck's animation.
+            let shows = webView === selected && (inFront || !webView.isHidden)
+            if shows, webView.isHidden { FrameMeter.mark("web view shown \(webView.url?.host() ?? "-")") }
+            webView.isHidden = !shows
             if webView.minimumViewportInset != viewport.min || webView.maximumViewportInset != viewport.max {
                 webView.setMinimumViewportInset(viewport.min, maximumViewportInset: viewport.max)
             }
             // Not every step of a bar collapse: a hidden page gets its final insets when it is shown.
             if webView !== selected, webView.obscuredContentInsets.top != insets.top { InsetAnimator.apply(insets, to: webView) }
         }
-        context.coordinator.move(selected, to: insets)
+        if !inFront, selected.isHidden { context.coordinator.showSoon(selected) } else { context.coordinator.cancelShow() }
+        context.coordinator.insets.move(selected, to: insets)
     }
 }
 

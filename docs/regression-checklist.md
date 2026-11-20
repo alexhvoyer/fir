@@ -79,6 +79,8 @@ timing, sync.
   page slides in from the right as a swipe past the last tab does, also from a tab that isn't last. It used to cut.
   Its bar grows from the compact capsule as it lands (it jumped wide at the end), and with text on the clipboard
   the paste button never shows a blank grey square or a bare icon for a frame.
+- `sim` **(was broken)** Start Page mode, swipe the bar past the last tab and let go: the new tab's bar grows to full
+  width as it lands, as with +. It stayed short, then jumped wide. Called off, no tab is added.
 - `sim` Page menu grows out of the menu button or the address. With Reduce Motion it slides up.
 - `sim` **(was broken)** Close the page menu and lift to the tab overview at once. The address capsule must not stay
   over the switcher.
@@ -141,6 +143,9 @@ timing, sync.
   grows. It used to jump to centre the cell at the tap.
 - `sim` **(was broken)** After closing a page, its cell shows its picture and the selected outline. A LazyVGrid kept
   the picture hidden.
+- `phone` **(was broken)** In the grid, scrolled to the end, close the selected tab and the last one in its row: the
+  grid rises in one smooth motion. It jumped a third of a row, paused, then slid, as it centred the next selected
+  cell and showed its page behind the grid.
 - `sim` Swipe a cell left past a third of its width: it slides off and closes. A shorter swipe returns it.
 - `sim` A flick back to the right keeps the tab, however far the cell went.
 - `sim` A cell dragged right follows with growing resistance and springs back; it never closes that way.

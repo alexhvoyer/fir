@@ -78,7 +78,10 @@ struct TabGrid: View {
                 .scrollEdgeEffectStyle(.soft, for: .bottom)
                 .onAppear { reveal(in: proxy) }
                 // Under the page the grid keeps the selected cell in view, so the page has a cell to land on.
-                .onChange(of: browser.selectedID) { if !holdsPosition { reveal(in: proxy) } }
+                // Not in view: closing the selected tab jumped the grid to centre the next one.
+                .onChange(of: browser.selectedID) { if hiddenTab != nil, !holdsPosition { reveal(in: proxy) } }
+                // A workspace switched to in the overview opens on its selected cell.
+                .onChange(of: live) { if live { reveal(in: proxy) } }
                 .onChange(of: holdsPosition) { if !holdsPosition { reveal(in: proxy) } }
                 // Not while a page grows out of its cell: the grid jumped under it. It centres once the page covers it.
                 .onChange(of: hiddenTab) { if hiddenTab != nil, !holdsPosition { reveal(in: proxy) } }
