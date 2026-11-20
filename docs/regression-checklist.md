@@ -75,6 +75,8 @@ timing, sync.
   keyboard down with the field riding on it. A fast page used to cut the field off in one frame.
 - `sim` Start Page mode: turning the phone with the field in the bar moves the search into the sheet, never both at once.
 - `phone` Start Page mode: the keyboard comes up as fast as in Safari (FrameMeter stall well under the sheet's).
+- `sim` **(was broken)** Start Page mode, + on a page (corner button set to New Tab, or the page menu): the new start
+  page slides in from the right as a swipe past the last tab does, also from a tab that isn't last. It used to cut.
 - `sim` Page menu grows out of the menu button or the address. With Reduce Motion it slides up.
 - `sim` **(was broken)** Close the page menu and lift to the tab overview at once. The address capsule must not stay
   over the switcher.
