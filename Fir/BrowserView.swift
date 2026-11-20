@@ -56,8 +56,8 @@ struct BrowserView: View {
     @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
     /// A swipe past the last tab slid the new-tab page in; it slides back if the search is cancelled.
     @State private var swipedToNewTab = false
-    /// + on a page is sliding a new tab in: the placeholder comes in from the right even with tabs there.
-    @State private var plusSlide = false
+    /// The blank tab + on a page is sliding in, its neighbour until it lands, wherever the current tab sits.
+    @State private var plusTab: BrowserTab?
     /// A lift toward the deck is under way; the tab moves to the deck's end once per lift.
     @State private var lifting = false
     /// A page is growing out of its card in the deck.
@@ -357,8 +357,7 @@ struct BrowserView: View {
             let swipeRadius = min(abs(swipeX) / 2, 48)
             ZStack(alignment: .topLeading) {
                 if swipeOpensNewTab {
-                    // + opens in the deck's workspace, Private included; a swipe stays in the page's.
-                    NewTabPlaceholder(spaceID: plusSlide ? browser.space : browser.selected.spaceID)
+                    NewTabPlaceholder(spaceID: browser.selected.spaceID)
                         .frame(width: page.width, height: page.height)
                         .clipShape(.rect(cornerRadius: swipeRadius, style: .continuous))
                         .offset(x: swipeX + page.width + Self.swipeGap)
@@ -608,12 +607,10 @@ struct BrowserView: View {
         land()
         transitionID += 1
         beginTransition()
-        plusSlide = true
-        withAnimation(swipeCommit) { swipeX = -(page.width + Self.swipeGap) } completion: {
-            browser.open(nil)
-            showPageAtOnce()
-            plusSlide = false
-        }
+        // A real tab, so its bar opens as it lands like a swiped-to one's; a stand-in's stayed short, then jumped.
+        let tab = browser.appendBlank()
+        plusTab = tab
+        slideHome(tab, to: -(page.width + Self.swipeGap))
     }
 
     /// Like Safari after a search: the page is already full screen under the search screen as it
@@ -658,7 +655,7 @@ struct BrowserView: View {
     /// The tab a bar swipe reveals, from the same workspace: dragging right shows the previous one,
     /// left the next one.
     private var swipeNeighbour: BrowserTab? {
-        guard !plusSlide else { return nil }
+        if let plusTab { return plusTab }
         let siblings = browser.tabs(in: browser.selected.spaceID)
         guard let index = siblings.firstIndex(where: { $0.id == browser.selectedID }) else { return nil }
         let next = swipeX > 0 ? index - 1 : index + 1
@@ -667,7 +664,7 @@ struct BrowserView: View {
 
     /// Like Safari: dragging left from the last tab of a workspace brings in a new one.
     private var swipeOpensNewTab: Bool {
-        plusSlide || swipeX < 0 && swipeNeighbour == nil && browser.selected.url != nil
+        swipeX < 0 && swipeNeighbour == nil && browser.selected.url != nil
     }
 
     /// Puts the tab a committed swipe is sliding in in front, at once.
@@ -681,6 +678,7 @@ struct BrowserView: View {
             coverView = nil
             swipeX = 0
             arriving = false
+            plusTab = nil
         }
         self.landing = nil
     }
@@ -722,8 +720,13 @@ struct BrowserView: View {
             withAnimation(settle) { swipeX = 0 } completion: { if id == transitionID { endTransition() } }
             return
         }
-        let target = swipeX > 0 ? width : -width
         swipeCommits += 1
+        slideHome(neighbour, to: swipeX > 0 ? width : -width)
+    }
+
+    /// Carries `neighbour` the rest of the way in and puts it in front.
+    private func slideHome(_ neighbour: BrowserTab, to target: CGFloat) {
+        let id = transitionID
         landing = neighbour
         withAnimation(swipeCommit) {
             swipeX = target

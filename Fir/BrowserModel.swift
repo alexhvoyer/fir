@@ -1251,6 +1251,14 @@ final class BrowserModel {
         save()
     }
 
+    /// A blank tab in the deck's workspace, not yet in front: + on a page slides it in, then selects it.
+    func appendBlank() -> BrowserTab {
+        let tab = BrowserTab(url: nil, spaceID: space, dataStore: dataStore(for: space))
+        tabs.append(tab)
+        save()
+        return tab
+    }
+
     /// The tab closed last, kept whole with its history so the undo capsule can put it back.
     struct Undo {
         let tab: BrowserTab

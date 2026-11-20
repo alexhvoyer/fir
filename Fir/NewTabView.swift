@@ -664,6 +664,7 @@ private struct Morph: ViewModifier {
 struct PasteAndGo: View {
     let engine: SearchEngine
     let go: (URL) -> Void
+    @State private var drawn = false
 
     /// The clipboard holds text or a link. Asking prompts nothing; only the paste control reads it.
     static var clipboardHasText: Bool { UIPasteboard.general.hasStrings || UIPasteboard.general.hasURLs }
@@ -677,6 +678,23 @@ struct PasteAndGo: View {
         .labelStyle(.iconOnly)
         .buttonBorderShape(.circle)
         .tint(.secondary)
+        // Its size before it reports one: laid out at zero for a frame, the copy below sat off to the side.
+        .frame(minWidth: 41, minHeight: 34)
+        // The control's first frames are a blank grey square, which blinked as a new tab's bar landed.
+        .overlay {
+            if !drawn {
+                Image(systemName: "doc.on.clipboard")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemGray), in: .capsule)
+                    .allowsHitTesting(false)
+            }
+        }
+        .task {
+            try? await Task.sleep(for: .milliseconds(250))
+            drawn = true
+        }
     }
 }
 

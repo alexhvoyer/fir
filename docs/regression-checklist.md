@@ -77,6 +77,8 @@ timing, sync.
 - `phone` Start Page mode: the keyboard comes up as fast as in Safari (FrameMeter stall well under the sheet's).
 - `sim` **(was broken)** Start Page mode, + on a page (corner button set to New Tab, or the page menu): the new start
   page slides in from the right as a swipe past the last tab does, also from a tab that isn't last. It used to cut.
+  Its bar grows from the compact capsule as it lands (it jumped wide at the end), and with text on the clipboard
+  the paste button never shows a blank grey square or a bare icon for a frame.
 - `sim` Page menu grows out of the menu button or the address. With Reduce Motion it slides up.
 - `sim` **(was broken)** Close the page menu and lift to the tab overview at once. The address capsule must not stay
   over the switcher.
