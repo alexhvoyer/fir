@@ -25,6 +25,9 @@ struct TabGrid: View {
 
     /// Tabs whose cells are flying off to the left; each closes once its cell is off screen.
     @State private var closing: Set<BrowserTab.ID> = []
+    /// A cell keeps its identity across sections, so a folder opening fans its cards out of the pile
+    /// and moves its neighbours, instead of the rows crossfading.
+    @Namespace private var cells
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Smaller than the deck's: a cell is under half the screen wide. The page's mask lands on it.
@@ -60,7 +63,10 @@ struct TabGrid: View {
                             // One layout per section, not a stack per row: a cell moving up a row stays the
                             // same view, so it slides there instead of popping in.
                             GridRows(columns: columns, spacing: Self.spacing, rowSpacing: 22) {
-                                ForEach(section.cells) { cell($0, width: width, height: height, screen: geo.size.width) }
+                                ForEach(section.cells) {
+                                    cell($0, width: width, height: height, screen: geo.size.width)
+                                        .matchedGeometryEffect(id: $0.id, in: cells)
+                                }
                             }
                         }
                     }
@@ -109,23 +115,25 @@ struct TabGrid: View {
     private enum Cell: Identifiable {
         case tab(BrowserTab)
         /// A closed folder: its first tab's picture with the rest piled behind.
-        case stack(DeckFolder, front: BrowserTab, count: Int)
+        case stack(DeckFolder, front: BrowserTab, count: Int, others: [BrowserTab.ID])
 
         var id: BrowserTab.ID {
             switch self {
-            case .tab(let tab), .stack(_, let tab, _): tab.id
+            case .tab(let tab), .stack(_, let tab, _, _): tab.id
             }
         }
     }
 
     private var sections: [GridSection] {
         let layout = DeckLayout(tabs, folder: browser.folder, expanded: expandedFolder)
+        let byFolder = Dictionary(grouping: tabs) { browser.folder(of: $0)?.id }
         var sections: [GridSection] = []
         for (slot, front) in layout.first.enumerated() {
             let cell: Cell
             var folder: DeckFolder?
             if let stack = layout.stacks[slot], case .stack(_, let count) = layout.heading[front.id] {
-                cell = .stack(stack, front: front, count: count)
+                cell = .stack(stack, front: front, count: count,
+                              others: (byFolder[stack.id] ?? []).map(\.id).filter { $0 != front.id })
             } else {
                 cell = .tab(front)
                 if case .member(let owner) = layout.heading[front.id] { folder = owner }
@@ -143,7 +151,7 @@ struct TabGrid: View {
         switch cell {
         case .tab(let tab):
             tabCell(tab, width: width, height: height, screen: screen)
-        case .stack(let folder, let front, let count):
+        case .stack(let folder, let front, let count, let others):
             VStack(spacing: 8) {
                 picture(front, width: width, height: height)
                     .background {
@@ -159,6 +167,10 @@ struct TabGrid: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(width: width)
+            // Where the folder's other cards come from as it opens, and go back to as it closes.
+            .background {
+                ForEach(others, id: \.self) { Color.clear.matchedGeometryEffect(id: $0, in: cells) }
+            }
             .contentShape(.rect)
             .onTapGesture { withAnimation(.snappy) { expandedFolder = folder.id } }
             .id(front.id)

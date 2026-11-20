@@ -126,6 +126,9 @@ timing, sync.
 
 - `sim` The page grows out of its cell and shrinks back into it, landing exactly on the cell.
 - `sim` Pick a folder from the folder button by Settings: it opens and the grid scrolls its name to the top.
+- `sim` **(was crossfading)** Open a closed folder in the grid: its cards slide out of the pile into their places and
+  the cells after it move to make room; closing slides them back into the pile. No row fades. Try a folder whose
+  cards land in a lower row (third pile in the first row on the open Duo): they used to fade in place.
 - `sim` **(was broken)** Scroll so the current cell is off centre, then open it: the grid stays still while the page
   grows. It used to jump to centre the cell at the tap.
 - `sim` **(was broken)** After closing a page, its cell shows its picture and the selected outline. A LazyVGrid kept
