@@ -40,6 +40,10 @@ struct TabSwitcherView: View {
     @State private var device: String?
     /// The Zen folder laid out as separate cards; every other folder is a stack. The selected tab's opens.
     @State private var expandedFolder: String?
+    /// A folder picked from the folders button, for the grid to scroll to.
+    @State private var folderJump: FolderJump?
+    /// The deck already sits on that folder: the layout change it caused must not move it again.
+    @State private var jumpedFolder = false
     /// The folder whose deletion awaits a confirmation.
     @State private var deletingFolder: DeckFolder?
     /// The card a new Zen folder is being named for.
@@ -95,6 +99,7 @@ struct TabSwitcherView: View {
         .overlay(alignment: .bottomTrailing) {
             if railWidth > 0 {
                 VStack(spacing: 10) {
+                    foldersButton
                     settingsButton
                     newTabButton
                 }
@@ -119,6 +124,11 @@ struct TabSwitcherView: View {
         }
         // A card joining or leaving a folder's stack moves slots: the deck follows the card it was on.
         .onChange(of: deckLayout.slot) { old, new in
+            // A folder opened from the folders button has already placed the deck on it.
+            if jumpedFolder {
+                jumpedFolder = false
+                return
+            }
             // Only when a card joined or left a stack. A reorder keeps the count, and following the old
             // slot's card then landed on the wrong one.
             // Under the page, centerSelected has already placed the deck for the new layout.
@@ -193,6 +203,7 @@ struct TabSwitcherView: View {
                         if tabLayout == .grid {
                             TabGrid(tabs: live ? browser.spaceTabs : tabs, live: live, hiddenTab: hiddenTab,
                                     holdsPosition: holdsPosition, expandedFolder: $expandedFolder,
+                                    folderJump: live ? folderJump : nil,
                                     folderMenu: folderMenu, tabMenu: tabMenu, space: zenSpace(of:),
                                     onCardFrame: onCardFrame, onOpen: onOpen)
                         } else if live {
@@ -335,6 +346,27 @@ struct TabSwitcherView: View {
     /// Fans a folder's stack out into its cards, starting where the stack stood.
     private func expand(_ folder: DeckFolder) {
         withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) { expandedFolder = folder.id }
+    }
+
+    /// The shown workspace's folders, in deck order, for the folders button.
+    private var spaceFolders: [DeckFolder] {
+        // Nothing from a locked Private space, not even folder names.
+        guard device == nil, !(browser.space == BrowserModel.privateSpace && browser.privateLocked) else { return [] }
+        var seen = Set<String>()
+        return browser.spaceTabs.compactMap { browser.folder(of: $0) }
+            .filter { seen.insert($0.id).inserted }
+    }
+
+    /// Opens a folder from the folders button and brings it into view: folders sit first, far from the selected tab.
+    private func showFolder(_ id: String) {
+        guard let tab = browser.spaceTabs.first(where: { browser.folder(of: $0)?.id == id }) else { return }
+        let before = deckLayout.slot
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+            expandedFolder = id
+            progress = CGFloat(deckLayout.slot[tab.id] ?? 0)
+        }
+        jumpedFolder = before != deckLayout.slot
+        folderJump = FolderJump(id: id)
     }
 
     private func collapse(_ folder: DeckFolder) {
@@ -494,13 +526,25 @@ struct TabSwitcherView: View {
 
     private static let devicePrefix = "device:"
 
+    /// Follows the workspace's folders through withAnimation, so the button doesn't pop: the switcher picks
+    /// a workspace with animations disabled, which silenced an animation modifier.
+    @State private var showsFoldersButton = false
+
     private var topBar: some View {
-        HStack {
+        HStack(spacing: 10) {
             Spacer()
-            if railWidth == 0, !landscape { settingsButton }
+            if railWidth == 0, !landscape {
+                foldersButton
+                settingsButton
+            }
         }
         .frame(minHeight: landscape ? 8 : 52)
         .padding(.horizontal, 20)
+        // Here, not on the body: the top bar is always on screen, and the body's chain was too long to type-check.
+        .onAppear { showsFoldersButton = !spaceFolders.isEmpty }
+        .onChange(of: spaceFolders.isEmpty) { _, empty in
+            withAnimation(.spring(duration: 0.3)) { showsFoldersButton = !empty }
+        }
     }
 
     private var settingsButton: some View {
@@ -518,6 +562,27 @@ struct TabSwitcherView: View {
             .matchedTransitionSource(id: "settings", in: sheetSource)
     }
 
+    /// A visible button, like Safari's tab groups button: folders sit first, far from the tab the overview opens on.
+    @ViewBuilder private var foldersButton: some View {
+        let folders = spaceFolders
+        if showsFoldersButton {
+            Menu("Folders", systemImage: "folder") {
+                ForEach(folders, id: \.id) { folder in
+                    Button(folder.name) { showFolder(folder.id) }
+                }
+            }
+            // Deck order: by default the menu put the first folder nearest the button, at the bottom.
+            .menuOrder(.fixed)
+            .labelStyle(.iconOnly)
+            .frame(width: 52, height: 52)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .font(.title3)
+            .foregroundStyle(.primary)
+            .accessibilityIdentifier("spaceFolders")
+            .transition(.scale(scale: 0.5).combined(with: .opacity))
+        }
+    }
+
     private var newTabButton: some View {
         Button("New Tab", systemImage: "plus", action: onNewTab)
             .labelStyle(.iconOnly)
@@ -533,7 +598,10 @@ struct TabSwitcherView: View {
         HStack(spacing: 10) {
                 // On its side the screen is short, and the top's edge sits under the status bar: all the
                 // buttons share the bottom bar, as in Safari's tab overview.
-                if landscape, railWidth == 0 { settingsButton }
+                if landscape, railWidth == 0 {
+                    settingsButton
+                    foldersButton
+                }
                 // With only this iPhone's tabs there is nothing to switch between.
                 if switcherItems.count > 1 {
                     SpaceSwitcher(items: switcherItems,

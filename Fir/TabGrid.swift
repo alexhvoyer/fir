@@ -15,6 +15,8 @@ struct TabGrid: View {
     /// A page is growing out of its cell: the grid doesn't scroll under it.
     let holdsPosition: Bool
     @Binding var expandedFolder: String?
+    /// A folder picked from the folders button: scrolled to its name.
+    let folderJump: FolderJump?
     let folderMenu: FolderMenu?
     let tabMenu: TabMenu?
     let space: (BrowserTab) -> ZenWorkspaces.Space?
@@ -48,6 +50,12 @@ struct TabGrid: View {
                             if let folder = section.folder {
                                 FolderLabel(folder: folder, detail: nil, font: .headline, folderMenu: live ? folderMenu : nil)
                                     .padding(.top, 8)
+                                    .id(FolderJump.anchor(folder.id))
+                                    // A folder that opens with the pick gets its name only now; the yield may come first.
+                                    .onAppear {
+                                        guard live, folderJump?.id == folder.id else { return }
+                                        withAnimation(.smooth) { proxy.scrollTo(FolderJump.anchor(folder.id), anchor: .top) }
+                                    }
                             }
                             // One layout per section, not a stack per row: a cell moving up a row stays the
                             // same view, so it slides there instead of popping in.
@@ -69,6 +77,14 @@ struct TabGrid: View {
                 // Not while a page grows out of its cell: the grid jumped under it. It centres once the page covers it.
                 .onChange(of: hiddenTab) { if hiddenTab != nil, !holdsPosition { reveal(in: proxy) } }
                 .onChange(of: expandedFolder) { if hiddenTab != nil { reveal(in: proxy) } }
+                .onChange(of: folderJump) {
+                    guard let folderJump else { return }
+                    // On the next update: the folder's own section only appears once it opens.
+                    Task {
+                        await Task.yield()
+                        withAnimation(.smooth) { proxy.scrollTo(FolderJump.anchor(folderJump.id), anchor: .top) }
+                    }
+                }
             }
         }
         .allowsHitTesting(live)
@@ -452,4 +468,12 @@ private struct GridRows: Layout {
             sizes[start..<min(start + columns, sizes.count)].map(\.height).max() ?? 0
         }
     }
+}
+
+/// A folder picked from the folders button. Each pick is new, so picking the same folder again still scrolls.
+struct FolderJump: Equatable {
+    let id: String
+    let token = UUID()
+
+    static func anchor(_ id: String) -> String { "folder-" + id }
 }

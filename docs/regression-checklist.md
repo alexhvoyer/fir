@@ -98,6 +98,10 @@ timing, sync.
 - `sim` Tap a card: the page grows out of it. Close the page: it shrinks back onto the same card.
 - `sim` A Zen folder shows as a stack. Tap it to fan it out. Its title menu collapses it again.
 - `sim` A card's title menu offers pin, essentials and folder actions, and close.
+- `sim` In a workspace with folders, a folder button sits by Settings (left of it on iPhone, above it in the Duo's
+  column). Its menu lists the folders in deck order. Pick one: the deck fans it out and centres its first card, also
+  when another folder was open. No button in a workspace without folders, on a device page or in locked Private.
+  Switching between a workspace with folders and one without, the button fades and scales in and out, never pops.
 - `sim` After a cold launch, a tab not opened yet loads when its card is tapped or it is swiped to, with its bar buttons.
   Restored tabs get their web view only then; closing one that never loaded works and Undo brings it back.
 - `sim` **(was broken)** Close a blank tab and tap Undo with Recently Closed empty: the tab comes back. It crashed.
@@ -107,6 +111,7 @@ timing, sync.
 ## Tab overview: Grid
 
 - `sim` The page grows out of its cell and shrinks back into it, landing exactly on the cell.
+- `sim` Pick a folder from the folder button by Settings: it opens and the grid scrolls its name to the top.
 - `sim` **(was broken)** Scroll so the current cell is off centre, then open it: the grid stays still while the page
   grows. It used to jump to centre the cell at the tap.
 - `sim` **(was broken)** After closing a page, its cell shows its picture and the selected outline. A LazyVGrid kept
