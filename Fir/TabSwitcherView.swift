@@ -969,7 +969,7 @@ struct PinGrid: View {
     let urls: [(id: String, url: URL?)]
     /// For Zen's pins and essentials: the long-press title that removes the one with this record id.
     var removeTitle: ((String) -> String?)? = nil
-    /// Pinned tabs shown among essentials, marked with a pin so the two can be told apart.
+    /// Pinned tabs, whose menu says Unpin; no badge, the essentials/pinned switch already tells them apart.
     var pinnedIDs: Set<String> = []
     /// One row that scrolls sideways once there are more than four, for tight places like the deck.
     var singleRow = false
@@ -1025,15 +1025,6 @@ struct PinGrid: View {
 
     private func tile(_ item: (id: String, url: URL?)) -> some View {
                 PinTile(url: item.url, onOpen: onOpen)
-                    .overlay(alignment: .topTrailing) {
-                        if pinnedIDs.contains(item.id) {
-                            Image(systemName: "pin.fill")
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundStyle(.secondary)
-                                .rotationEffect(.degrees(45))
-                                .padding(6)
-                        }
-                    }
                     .contextMenu {
                         if let url = item.url {
                             Button("Copy Link", systemImage: "link") { UIPasteboard.general.url = url }
