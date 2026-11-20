@@ -252,15 +252,14 @@ struct ZenSpacePage: View {
     let space: ZenWorkspaces.Space
     let essentials: [ZenWorkspaces.Tab]
     let onOpen: (URL) -> Void
+    var barButtonsWidth: CGFloat?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Same title and spacing as ZenSpaceHeader, so switching to a space with tabs doesn't jump.
-                VStack(alignment: .leading, spacing: 12) {
-                    Text([space.icon, space.name].compactMap { $0 }.joined(separator: " "))
-                        .font(.brandHeading(.title2))
-                        .lineLimit(1)
+                VStack(alignment: .leading, spacing: ZenSpaceTitle.spacing(barButtonsWidth)) {
+                    ZenSpaceTitle(space: space, barButtonsWidth: barButtonsWidth)
                     if !essentials.isEmpty {
                         PinGrid(urls: essentials.map { ($0.id, $0.url) },
                                 removeTitle: { _ in String(localized: "Remove from Essentials") }, onOpen: onOpen)
@@ -277,6 +276,8 @@ struct ZenSpacePage: View {
             .padding(.horizontal, 20)
         }
         .scrollIndicators(.hidden)
+        // Up as far as the header's title rises.
+        .padding(.top, -ZenSpaceTitle.rise(barButtonsWidth))
         .background(alignment: .top) {
             // A wash of the space's theme colour, like Zen's own sidebar.
             LinearGradient(colors: [(space.color ?? .clear).opacity(0.35), .clear], startPoint: .top, endPoint: .center)
@@ -366,17 +367,19 @@ struct ZenSpaceHeader: View {
     let space: ZenWorkspaces.Space
     let essentials: [ZenWorkspaces.Tab]
     let onOpen: (URL) -> Void
+    /// The width the top bar's buttons take on the right of the row the title shares; nil where the bar has
+    /// no buttons (the Duo's sit in its column, on its side in the bottom bar) and the title keeps its own place.
+    var barButtonsWidth: CGFloat?
     @Environment(\.isLandscape) private var landscape
 
     var body: some View {
         // A folder's tabs are cards in the deck below.
         let pins = essentials + space.tabs
-        VStack(alignment: .leading, spacing: 12) {
-            Text([space.icon, space.name].compactMap { $0 }.joined(separator: " "))
-                .font(.brandHeading(.title2))
-                .lineLimit(1)
-                // Clear of the settings button, whose row the title shares.
-                .padding(.trailing, 64)
+        VStack(alignment: .leading, spacing: ZenSpaceTitle.spacing(barButtonsWidth)) {
+            // On its side it rose off the screen anyway: hidden, not removed, so the deck keeps its height.
+            ZenSpaceTitle(space: space, barButtonsWidth: barButtonsWidth)
+                .opacity(landscape ? 0 : 1)
+                .accessibilityHidden(landscape)
             // On its side the deck has no height to spare for the pins.
             if !pins.isEmpty, !landscape {
                 PinGrid(urls: pins.map { ($0.id, $0.url) }, removeTitle: { id in
@@ -385,14 +388,37 @@ struct ZenSpaceHeader: View {
             }
         }
         .padding(.horizontal, 20)
-        // Up beside the settings button, leaving the deck room for a folder's name above its cards.
-        .padding(.top, -40)
+        // Up into the top bar's row, leaving the deck room for a folder's name above its cards.
+        .padding(.top, -ZenSpaceTitle.rise(barButtonsWidth))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(alignment: .top) {
             LinearGradient(colors: [(space.color ?? .clear).opacity(0.35), .clear], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
         }
     }
+}
+
+/// A Zen workspace's name, placed the same way by its header and by its page without tabs.
+struct ZenSpaceTitle: View {
+    let space: ZenWorkspaces.Space
+    /// What the top bar's buttons take on the right of the row the title shares; nil when they are elsewhere.
+    let barButtonsWidth: CGFloat?
+
+    var body: some View {
+        Text([space.icon, space.name].compactMap { $0 }.joined(separator: " "))
+            .font(.brandHeading(.title2))
+            .lineLimit(1)
+            // Centred on the top bar's buttons, whose row it shares, and clear of them.
+            .frame(minHeight: barButtonsWidth == nil ? nil : TabSwitcherView.barHeight, alignment: .leading)
+            .padding(.trailing, barButtonsWidth ?? 64)
+    }
+
+    /// How far the title's block rises above the top bar's bottom: into its row, or beside the Duo's empty bar.
+    static func rise(_ barButtonsWidth: CGFloat?) -> CGFloat {
+        barButtonsWidth == nil ? 40 : TabSwitcherView.barHeight + TabSwitcherView.barGap
+    }
+
+    static func spacing(_ barButtonsWidth: CGFloat?) -> CGFloat { barButtonsWidth == nil ? 12 : 16 }
 }
 
 /// The private deck before any private tab is open.

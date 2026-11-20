@@ -102,6 +102,11 @@ timing, sync.
   column). Its menu lists the folders in deck order. Pick one: the deck fans it out and centres its first card, also
   when another folder was open. No button in a workspace without folders, on a device page or in locked Private.
   Switching between a workspace with folders and one without, the button fades and scales in and out, never pops.
+- `sim` In a Zen workspace on iPhone, its title sits centred on the top buttons and stops short of them, a long name
+  ending in an ellipsis. The essentials start clear below the buttons; cards keep their size. On the Duo, whose
+  buttons sit in the column, the title keeps its own place with room above it, not pressed to the top edge.
+- `sim` **(was broken)** Switch between a Zen workspace with tabs and one without (its page of pins): the title and
+  the essentials stay at the same height, on iPhone and on the Duo. The empty page's title sat about 40 pt lower.
 - `sim` After a cold launch, a tab not opened yet loads when its card is tapped or it is swiped to, with its bar buttons.
   Restored tabs get their web view only then; closing one that never loaded works and Undo brings it back.
 - `sim` **(was broken)** Close a blank tab and tap Undo with Recently Closed empty: the tab comes back. It crashed.

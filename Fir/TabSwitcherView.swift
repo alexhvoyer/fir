@@ -64,7 +64,7 @@ struct TabSwitcherView: View {
                 page(id, live: id == items[selected].id)
             }
         }
-        .safeAreaInset(edge: .top) { topBar }
+        .safeAreaInset(edge: .top, spacing: Self.barGap) { topBar }
 
         .alert(deletingFolder.map { String(localized: "Delete \($0.name)?") } ?? String(localized: "Delete Folder?"), isPresented: Binding(
             get: { deletingFolder != nil }, set: { if !$0 { deletingFolder = nil } }
@@ -193,11 +193,13 @@ struct TabSwitcherView: View {
             } else if space == BrowserModel.privateSpace, tabs.isEmpty {
                 PrivateEmptyPage().environment(\.colorScheme, .dark)
             } else if let zen, let current, tabs.isEmpty {
-                ZenSpacePage(space: current, essentials: zen.essentials(in: current), onOpen: open)
+                ZenSpacePage(space: current, essentials: zen.essentials(in: current), onOpen: open,
+                             barButtonsWidth: topBarButtonsWidth)
             } else {
                 VStack(spacing: 0) {
                     if let zen, let current {
-                        ZenSpaceHeader(space: current, essentials: zen.essentials(in: current), onOpen: open)
+                        ZenSpaceHeader(space: current, essentials: zen.essentials(in: current), onOpen: open,
+                                       barButtonsWidth: topBarButtonsWidth)
                     }
                     Group {
                         if tabLayout == .grid {
@@ -212,8 +214,9 @@ struct TabSwitcherView: View {
                             deckPreview(tabs).ignoresSafeArea(.container, edges: carouselEdges)
                         }
                     }
-                    // Room for an open folder's name over its card's title.
-                    .padding(.top, current == nil ? 0 : 24)
+                    // Room for an open folder's name over its card's title. Smaller beside the top bar's
+                    // buttons: the header's essentials moved down there, and the cards keep their size.
+                    .padding(.top, current == nil ? 0 : topBarButtonsWidth == nil ? 24 : 14)
                 }
             }
         }
@@ -526,6 +529,16 @@ struct TabSwitcherView: View {
 
     private static let devicePrefix = "device:"
 
+    static let barHeight: CGFloat = 52
+    /// Said outright, not the system default, so the workspace header can rise exactly into the bar's row.
+    static let barGap: CGFloat = 8
+
+    /// What the top bar's buttons take on the right, with a gap before the title; nil when they are elsewhere.
+    private var topBarButtonsWidth: CGFloat? {
+        guard railWidth == 0, !landscape else { return nil }
+        return 52 + (spaceFolders.isEmpty ? 0 : 62) + 12
+    }
+
     /// Follows the workspace's folders through withAnimation, so the button doesn't pop: the switcher picks
     /// a workspace with animations disabled, which silenced an animation modifier.
     @State private var showsFoldersButton = false
@@ -538,7 +551,7 @@ struct TabSwitcherView: View {
                 settingsButton
             }
         }
-        .frame(minHeight: landscape ? 8 : 52)
+        .frame(minHeight: landscape ? 8 : Self.barHeight)
         .padding(.horizontal, 20)
         // Here, not on the body: the top bar is always on screen, and the body's chain was too long to type-check.
         .onAppear { showsFoldersButton = !spaceFolders.isEmpty }
