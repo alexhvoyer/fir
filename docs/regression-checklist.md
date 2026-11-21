@@ -221,6 +221,9 @@ timing, sync.
 
 - `sim` With Block Ads & Trackers on, a page with ads loads without them. Turning it off for a site reloads that site
   with ads.
+- `sim` Filter Lists > Add List with an https list address: it appears under Your Lists with its own title and
+  rule count. An http address shows an error; a web page or a list over 150,000 rules shows red text and turns off.
+  Swipe to delete removes it. The catalog lists keep working throughout.
 - `sim` HTTPS-Only upgrades an http link and warns when the site has no https.
 - `sim` **(was broken)** Page Zoom on google.com search results: 70% shrinks the whole page evenly and keeps the
   full width (pageZoom left a blank strip, did nothing or spilled off screen); 130% reflows narrower without sideways

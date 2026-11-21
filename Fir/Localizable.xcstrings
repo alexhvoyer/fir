@@ -259,6 +259,46 @@
         }
       }
     },
+    "%@ · %@ rules" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ Regeln"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ reglas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ règles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ regole"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ regras"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · правил: %2$@"
+          }
+        }
+      }
+    },
     "%lld" : {
       "shouldTranslate" : false
     },
@@ -1080,6 +1120,46 @@
         }
       }
     },
+    "A filter list blocked this page." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Filterliste hat diese Seite blockiert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una lista de filtros ha bloqueado esta página."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une liste de filtres a bloqué cette page."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un elenco filtri ha bloccato questa pagina."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma lista de filtros bloqueou esta página."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эту страницу заблокировал список фильтров."
+          }
+        }
+      }
+    },
     "A result" : {
       "localizations" : {
         "de" : {
@@ -1443,6 +1523,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить «%@»"
+          }
+        }
+      }
+    },
+    "Add Filter List" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filterliste hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir lista de filtros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une liste de filtres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi elenco filtri"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Lista de Filtros"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить список фильтров"
+          }
+        }
+      }
+    },
+    "Add List…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste hinzufügen …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir lista…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une liste…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi elenco…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Lista…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить список…"
           }
         }
       }
@@ -4013,6 +4173,46 @@
         }
       }
     },
+    "Couldn't Add the List" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liste konnte nicht hinzugefügt werden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido añadir la lista"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'ajouter la liste"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile aggiungere l'elenco"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não Foi Possível Adicionar a Lista"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось добавить список"
+          }
+        }
+      }
+    },
     "Couldn't Reach Mozilla" : {
       "localizations" : {
         "de" : {
@@ -5253,6 +5453,46 @@
         }
       }
     },
+    "Enter the list's full address, starting with https://." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib die vollständige Adresse der Liste ein, beginnend mit https://."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduce la dirección completa de la lista, que empiece por https://."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisissez l'adresse complète de la liste, commençant par https://."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci l'indirizzo completo dell'elenco, che inizi con https://."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite o endereço completo da lista, começando com https://."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите полный адрес списка, начиная с https://."
+          }
+        }
+      }
+    },
     "Essential" : {
       "localizations" : {
         "de" : {
@@ -6009,6 +6249,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Заканчиваю последнюю страницу"
+          }
+        }
+      }
+    },
+    "Fir closed before this list was ready, so it was turned off. Turn it on to try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir wurde beendet, bevor diese Liste fertig war, daher wurde sie ausgeschaltet. Schalte sie ein, um es erneut zu versuchen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir se cerró antes de que esta lista estuviera lista, así que se ha desactivado. Actívala para volver a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir s'est fermé avant que cette liste soit prête, elle a donc été désactivée. Activez-la pour réessayer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir si è chiuso prima che questo elenco fosse pronto, quindi è stato disattivato. Attivalo per riprovare."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Fir fechou antes de esta lista ficar pronta, então ela foi desativada. Ative-a para tentar de novo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fir закрылся до того, как список был готов, поэтому он выключен. Включите его, чтобы попробовать снова."
           }
         }
       }
@@ -8373,6 +8653,46 @@
         }
       }
     },
+    "Lists in Adblock Plus format, added by address. Each compiles on its own, so one that fails leaves the others working. Rules Safari's engine can't run, like uBlock scriptlets, are skipped." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listen im Adblock-Plus-Format, per Adresse hinzugefügt. Jede wird einzeln kompiliert, eine fehlerhafte stört die anderen nicht. Regeln, die Safaris Engine nicht ausführen kann, etwa uBlock-Scriptlets, werden übersprungen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listas en formato Adblock Plus, añadidas por su dirección. Cada una se compila por separado, así que si una falla, las demás siguen funcionando. Las reglas que el motor de Safari no admite, como los scriptlets de uBlock, se omiten."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listes au format Adblock Plus, ajoutées par leur adresse. Chacune est compilée à part : si l'une échoue, les autres fonctionnent. Les règles que le moteur de Safari ne gère pas, comme les scriptlets uBlock, sont ignorées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elenchi in formato Adblock Plus, aggiunti tramite indirizzo. Ognuno viene compilato a parte, quindi se uno non funziona gli altri continuano a funzionare. Le regole che il motore di Safari non supporta, come gli scriptlet di uBlock, vengono ignorate."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listas no formato Adblock Plus, adicionadas pelo endereço. Cada uma é compilada separadamente, então uma com erro não afeta as outras. Regras que o mecanismo do Safari não executa, como scriptlets do uBlock, são ignoradas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Списки в формате Adblock Plus, добавленные по адресу. Каждый собирается отдельно, поэтому сбой одного не мешает остальным. Правила, которые движок Safari не умеет выполнять, например скриптлеты uBlock, пропускаются."
+          }
+        }
+      }
+    },
     "Lists update weekly. Changes apply from the next page load." : {
       "localizations" : {
         "de" : {
@@ -8689,6 +9009,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Другие кнопки"
+          }
+        }
+      }
+    },
+    "More than 150,000 rules, the most Safari's blocking engine can take." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr als 150.000 Regeln, das Maximum für Safaris Blocker-Engine."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más de 150.000 reglas, el máximo que admite el motor de bloqueo de Safari."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus de 150 000 règles, le maximum que le moteur de blocage de Safari accepte."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più di 150.000 regole, il massimo che il motore di blocco di Safari accetta."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais de 150.000 regras, o máximo que o mecanismo de bloqueio do Safari aceita."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Больше 150 000 правил — это предел движка блокировки Safari."
           }
         }
       }
@@ -16133,6 +16493,86 @@
         }
       }
     },
+    "The address of a list in Adblock Plus format." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Adresse einer Liste im Adblock-Plus-Format."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dirección de una lista en formato Adblock Plus."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'adresse d'une liste au format Adblock Plus."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'indirizzo di un elenco in formato Adblock Plus."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O endereço de uma lista no formato Adblock Plus."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адрес списка в формате Adblock Plus."
+          }
+        }
+      }
+    },
+    "The address returned a web page or an error, not a filter list." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Adresse lieferte eine Webseite oder einen Fehler, keine Filterliste."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dirección devolvió una página web o un error, no una lista de filtros."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'adresse a renvoyé une page web ou une erreur, pas une liste de filtres."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'indirizzo ha restituito una pagina web o un errore, non un elenco filtri."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O endereço retornou uma página da web ou um erro, não uma lista de filtros."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По адресу открылась веб-страница или ошибка, а не список фильтров."
+          }
+        }
+      }
+    },
     "The change didn't reach Zen's sync server, so nothing changed. Try again." : {
       "localizations" : {
         "de" : {
@@ -16169,6 +16609,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Изменение не дошло до сервера синхронизации Zen, поэтому ничего не изменилось. Попробуйте ещё раз."
+          }
+        }
+      }
+    },
+    "The file is over 30 MB, far bigger than a filter list." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Datei ist größer als 30 MB, viel größer als eine Filterliste."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El archivo supera los 30 MB, mucho más que una lista de filtros."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier dépasse 30 Mo, bien plus qu'une liste de filtres."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il file supera i 30 MB, molto più di un elenco filtri."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O arquivo tem mais de 30 MB, muito maior que uma lista de filtros."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файл больше 30 МБ — намного больше любого списка фильтров."
           }
         }
       }
@@ -16609,6 +17089,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Эта форма будет отправлена по незащищённому соединению. Её содержимое могут увидеть другие в сети."
+          }
+        }
+      }
+    },
+    "This list is already in Filter Lists." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Liste ist bereits in den Filterlisten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta lista ya está en Listas de filtros."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette liste figure déjà dans Listes de filtres."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo elenco è già in Elenchi filtri."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta lista já está em Listas de Filtros."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот список уже есть в «Списках фильтров»."
           }
         }
       }
@@ -19013,6 +19533,46 @@
         }
       }
     },
+    "Your Lists" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eigene Listen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus listas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos listes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi elenchi"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suas Listas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свои списки"
+          }
+        }
+      }
+    },
     "Your connection to %@ is encrypted, but some of this page's content isn't." : {
       "localizations" : {
         "de" : {
@@ -19372,6 +19932,9 @@
           }
         }
       }
+    },
+    "https://example.com/list.txt" : {
+      "shouldTranslate" : false
     },
     "iPhone Language" : {
       "localizations" : {

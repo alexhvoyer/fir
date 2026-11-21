@@ -797,9 +797,20 @@ extension BrowserTab: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) {
         webView.scrollView.refreshControl?.endRefreshing()
-        // Not a replaced or cancelled load: those say nothing about the site.
         let failure = error as NSError
-        guard failure.domain == NSURLErrorDomain, failure.code != NSURLErrorCancelled else { return }
+        // A filter list blocked the page (104): no reason to offer the site over plain HTTP, as an upgrade timeout would.
+        if failure.domain == "WebKitErrorDomain", failure.code == 104 {
+            stopUpgrade()
+            loadFailure = LoadFailure(url: failure.userInfo[NSURLErrorFailingURLErrorKey] as? URL ?? url,
+                                      message: String(localized: "A filter list blocked this page."))
+            return
+        }
+        // Not a replaced or cancelled load: those say nothing about the site, but end an upgrade, whose timeout
+        // would otherwise offer plain HTTP.
+        guard failure.domain == NSURLErrorDomain, failure.code != NSURLErrorCancelled else {
+            if failure.domain != NSURLErrorDomain { stopUpgrade() }
+            return
+        }
         let plain = upgradedFrom
         stopUpgrade()
         if let plain, HTTPSOnly.isSecureFailure(error) {

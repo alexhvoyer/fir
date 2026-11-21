@@ -21,6 +21,8 @@ enum FilterListConverter {
         var siteSelectors: [String: [String]] = [:]
         for list in lists {
             for line in list.split(whereSeparator: \.isNewline) {
+                // The longest real filters are about 12 KB; a far longer line is a regex WebKit may choke on.
+                guard line.utf8.count <= 32_768 else { continue }
                 let line = line.trimmingCharacters(in: .whitespaces)
                 if line.isEmpty || line.hasPrefix("!") || line.hasPrefix("[") { continue }
                 if let range = line.range(of: "##") {
@@ -156,13 +158,15 @@ enum FilterListConverter {
         }
         let body = pattern.trimmingCharacters(in: CharacterSet(charactersIn: "*"))
         guard body.count >= 3, isASCII(body) else { return nil }
+        // Counted once: a substring counts by walking, which per character made a long line take hours.
+        let last = pattern.count - 1
         for (index, char) in pattern.enumerated() {
             switch char {
             case "*": regex += ".*"
             // A trailing separator also matches the end of the URL, which WebKit can't say without
             // alternation; after a bare host, a URL always continues with `/` or `:port`.
             case "^":
-                if index < pattern.count - 1 { regex += "[/:?=&]" } else if isHost { regex += "[/:]" }
+                if index < last { regex += "[/:?=&]" } else if isHost { regex += "[/:]" }
             case ".", "+", "?", "(", ")", "[", "]", "{", "}", "\\", "$", "|": regex += "\\\(char)"
             default: regex.append(char)
             }

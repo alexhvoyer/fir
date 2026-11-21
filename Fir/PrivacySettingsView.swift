@@ -127,9 +127,12 @@ struct PrivacySettingsView: View {
     }
 }
 
-/// Every filter list Fir can block with: the general ones, then one per language for regional sites.
+/// Every filter list Fir can block with: the general ones, one per language for regional sites, then the user's own.
 private struct FilterListsView: View {
     private let blocker = ContentBlocker.shared
+    @State private var adding = false
+    @State private var address = ""
+    @State private var addError: String?
 
     var body: some View {
         List {
@@ -144,6 +147,21 @@ private struct FilterListsView: View {
                 Text("General lists miss many ads on sites in other languages. Turn on the lists for the languages you read.")
             }
             Section {
+                ForEach(blocker.addedLists) { row($0) }
+                    .onDelete { offsets in
+                        let lists = offsets.map { blocker.addedLists[$0] }
+                        Task { for list in lists { await blocker.removeList(list) } }
+                    }
+                Button("Add List…") {
+                    address = ""
+                    adding = true
+                }
+            } header: {
+                Text("Your Lists")
+            } footer: {
+                Text("Lists in Adblock Plus format, added by address. Each compiles on its own, so one that fails leaves the others working. Rules Safari's engine can't run, like uBlock scriptlets, are skipped.")
+            }
+            Section {
                 Button("Update Filter Lists") { Task { await blocker.update() } }
                     .disabled(blocker.state == .loading)
             } footer: {
@@ -151,6 +169,26 @@ private struct FilterListsView: View {
             }
         }
         .navigationTitle("Filter Lists")
+        .alert("Add Filter List", isPresented: $adding) {
+            TextField("https://example.com/list.txt", text: $address)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            Button("Cancel", role: .cancel) {}
+            Button("Add") {
+                let address = address
+                Task {
+                    do { try await blocker.addList(address) } catch { addError = error.localizedDescription }
+                }
+            }
+        } message: {
+            Text("The address of a list in Adblock Plus format.")
+        }
+        .alert("Couldn't Add the List", isPresented: Binding(get: { addError != nil }, set: { if !$0 { addError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(addError ?? "")
+        }
     }
 
     private func row(_ list: FilterList) -> some View {
@@ -160,9 +198,17 @@ private struct FilterListsView: View {
         )) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(list.name)
-                Text(list.detail).font(.footnote).foregroundStyle(.secondary)
+                Text(detail(list)).font(.footnote).foregroundStyle(list.group == .added && blocker.unitFailures[list.unit] != nil ? .red : .secondary)
             }
         }
+    }
+
+    /// An added list shows its site and rule count, or why it isn't blocking.
+    private func detail(_ list: FilterList) -> String {
+        guard list.group == .added else { return list.detail }
+        if let failure = blocker.unitFailures[list.unit] { return failure }
+        guard blocker.isSelected(list), let rules = blocker.unitRules[list.unit] else { return list.detail }
+        return String(localized: "\(list.detail) · \(rules.formatted()) rules")
     }
 
     private var footer: String {
