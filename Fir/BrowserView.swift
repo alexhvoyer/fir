@@ -1304,6 +1304,7 @@ private struct PageView: View {
     @GestureState private var dragging = false
     /// The phone on its side: as in Safari, the bar moves to the top with a strip of the tabs under it.
     @Environment(\.isLandscape) private var landscape
+    @Environment(\.isWideScreen) private var wideScreen
     private static let stripHeight: CGFloat = 36
     /// The strip lists the workspace's tabs; one tab needs no strip.
     private var showsStrip: Bool { browser.tabs(in: browser.selected.spaceID).count > 1 }
@@ -1413,6 +1414,9 @@ private struct PageView: View {
         // Restored tabs load their page only once shown.
         .onChange(of: browser.selectedID, initial: true) { browser.selected.loadIfNeeded() }
         .onChange(of: pageInsets(insets).top, initial: true) { onStartPageTop($1) }
+        .onChange(of: clearanceZone, initial: true) {
+            CameraClearance.shared.update($1, in: browser.tabs.compactMap(\.existingWebView))
+        }
         // Only a real load: sites rewrite their address while scrolling, which kept popping the bar open.
         .onChange(of: tab.pageURL) { if tab.isLoading { withAnimation(.snappy) { expand() } } }
         .onChange(of: browser.selectedID) { expand() }
@@ -1762,6 +1766,14 @@ private struct PageView: View {
     private var trailingWidth: CGFloat { sideRail ? 0 : landscape ? 106 : 48 }
 
     private var sideRail: Bool { BrowserView.sideRail(safeInsets) }
+
+    /// Where a site's controls are moved out from under the Duo's camera pill; none when the page stops at the column.
+    private var clearanceZone: CameraClearance.Zone? {
+        guard sideRail, fullWidthPages, pageWidth > 0 else { return nil }
+        let bottom = CameraClearance.pillHeight(wideScreen: wideScreen) - pageInsets(safeInsets).top
+        guard bottom > 0 else { return nil }
+        return .init(left: pageWidth - safeInsets.trailing + CameraClearance.pillInset, bottom: bottom, viewWidth: pageWidth)
+    }
 
     /// Back and forward buttons beside the address; none in the bar when the camera column holds them.
     private func barHistory(_ tab: BrowserTab) -> Int {

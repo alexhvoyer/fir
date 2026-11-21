@@ -82,6 +82,11 @@ timing, sync.
 - `sim` **(was broken)** Start Page mode, swipe the bar past the last tab and let go: the new tab's bar grows to full
   width as it lands, as with +. It stayed short, then jumped wide. Called off, no tab is added.
 - `sim` Page menu grows out of the menu button or the address. With Reduce Motion it slides up.
+- `sim` iPhone Duo outer screen, Full-Width Pages on: en.m.wikipedia.org's search and account buttons sit left of the
+  camera pill and open; the header's background and the article stay full width. m.youtube.com's Sign in shows as its
+  icon left of the pill; ebay.com's camera and search buttons sit left of it. Same on the open inner screen, where
+  the pill is shorter: ebay.com's search field stays full width there. With Full-Width Pages off, or on an iPhone,
+  pages are untouched.
 - `sim` **(was broken)** Close the page menu and lift to the tab overview at once. The address capsule must not stay
   over the switcher.
 - `sim` **(was broken)** With an add-on installed, the bar's buttons don't overlap the address text.

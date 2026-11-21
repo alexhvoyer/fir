@@ -194,6 +194,7 @@ final class BrowserTab: NSObject, Identifiable {
         let webView = WKWebView(frame: .zero, configuration: config)
         ContentBlocker.shared.attach(webView)
         PasswordAutofill.shared.attach(webView)
+        CameraClearance.shared.attach(webView)
         return configure(webView)
     }
 
