@@ -97,6 +97,7 @@ struct HistoryView: View {
     }
 
     private func clear(_ span: ClearSpan) {
+        CameraClearance.shared.forget()
         Task {
             await Task.detached(priority: .userInitiated) {
                 if let start = span.start { HistoryStore.shared?.deleteVisits(since: start) } else { HistoryStore.shared?.deleteAll() }

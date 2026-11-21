@@ -102,6 +102,7 @@ struct PrivacySettingsView: View {
                 Task {
                     let store = WKWebsiteDataStore.default()
                     await store.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
+                    CameraClearance.shared.forget()
                     cleared = true
                 }
             }

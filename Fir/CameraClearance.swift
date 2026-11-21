@@ -52,19 +52,52 @@ final class CameraClearance: NSObject, WKScriptMessageHandlerWithReply {
         }
         switch body["kind"] as? String {
         case "pick":
-            guard let options = body["options"] as? String else { return replyHandler(nil, nil) }
-            let key = Self.key(bar + options)
-            if let choice = kept[key] { return replyHandler(["choice": choice, "asked": false], nil) }
-            // Private tabs leave no trace of where they went.
-            let remembers = message.webView?.configuration.websiteDataStore.isPersistent == true
+            guard let options = body["options"] as? String, let webView = message.webView,
+                  // A page sets these texts; a huge one would stall the app, not just its own tab.
+                  bar.utf8.count + options.utf8.count <= 16_000 else { return replyHandler(nil, nil) }
+            let origin = message.frameInfo.securityOrigin
+            let site = "\(origin.protocol)://\(origin.host):\(origin.port)"
+            // Private tabs neither read nor write picks: a quick answer would tell a page it was seen before.
+            let remembers = webView.configuration.websiteDataStore.isPersistent
+            let key = Self.key(site + "\n" + bar + "\n" + options)
+            if remembers, let choice = kept[key] { return replyHandler(["choice": choice], nil) }
+            guard let tab = asks.allow(webView, site: site) else { return replyHandler(nil, nil) }
             Task {
                 let choice = await Self.pick(from: options, in: bar)
-                if remembers, let choice { keep(choice, for: key) }
-                replyHandler(["choice": choice as Any, "asked": true], nil)
+                asks.finish(tab)
+                if remembers, let choice { kept[key] = choice }
+                replyHandler(["choice": choice as Any], nil)
             }
         default:
             replyHandler(nil, nil)
         }
+    }
+
+    /// Forgets every pick, with the website data or history that could have shown a page was seen before.
+    func forget() { kept = [:] }
+
+    /// Picks by site, bar and options, in memory only: on disk they would outlive clearing history, and a page
+    /// timing a cached answer could recognise the phone.
+    private var kept: [String: Int] = [:]
+    private var asks = Asks()
+
+    /// One question to the model at a time per tab, and a few per site in it, so a page reshaping its bar
+    /// can't keep the model busy.
+    private struct Asks {
+        private var busy: Set<ObjectIdentifier> = []
+        private var counts: [ObjectIdentifier: (site: String, count: Int)] = [:]
+
+        mutating func allow(_ webView: WKWebView, site: String) -> ObjectIdentifier? {
+            let tab = ObjectIdentifier(webView)
+            var entry: (site: String, count: Int) = counts[tab].flatMap { $0.site == site ? $0 : nil } ?? (site, 0)
+            guard !busy.contains(tab), entry.count < 3 else { return nil }
+            entry.count += 1
+            counts[tab] = entry
+            busy.insert(tab)
+            return tab
+        }
+
+        mutating func finish(_ tab: ObjectIdentifier) { busy.remove(tab) }
     }
 
     // MARK: The model
@@ -93,33 +126,18 @@ final class CameraClearance: NSObject, WKScriptMessageHandlerWithReply {
         return choice
     }
 
-    // MARK: Picks remembered
-
-    private struct Kept: Codable { let key: String; let choice: Int }
-    private static let keptFile = URL.cachesDirectory.appending(path: "camera-clearance.json")
-    private static let keptLimit = 300
-    private lazy var keptList: [Kept] = (try? JSONDecoder().decode([Kept].self, from: Data(contentsOf: Self.keptFile))) ?? []
-    private lazy var kept: [String: Int] = Dictionary(keptList.map { ($0.key, $0.choice) }) { $1 }
-
-    /// The bar and its options are the key: the same bar on the next visit gets the same pick, a changed one asks again.
-    private static func key(_ bar: String) -> String {
-        SHA256.hash(data: Data(bar.utf8)).map { String(format: "%02x", $0) }.joined()
-    }
-
-    private func keep(_ choice: Int, for key: String) {
-        guard kept[key] != choice else { return }
-        kept[key] = choice
-        keptList.removeAll { $0.key == key }
-        keptList.append(Kept(key: key, choice: choice))
-        keptList = keptList.suffix(Self.keptLimit)
-        try? JSONEncoder().encode(keptList).write(to: Self.keptFile, options: .atomic)
+    private static func key(_ text: String) -> String {
+        SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
     /// Pads, narrows or shifts what covers a control. Failing that, hides or narrows something, if it breaks
     /// nothing; the model picks what to give up.
     static let script = WKUserScript(source: """
         (() => {
-          let zone = null, timer = 0, asked = 0, askedAt = '', last = 0;
+          // The controls a full pass left covered, which later passes needn't retry.
+          let zone = null, timer = 0, last = 0, asking = false, redo = true, stillCovered = new Set();
+          // This pass's candidate controls, so whole-page searches look only near the zone.
+          let pool = [];
           const touched = new Map();
           // Each bar's working options on this page, and the one picked.
           const fixes = new Map();
@@ -162,20 +180,37 @@ final class CameraClearance: NSObject, WKScriptMessageHandlerWithReply {
             return false;
           }
           // Controls in the zone: on the whole page, or only inside the given bars.
-          function hits(left, bottom, scope) {
+          function hits(left, bottom, scope, candidates) {
             const found = [];
-            const all = scope ? scope.flatMap((bar) => [...bar.querySelectorAll(controls)]) : document.querySelectorAll(controls);
+            const all = candidates || (scope ? scope.flatMap((bar) => [...bar.querySelectorAll(controls)]) : pool);
             for (const el of all) {
+              // Cheap geometry first; the visibility check costs more per control.
               const r = el.getBoundingClientRect();
               // Mostly in view still takes a tap.
               if (r.width === 0 || r.height === 0 || r.right - left <= r.width / 4 || r.left >= innerWidth) continue;
-              // A closed search overlay or menu, faded out, takes no taps.
-              if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
               // A control is small: a page-wide shield or drawer label is not one.
               if (r.width > innerWidth / 2 || r.height > bottom || r.top >= bottom) continue;
+              // Scrolled past and not at the page's top: no longer under the camera, pinned or not.
+              if (r.bottom <= 0 && r.top + scrollY >= bottom) continue;
+              // A closed search overlay or menu, faded out, takes no taps.
+              if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
               // A pinned bar can be anywhere in the zone; in the page's flow, only what no scrolling brings out from under it.
               const top = pinned(el) ? r.top : r.top + scrollY;
               if (top < bottom && top + r.height > 0 && !inScroller(el)) found.push(el);
+            }
+            return found;
+          }
+          // Controls that may be in the zone, by hit-testing a grid over it: measuring every link of a long
+          // article took up to a second. Misses only controls under 8 px.
+          function probe(left, bottom) {
+            const found = new Set();
+            for (let x = Math.max(left, 0) + 4; x < innerWidth; x += 8) {
+              for (let y = 4; y < bottom; y += 8) {
+                for (const node of document.elementsFromPoint(x, y)) {
+                  const el = node.closest(controls);
+                  if (el) found.add(el);
+                }
+              }
             }
             return found;
           }
@@ -237,7 +272,7 @@ final class CameraClearance: NSObject, WKScriptMessageHandlerWithReply {
           }
           function label(node, part) {
             const role = node.getAttribute('role');
-            const tag = node.localName + (role ? ' ' + role : '');
+            const tag = (node.localName + (role ? ' ' + role : '')).slice(0, 40);
             if (!part) return tag + ' group';
             const text = (node.getAttribute('aria-label') || node.getAttribute('title') || node.getAttribute('alt') ||
               node.innerText || '').trim().replace(/\\s+/g, ' ').slice(0, 30).replace(/"/g, "'");
@@ -373,7 +408,8 @@ final class CameraClearance: NSObject, WKScriptMessageHandlerWithReply {
                 !(pinned(root) || top < 72 || root.closest('header,nav,[role=banner],[role=navigation]'))) return;
             undoSince(mark);
             let fix = fixes.get(bar);
-            if (!fix) {
+            // One question at a time: a second bar waits for the next pass rather than being refused for good.
+            if (!fix && !asking) {
               // Kept as positions in the description: a re-render with the same markup brings new elements.
               const found = options(covered, [root], ids, left, bottom).map((o) => o.map(([el, how]) => [ids.indexOf(el), how]));
               const fallback = found.findIndex((option) => harmless(resolve(option, ids)));
@@ -381,22 +417,24 @@ final class CameraClearance: NSObject, WKScriptMessageHandlerWithReply {
               fixes.set(bar, fix);
               if (fallback >= 0) {
                 fix.choice = fallback;
-              } else if (found.length && (askedAt !== location.href || asked < 3)) {
+              } else if (found.length) {
                 const list = found.map((o, i) => `${i + 1}. ${say(resolve(o, ids), ids)}`).join('\\n') +
                   `\\n${found.length + 1}. change nothing: leave the controls covered`;
+                asking = true;
                 post({ kind: 'pick', bar, options: list }).then((reply) => {
-                  // A bar that keeps changing, like one with a clock, would ask the model on every change.
-                  if (askedAt !== location.href) { askedAt = location.href; asked = 0; }
-                  if (reply && reply.asked) asked++;
+                  asking = false;
                   const n = reply && reply.choice;
                   fix.choice = n >= 1 && n <= found.length ? n - 1 : null;
+                  // A refusal changes nothing here but lets another bar ask, at the usual pace.
+                  if (fix.choice === null) return schedule();
+                  redo = true;
                   clearTimeout(timer);
                   timer = setTimeout(apply, 0);
                 });
               }
             }
             undoSince(mark);
-            if (fix.choice !== null && fits(resolve(fix.options[fix.choice], ids), before, [root], left, bottom)) return;
+            if (fix && fix.choice !== null && fits(resolve(fix.options[fix.choice], ids), before, [root], left, bottom)) return;
             undoSince(mark);
             clear(left, bottom, [root]);
           }
@@ -452,21 +490,55 @@ final class CameraClearance: NSObject, WKScriptMessageHandlerWithReply {
           function apply() {
             timer = 0;
             last = performance.now();
-            restore();
-            if (!zone || !document.body) return;
+            if (!zone || !document.body) return restore();
             const scale = innerWidth / zone.viewWidth;
             const left = zone.left * scale - 8, bottom = zone.bottom * scale;
-            clear(left, bottom);
-            if (hits(left, bottom).length) consult(left, bottom);
+            // A full pass restores, restyles and measures again: redo it only when a control is newly covered,
+            // not on every scroll.
+            const found = probe(left, bottom);
+            const now = hits(left, bottom, null, [...found]);
+            if (!redo && [...touched.keys()].every((el) => el.isConnected) && now.every((el) => stillCovered.has(el))) return;
+            redo = false;
+            // What was moved before may sit outside the zone now, or scrolled out of view; it is checked again.
+            for (const el of touched.keys()) {
+              if (el.matches(controls)) found.add(el);
+              for (const control of el.querySelectorAll(controls)) found.add(control);
+            }
+            for (const el of stillCovered) found.add(el);
+            // Opened scrolled, as by a #link, the top bar is out of the probe's sight.
+            if (scrollY > 0) {
+              for (const bar of document.querySelectorAll('header, nav, [role=banner], [role=navigation]')) {
+                for (const control of bar.querySelectorAll(controls)) found.add(control);
+              }
+            }
+            pool = [...found];
+            try {
+              restore();
+              clear(left, bottom);
+              stillCovered = new Set();
+              if (hits(left, bottom).length) {
+                consult(left, bottom);
+                stillCovered = new Set(hits(left, bottom));
+              }
+            } catch (error) {
+              redo = true;
+              throw error;
+            } finally {
+              pool = [];
+            }
           }
           // Pages away from the Duo's column skip the work, but still undo it if the zone just went.
           // At most once a second: restyling a bar can make the page re-render it, which would call this again.
           function schedule() {
             if (!timer && (zone || touched.size)) timer = setTimeout(apply, Math.max(250, last + 1000 - performance.now()));
           }
-          window.__firClearance = (next) => { zone = next; if (!timer) timer = setTimeout(apply, 0); };
+          window.__firClearance = (next) => { zone = next; redo = true; if (!timer) timer = setTimeout(apply, 0); };
           new MutationObserver(schedule).observe(document, { childList: true, subtree: true });
-          addEventListener('resize', schedule);
+          // Late fonts and a new size can make a fix unneeded or short, which a skipped pass wouldn't notice.
+          const again = () => { redo = true; schedule(); };
+          addEventListener('resize', again);
+          addEventListener('load', again);
+          document.fonts.ready.then(again);
           // A sticky bar can reach the top only as the page scrolls.
           addEventListener('scroll', schedule, { passive: true });
           post('zone').then((next) => {
