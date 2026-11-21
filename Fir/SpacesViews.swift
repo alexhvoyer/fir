@@ -260,6 +260,7 @@ struct ZenSpacePage: View {
     let space: ZenWorkspaces.Space
     let essentials: [ZenWorkspaces.Tab]
     let onOpen: (URL) -> Void
+    let onOpenTile: (String, URL, CGRect) -> Void
     var barButtonsWidth: CGFloat?
 
     var body: some View {
@@ -271,7 +272,8 @@ struct ZenSpacePage: View {
                     ZenSpaceTitle(space: space, barButtonsWidth: barButtonsWidth)
                     if !essentials.isEmpty {
                         PinGrid(urls: essentials.map { ($0.id, $0.url) },
-                                removeTitle: { _ in String(localized: "Remove from Essentials") }, onOpen: onOpen)
+                                removeTitle: { _ in String(localized: "Remove from Essentials") }, onOpenTile: onOpenTile,
+                                onOpen: onOpen)
                     }
                 }
                 ZenSpaceSections(space: space, onOpen: onOpen)
@@ -389,6 +391,7 @@ struct ZenSpaceHeader: View {
     let space: ZenWorkspaces.Space
     let essentials: [ZenWorkspaces.Tab]
     let onOpen: (URL) -> Void
+    let onOpenTile: (String, URL, CGRect) -> Void
     /// The width the top bar's buttons take on the right of the row the title shares; nil where the bar has
     /// no buttons (the Duo's sit in its column, on its side in the bottom bar) and the title keeps its own place.
     var barButtonsWidth: CGFloat?
@@ -408,7 +411,7 @@ struct ZenSpaceHeader: View {
                 .accessibilityHidden(landscape)
             // On a wide screen the pins stand in a column beside the deck instead.
             if pinsInRow {
-                ZenSpacePins(space: space, essentials: essentials, onOpen: onOpen)
+                ZenSpacePins(space: space, essentials: essentials, onOpen: onOpen, onOpenTile: onOpenTile)
             }
         }
         .padding(.horizontal, 20)
@@ -428,6 +431,7 @@ struct ZenSpacePins: View {
     let space: ZenWorkspaces.Space
     let essentials: [ZenWorkspaces.Tab]
     let onOpen: (URL) -> Void
+    let onOpenTile: (String, URL, CGRect) -> Void
     var column = false
     /// Workspaces showing their pinned tabs instead of essentials, comma-separated.
     @AppStorage("pinsShownSpaces") private var pinsShownSpaces = ""
@@ -447,7 +451,7 @@ struct ZenSpacePins: View {
             PinGrid(urls: pins.map { ($0.id, $0.url) }, removeTitle: { _ in
                 showsPins ? String(localized: "Unpin") : String(localized: "Remove from Essentials")
             }, pinnedIDs: showsPins ? Set(pins.map(\.id)) : [], singleRow: !column, leading: kindSwitch,
-                    column: column, onOpen: onOpen)
+                    column: column, onOpenTile: onOpenTile, onOpen: onOpen)
         }
     }
 }

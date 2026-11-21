@@ -10,6 +10,8 @@ struct StartPage: View {
     let onPullUp: () -> Void
     let onOpen: (URL) -> Void
     let onOpenPin: (LocalPin) -> Void
+    /// A Zen essential: back to its tab if one is open, else opened and tied to it.
+    let onOpenTile: (String, URL) -> Void
     /// A whole page has room for frequent sites beside Zen's pins.
     let fillsPage: Bool
     /// Where a copy is drawn scrolled to. The live page reports each move, and whether it has come to rest.
@@ -33,12 +35,14 @@ struct StartPage: View {
     @AppStorage(SettingsKey.signInCardHidden) private var signInCardHidden = false
 
     init(spaceID: String?, onPullUp: @escaping () -> Void, onOpen: @escaping (URL) -> Void,
-         onOpenPin: @escaping (LocalPin) -> Void, fillsPage: Bool = false, offset: CGFloat = 0,
+         onOpenPin: @escaping (LocalPin) -> Void, onOpenTile: @escaping (String, URL) -> Void,
+         fillsPage: Bool = false, offset: CGFloat = 0,
          onScrolled: ((CGFloat, Bool) -> Void)? = nil, isCopy: Bool = false, isCovered: Bool = false) {
         self.spaceID = spaceID
         self.onPullUp = onPullUp
         self.onOpen = onOpen
         self.onOpenPin = onOpenPin
+        self.onOpenTile = onOpenTile
         self.fillsPage = fillsPage
         self.offset = offset
         self.onScrolled = onScrolled
@@ -112,7 +116,9 @@ struct StartPage: View {
                 if !essentials.isEmpty {
                     section("Essentials") {
                         PinGrid(urls: essentials.map { ($0.id, $0.url) },
-                                removeTitle: { _ in String(localized: "Remove from Essentials") }, onOpen: onOpen)
+                                removeTitle: { _ in String(localized: "Remove from Essentials") },
+                                // A private tab opens it privately rather than jump to the ordinary tab.
+                                onOpenTile: isPrivate ? nil : { id, url, _ in onOpenTile(id, url) }, onOpen: onOpen)
                     }
                 }
                 if let space { pinned(space) }
@@ -309,7 +315,12 @@ struct BlankTab: View {
                 let safe = window?.safeAreaInsets ?? .zero
                 let padding = insets ?? EdgeInsets(top: safe.top, leading: safe.left, bottom: 0, trailing: safe.right)
                 StartPage(spaceID: spaceID, onPullUp: {}, onOpen: { tab?.load($0) },
-                          onOpenPin: { browser.open($0, replacing: tab) }, fillsPage: true,
+                          onOpenPin: { browser.open($0, replacing: tab) },
+                          onOpenTile: { id, url in
+                              guard !browser.selectTile(id, replacing: tab), let tab else { return }
+                              tab.load(url)
+                              browser.tie(tab, toTile: id)
+                          }, fillsPage: true,
                           offset: offset, onScrolled: tab.map { tab in { y, resting in
                               tab.liveStartPageOffset = y
                               if resting { tab.startPageOffset = y }

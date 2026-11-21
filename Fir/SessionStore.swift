@@ -21,6 +21,8 @@ enum SessionStore {
         var localFolder: UUID? = nil
         /// The pin of this iPhone's tabs it stands for.
         var localPin: UUID? = nil
+        /// The Zen essential or pinned tab it was opened from.
+        var tile: String? = nil
     }
 
     struct Session: Codable {

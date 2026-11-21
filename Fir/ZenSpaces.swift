@@ -41,6 +41,11 @@ struct ZenWorkspaces {
         essentialsByContainer[space?.container ?? Self.defaultContainer] ?? []
     }
 
+    /// Every essential and loose pinned tab, by record id: the tiles a tab may have been opened from.
+    var tileIDs: Set<String> {
+        Set(essentialsByContainer.values.flatMap { $0.map(\.id) } + spaces.flatMap { $0.tabs.map(\.id) })
+    }
+
     static let defaultContainer = "default"
 
     init(records: [[String: Any]]) {

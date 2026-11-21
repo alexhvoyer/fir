@@ -28,6 +28,8 @@ final class BrowserTab: NSObject, Identifiable {
     var localFolderID: LocalFolder.ID?
     /// The pin of this iPhone's tabs it stands for; the pin outlives the tab.
     var localPinID: LocalPin.ID?
+    /// The Zen essential or pinned tab it was opened from, whose tile brings it back instead of opening another.
+    var tileID: String?
 
     private(set) var pageURL: URL?
     struct LoadFailure {
@@ -147,6 +149,7 @@ final class BrowserTab: NSObject, Identifiable {
         fromZenFolder = saved.zenFolder ?? false
         localFolderID = saved.localFolder
         localPinID = saved.localPin
+        tileID = saved.tile
         super.init()
         snapshot = SessionStore.loadSnapshot(for: saved.id)
     }
@@ -915,6 +918,8 @@ final class BrowserModel {
         let url: URL
         let title: String
         let spaceID: String?
+        /// The essential or pinned tab it was opened from, which it stands for again when reopened.
+        var tile: String? = nil
     }
 
     private(set) var recentlyClosed: [ClosedTab] = {
@@ -997,7 +1002,7 @@ final class BrowserModel {
                 SessionStore.Tab(id: $0.id, url: $0.url, title: $0.url == nil ? "" : $0.title, spaceID: $0.spaceID, lastViewed: $0.lastViewed,
                                  pinned: $0.isPinned, zenPinID: $0.zenPinID,
                                  zenEssentialID: $0.zenEssentialID, zenFolder: $0.fromZenFolder ? true : nil,
-                                 localFolder: $0.localFolderID, localPin: $0.localPinID)
+                                 localFolder: $0.localFolderID, localPin: $0.localPinID, tile: $0.tileID)
             },
             selectedID: selectedID,
             localFolders: localFolders,
@@ -1199,6 +1204,28 @@ final class BrowserModel {
             select(tab)
         }
         if let blank, blank.url == nil, blank.localPinID == nil { discard(blank) }
+        save()
+    }
+
+    /// The tab that stands for a Zen essential or pinned tab: opened from its tile, or added to Zen from here.
+    /// Never a private tab, nor a Zen folder's, which has its own card.
+    func tab(forTile id: String) -> BrowserTab? {
+        tabs.first { !$0.isPrivate && ($0.tileID == id || $0.zenEssentialID == id || !$0.fromZenFolder && $0.zenPinID == id) }
+    }
+
+    /// Back to the tile's tab, wherever it is; false when none is open. A blank tab it was opened from goes.
+    func selectTile(_ id: String, replacing blank: BrowserTab? = nil) -> Bool {
+        guard let tab = tab(forTile: id) else { return false }
+        select(tab)
+        if let blank, blank !== tab, blank.url == nil, blank.localPinID == nil { discard(blank) }
+        save()
+        return true
+    }
+
+    /// Ties a tab just opened from a tile to it, so the tile lights up and leads back here.
+    func tie(_ tab: BrowserTab, toTile id: String) {
+        guard !tab.isPrivate else { return }
+        tab.tileID = id
         save()
     }
 
@@ -1471,12 +1498,14 @@ final class BrowserModel {
     func reopen(_ closed: ClosedTab) {
         recentlyClosed.removeAll { $0.id == closed.id }
         storeRecentlyClosed()
+        if let tile = closed.tile, selectTile(tile) { return }
         open(closed.url, in: closed.spaceID)
+        if let tile = closed.tile { tie(selected, toTile: tile) }
     }
 
     private func remember(_ tab: BrowserTab) {
         guard !tab.isPrivate, let url = tab.url else { return }
-        recentlyClosed.insert(ClosedTab(url: url, title: tab.title, spaceID: tab.spaceID), at: 0)
+        recentlyClosed.insert(ClosedTab(url: url, title: tab.title, spaceID: tab.spaceID, tile: tab.tileID), at: 0)
         recentlyClosed = Array(recentlyClosed.prefix(20))
         storeRecentlyClosed()
     }
@@ -1876,4 +1905,12 @@ struct DeckFolder: Hashable {
     let id: String
     let name: String
     let local: LocalFolder.ID?
+}
+
+extension BrowserTab {
+    /// Opened from an essential or pinned tab Zen still has, so it is one already; once that tile goes, an
+    /// ordinary tab whose menu offers them again.
+    func isTile(in zen: ZenWorkspaces?) -> Bool {
+        tileID.map { zen?.tileIDs.contains($0) == true } ?? false
+    }
 }

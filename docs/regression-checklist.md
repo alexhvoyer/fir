@@ -109,6 +109,16 @@ timing, sync.
 - `sim` Tap a card: the page grows out of it. Close the page: it shrinks back onto the same card.
 - `sim` A Zen folder shows as a stack. Tap it to fan it out. Its title menu collapses it again.
 - `sim` A card's title menu offers pin, essentials and folder actions, and close.
+- `sim` Essentials and pinned tiles are pale until opened. Tap one: a tab opens and the tile goes full. Switch away,
+  tap it again: the same tab comes back, even after it navigated elsewhere, and no new tab is added. Close that tab:
+  the tile is pale again. A relaunch keeps the tie. In a private tab's start page an essential opens privately.
+- `sim` **(was broken)** Open Duo screen, grid overview with a folder above the selected card: opening a card
+  grows only that card; a card from the folder above used to rise and slide across the page. A pale essential's
+  new tab grows out of its tile, not out of the corner; in Cards no deck card slides over it. Lifted mid-grow,
+  it lands on its new card, not back in the tile.
+- `sim` **(was broken)** Duo outer screen, a pale essential for a site with a dark page: the screen never flashes white
+  while the page grows. The icon sits mid-page on the theme's background, stays at least half a second from the tap and
+  fades into the page, never cut. Offline, the error page shows at once, not after the icon.
 - `sim` In a workspace with folders, a folder button sits by Settings (left of it on iPhone, above it in the Duo's
   column). Its menu lists the folders in deck order. Pick one: the deck fans it out and centres its first card, also
   when another folder was open. No button in a workspace without folders, on a device page or in locked Private.

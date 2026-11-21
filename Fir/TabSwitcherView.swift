@@ -15,6 +15,8 @@ struct TabSwitcherView: View {
     /// Reports each card's on-screen frame so the page can grow out of it.
     let onCardFrame: (BrowserTab.ID, CGRect) -> Void
     let onOpen: () -> Void
+    /// Opens the page growing out of this frame rather than out of a card.
+    let onOpenFrom: (CGRect) -> Void
     let onNewTab: () -> Void
     let onSettings: () -> Void
     /// Settings opened on Workspaces, from a long press on the settings button.
@@ -194,19 +196,20 @@ struct TabSwitcherView: View {
             } else if space == BrowserModel.privateSpace, tabs.isEmpty {
                 PrivateEmptyPage().environment(\.colorScheme, .dark)
             } else if let zen, let current, tabs.isEmpty, !wide {
-                ZenSpacePage(space: current, essentials: zen.essentials(in: current), onOpen: open,
+                ZenSpacePage(space: current, essentials: zen.essentials(in: current), onOpen: open, onOpenTile: openTile,
                              barButtonsWidth: topBarButtonsWidth)
             } else {
                 // Only with pins to show: an empty column must not hold the deck's tucked cards back.
                 let pinsColumn = wide && current.map { !$0.tabs.isEmpty || !(zen?.essentials(in: $0).isEmpty ?? true) } == true
                 VStack(spacing: 0) {
                     if let zen, let current {
-                        ZenSpaceHeader(space: current, essentials: zen.essentials(in: current), onOpen: open,
+                        ZenSpaceHeader(space: current, essentials: zen.essentials(in: current), onOpen: open, onOpenTile: openTile,
                                        barButtonsWidth: topBarButtonsWidth, pinsInRow: !wide)
                     }
                     HStack(alignment: .top, spacing: 12) {
                         if pinsColumn, let zen, let current {
-                            ZenSpacePins(space: current, essentials: zen.essentials(in: current), onOpen: open, column: true)
+                            ZenSpacePins(space: current, essentials: zen.essentials(in: current), onOpen: open, onOpenTile: openTile,
+                                         column: true)
                                 .padding(.leading, 20)
                         }
                         Group {
@@ -345,6 +348,15 @@ struct TabSwitcherView: View {
     private func open(_ url: URL) {
         browser.open(url)
         onOpen()
+    }
+
+    /// Back to the tile's tab, growing out of its card; else a new tab growing out of the tile itself.
+    private func openTile(_ id: String, _ url: URL, from tile: CGRect) {
+        if browser.selectTile(id) { return onOpen() }
+        browser.open(url)
+        browser.tie(browser.selected, toTile: id)
+        // Not yet measured, it would grow out of the screen's corner.
+        if tile.isEmpty { onOpen() } else { onOpenFrom(tile) }
     }
 
     /// Animated when the deck is on screen; instant under the page, which needs the final frame. The
@@ -804,13 +816,14 @@ private struct TitleMenu: ViewModifier {
 
 /// What can be done with a tab: pins, folders, unloading and closing. Shared by the deck and the grid.
 struct TabMenuItems: View {
+    @Environment(AccountService.self) private var account
     let tab: BrowserTab
     let space: ZenWorkspaces.Space?
     let local: Bool
     let menu: TabMenu
 
     var body: some View {
-        if tab.url != nil, !tab.fromZenFolder {
+        if tab.url != nil, !tab.fromZenFolder, !tab.isTile(in: account.zenWorkspaces) {
             Button(tab.isPinned ? "Unpin Tab" : "Pin Tab", systemImage: tab.isPinned ? "pin.slash" : "pin") {
                 menu.editor.togglePin(tab)
             }
@@ -950,16 +963,23 @@ struct SiteIcon: View {
 /// A pinned site as Zen draws its essentials: a soft rounded tile with the icon in the middle.
 struct PinTile: View {
     let url: URL?
-    let onOpen: (URL) -> Void
+    /// Pale while no tab of it is open, as Zen's unloaded essentials are.
+    var dimmed = false
+    /// With the tile's frame on screen, for a page to grow out of it.
+    let onOpen: (URL, CGRect) -> Void
+    @State private var frame = CGRect.zero
 
     var body: some View {
-        Button { url.map(onOpen) } label: {
+        Button { url.map { onOpen($0, frame) } } label: {
             SiteIcon(host: url?.host(), size: 26)
+                .opacity(dimmed ? 0.4 : 1)
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .background(.primary.opacity(0.08), in: .rect(cornerRadius: 16, style: .continuous))
+                .background(.primary.opacity(dimmed ? 0.04 : 0.08), in: .rect(cornerRadius: 16, style: .continuous))
                 .contentShape(.rect(cornerRadius: 16))
+                .animation(.default, value: dimmed)
         }
         .buttonStyle(.plain)
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
     }
 }
 
@@ -977,8 +997,11 @@ struct PinGrid: View {
     var leading: AnyView? = nil
     /// One column that scrolls, beside the deck on a wide screen, as Zen keeps pins in its sidebar.
     var column = false
+    /// For essentials and pinned tabs: the tile goes back to its own tab, and is pale while none is open.
+    var onOpenTile: ((String, URL, CGRect) -> Void)? = nil
     let onOpen: (URL) -> Void
     @Environment(AccountService.self) private var account
+    @Environment(BrowserModel.self) private var browser
     @State private var leadingWidth: CGFloat = 0
 
     var body: some View {
@@ -1024,7 +1047,9 @@ struct PinGrid: View {
     }
 
     private func tile(_ item: (id: String, url: URL?)) -> some View {
-                PinTile(url: item.url, onOpen: onOpen)
+                PinTile(url: item.url, dimmed: onOpenTile != nil && browser.tab(forTile: item.id) == nil) { url, frame in
+                    if let onOpenTile { onOpenTile(item.id, url, frame) } else { onOpen(url) }
+                }
                     .contextMenu {
                         if let url = item.url {
                             Button("Copy Link", systemImage: "link") { UIPasteboard.general.url = url }

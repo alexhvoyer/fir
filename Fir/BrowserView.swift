@@ -26,6 +26,8 @@ struct BrowserView: View {
     @State private var anchor: CGPoint?
     /// The card a new tab grows from, held for the whole transition: its own card is placed only later.
     @State private var heldCard: CGRect?
+    /// `heldCard` is an essential's tile, not a card: no deck card lies beside it.
+    @State private var growingFromTile = false
     /// Counts requests to close PageView's sheets, which only it can reach.
     @State private var sheetsDismissed = 0
     /// Tracked here, not in the login capsule: it appears after the keyboard's notification has passed.
@@ -38,8 +40,8 @@ struct BrowserView: View {
     @State private var cover: UIImage?
     /// The live page frozen at the start of a transition; preferred over `cover` while set.
     @State private var coverView: UIView?
-    /// A tab's saved snapshot left over its page until the page has loaded, then faded out.
-    @State private var veil: UIImage?
+    /// Left over a page until it has loaded, then faded out: its saved snapshot, or with none, its site's icon.
+    @State private var veil: PageVeil?
     /// Whether a transition is running; the live page is hidden then, even without a snapshot.
     @State private var transitioning = false
     /// The tab a committed swipe is sliding in, until it is in front.
@@ -190,7 +192,8 @@ struct BrowserView: View {
                 hiddenTab: pageShown ? browser.selectedID : nil,
                 coveredTabs: Set(deckNeighbours.map(\.tab.id)),
                 onCardFrame: { cardFrames[$0] = $1 },
-                onOpen: openPage,
+                onOpen: { openPage() },
+                onOpenFrom: { openPage(from: $0) },
                 onNewTab: startNewTab,
                 onSettings: { settings = .main },
                 onEditWorkspaces: { settings = .workspaces },
@@ -297,7 +300,7 @@ struct BrowserView: View {
         }
         .onAppear {
             // The tab shown at launch is restored and still loading.
-            if !browser.selected.hasPainted, let image = browser.selected.snapshot { reveal(browser.selected, from: image) }
+            if !browser.selected.hasPainted, let image = browser.selected.snapshot { reveal(browser.selected, showing: image) }
         }
         .onChange(of: browser.searchRequested, initial: true) { takeSearchRequest() }
         .onChange(of: whatsNewPending) { takeSearchRequest() }
@@ -374,8 +377,8 @@ struct BrowserView: View {
                 PageImage(image: cover, view: coverView, host: browser.selected.isPrivate ? nil : browser.selected.url?.host(),
                           blank: browser.selected.url == nil, space: browser.selected.spaceID,
                           offset: browser.selected.startPageOffset, failed: browser.selected,
-                          sides: pageSides, sideFill: browser.selected.sideFill, progress: progress,
-                          blankDrop: startPageDrop)
+                          sides: pageSides, sideFill: browser.selected.drawnSideFill, progress: progress,
+                          blankDrop: startPageDrop, iconLift: max(0, page.height - card.height / k) / 2 * progress)
                     .frame(width: page.width, height: page.height)
                     .clipShape(PageMask(progress: progress, minRadius: swipeRadius, crop: CGSize(width: card.width / k, height: card.height / k), scale: k,
                              cardRadius: cardRadius))
@@ -414,10 +417,12 @@ struct BrowserView: View {
             .allowsHitTesting(false)
             .transition(.identity)
         } else if let veil {
-            PageImage(image: veil, host: nil, sides: pageSides, sideFill: browser.selected.sideFill)
+            PageImage(image: veil.image, host: veil.host, sides: pageSides, sideFill: browser.selected.drawnSideFill)
                 .frame(width: page.width, height: page.height)
-                .transition(.opacity)
-                .allowsHitTesting(false)
+                // Faded by opacity, then removed: an opacity transition here cut out in one frame.
+                .opacity(veil.fading ? 0 : 1)
+                // Over the icon, a tap would land on a page the user can't see yet.
+                .allowsHitTesting(veil.image == nil && !veil.fading)
         }
     }
 
@@ -464,6 +469,7 @@ struct BrowserView: View {
         anchor = nil
         follow = .zero
         heldCard = nil
+        growingFromTile = false
     }
 
     // MARK: - Deck transitions
@@ -471,7 +477,8 @@ struct BrowserView: View {
     /// The cards the deck lays over the selected one's right edge, front first: one card, or a folder's
     /// pile as deep as the deck shows it.
     private var deckNeighbours: [(tab: BrowserTab, frame: CGRect)] {
-        guard transitioning, swipeX == 0, !swipeOpensNewTab else { return [] }
+        // The grid lays no card over another: there a cell from the row above, by its x alone, slid across the page.
+        guard transitioning, swipeX == 0, !swipeOpensNewTab, tabLayout != .grid, !growingFromTile else { return [] }
         let card = currentCard
         // Deck order puts a stack's front card first, then its deeper ones.
         return Array(browser.tabs(in: browser.selected.spaceID)
@@ -535,9 +542,14 @@ struct BrowserView: View {
         }
     }
 
-    private func openPage() {
+    /// From its card, or from `source` for a tab that has none yet, as an essential's tile.
+    private func openPage(from source: CGRect? = nil) {
         FrameMeter.mark("open page")
         let a = CGPoint(x: page.midX, y: page.midY)
+        if let source {
+            heldCard = source
+            growingFromTile = true
+        }
         cover = browser.selected.snapshot
         // Drawn over the image: a card tapped during a shrink would grow with the old page's picture.
         coverView = nil
@@ -549,6 +561,7 @@ struct BrowserView: View {
         opening = true
         transitionID += 1
         let id = transitionID
+        let start = ContinuousClock.now
         // Let the deck lay out the card first so the page grows out of its real frame.
         Task {
             await Task.yield()
@@ -556,23 +569,32 @@ struct BrowserView: View {
                 // A close during the grow keeps the deck still until the page is back on its card.
                 guard id == transitionID else { return }
                 opening = false
-                reveal(browser.selected)
+                reveal(browser.selected, showing: cover, openedAt: start)
             }
         }
     }
 
-    /// Ends a transition onto a tab. One that hasn't loaded yet (restored at launch, or reloading after
-    /// iOS reclaimed it) stays under its snapshot, which fades once the page is drawn: no white flash.
-    private func reveal(_ tab: BrowserTab, from image: UIImage? = nil) {
-        // A failed page never paints, and the veil would sit over its error screen.
-        guard !tab.hasPainted, tab.loadFailure == nil, let image = image ?? cover ?? tab.snapshot else { endTransition(); return }
-        veil = image
+    /// Ends a transition onto a tab, leaving what it showed (`image`, or with none the site's icon) over a page
+    /// not yet drawn, then fading it: no white flash.
+    private func reveal(_ tab: BrowserTab, showing image: UIImage?, openedAt start: ContinuousClock.Instant? = nil) {
+        // A failed page never paints. The icon fades in front of a painted page too: cut out, it read as a jerk.
+        guard tab.loadFailure == nil, image == nil ? tab.url != nil : !tab.hasPainted else { endTransition(); return }
+        let host = image == nil && !tab.isPrivate ? tab.url?.host() : nil
+        let shown = PageVeil(image: image, host: host)
+        veil = shown
         endTransition()
         Task {
-            for _ in 0..<40 where !tab.hasPainted && veil != nil {
+            // Its error screen is drawn under the veil.
+            for _ in 0..<40 where !tab.hasPainted && tab.loadFailure == nil && veil?.id == shown.id {
                 try? await Task.sleep(for: .milliseconds(100))
             }
-            withAnimation(.easeOut(duration: 0.3)) { veil = nil }
+            // The icon stays at least half a second from the tap: swapped for a page sooner, it read as a jerk.
+            if image == nil, tab.loadFailure == nil, let start { try? await Task.sleep(until: start + .milliseconds(500)) }
+            // A later veil is that page's own to lift.
+            guard veil?.id == shown.id else { return }
+            withAnimation(.easeOut(duration: 0.3)) { veil?.fading = true } completion: {
+                if veil?.id == shown.id { veil = nil }
+            }
         }
     }
 
@@ -632,6 +654,11 @@ struct BrowserView: View {
         transitionID += 1
         let id = transitionID
         let a = anchor ?? CGPoint(x: page.midX, y: page.midY)
+        // Closed mid-grow, the page lands on the new tab's card, not back in the tile.
+        if growingFromTile {
+            heldCard = nil
+            growingFromTile = false
+        }
         Task {
             withAnimation(cardMorph) {
                 anchor = a
@@ -738,7 +765,7 @@ struct BrowserView: View {
             Task {
                 // The neighbour's web view needs a moment to paint after being shown.
                 try? await Task.sleep(for: .milliseconds(150))
-                if id == transitionID { reveal(neighbour) }
+                if id == transitionID { reveal(neighbour, showing: cover ?? neighbour.snapshot) }
             }
         }
     }
@@ -1064,7 +1091,14 @@ private struct NewTabPlaceholder: View {
     }
 }
 
-/// A full-screen page snapshot, top-aligned; white with the site's letter when there is none yet.
+private struct PageVeil {
+    let id = UUID()
+    let image: UIImage?
+    let host: String?
+    var fading = false
+}
+
+/// A full-screen page snapshot, top-aligned; the site's icon on the theme's background when there is none yet.
 private struct PageImage: View {
     let image: UIImage?
     var view: UIView? = nil
@@ -1083,6 +1117,8 @@ private struct PageImage: View {
     /// them, or it jumped at one end.
     var progress: CGFloat = 0
     var blankDrop: CGFloat = 0
+    /// Raises the icon into the part of the page a card shows: centred, it started below a tile's square crop.
+    var iconLift: CGFloat = 0
 
     var body: some View {
         sideFill.overlay(alignment: .top) {
@@ -1092,12 +1128,12 @@ private struct PageImage: View {
                 }
                 .overlay(alignment: .top) { snapshotView }
             } else {
-                Color.white.overlay(alignment: .top) {
-                    if let image {
-                        Image(uiImage: image).resizable().scaledToFit()
-                    } else if view == nil {
-                        SiteIcon(host: host, size: 56).padding(.top, 180)
-                    }
+                // Under a picture, the white of a page; under the site's icon while it loads, the theme's own.
+                (image == nil && view == nil ? Color(.systemBackground) : Color.white).overlay(alignment: .top) {
+                    if let image { Image(uiImage: image).resizable().scaledToFit() }
+                }
+                .overlay {
+                    if image == nil, view == nil { SiteIcon(host: host, size: 56).offset(y: -iconLift) }
                 }
                 .overlay(alignment: .top) { snapshotView }
                 .padding(.leading, sides.leading)
@@ -1124,6 +1160,10 @@ extension BrowserTab {
         if url != nil, let color = pageBackground { return Color(uiColor: color) }
         return Color(.systemGroupedBackground)
     }
+
+    /// For pictures of the page in transitions: before its first paint WebKit reports default white, which flashed
+    /// over the deck as a page grew.
+    var drawnSideFill: Color { hasPainted || loadFailure != nil ? sideFill : Color(.systemGroupedBackground) }
 }
 
 /// In place of a page that couldn't load; WebKit shows no error page of its own.
@@ -1329,7 +1369,7 @@ private struct PageView: View {
                 // Fills the side cutouts the page keeps clear of (the Duo's camera column, a notch side) with what
                 // is under them, as Safari: a fixed grey read as black bars beside dark pages.
                 if insets.leading > 0 || insets.trailing > 0 {
-                    tab.sideFill
+                    (liveHidden ? tab.drawnSideFill : tab.sideFill)
                     // Fades with the bar: it spans the screen and hid the deck behind a shrinking page.
                     .opacity(chromeOpacity)
                 }
@@ -2231,7 +2271,7 @@ private struct PageView: View {
                 }
             }
             let current = browser.selected
-            if current.url != nil, !current.fromZenFolder {
+            if current.url != nil, !current.fromZenFolder, !current.isTile(in: account.zenWorkspaces) {
                 Button(current.isPinned ? "Unpin Tab" : "Pin Tab", systemImage: current.isPinned ? "pin.slash" : "pin") {
                     folderEditor.togglePin(current)
                 }

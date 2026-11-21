@@ -271,6 +271,13 @@ struct NewTabView: View {
                 browser.open(pin, replacing: mode == .edit ? browser.selected : nil)
                 onOpen()
                 close()
+            }, onOpenTile: { id, url in
+                guard !browser.selectTile(id, replacing: mode == .edit ? browser.selected : nil) else {
+                    onOpen()
+                    return close()
+                }
+                open(url)
+                browser.tie(browser.selected, toTile: id)
             })
             // Over the start page itself, the sheet would repeat it.
             .shown(showsStartPage && !coversStartPage)
