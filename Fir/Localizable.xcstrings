@@ -15613,6 +15613,46 @@
         }
       }
     },
+    "Suggestions send what you type to the search engine, also to one picked by keyword. History matches stay on this device." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für Vorschläge wird Ihre Eingabe an die Suchmaschine gesendet, auch an eine per Kürzel gewählte. Treffer aus dem Verlauf bleiben auf diesem Gerät."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las sugerencias envían lo que escribes al buscador, también al elegido con una palabra clave. Las coincidencias del historial se quedan en este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les suggestions envoient votre saisie au moteur de recherche, y compris celui choisi par mot-clé. Les correspondances de l’historique restent sur cet appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I suggerimenti inviano al motore di ricerca ciò che digiti, anche a quello scelto con una parola chiave. Le corrispondenze nella cronologia restano su questo dispositivo."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As sugestões enviam o que você digita ao buscador, inclusive ao escolhido por palavra-chave. As correspondências do histórico ficam neste dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для подсказок введённый текст отправляется в поисковую систему, в том числе выбранную по ключевому слову. Совпадения из истории остаются на этом устройстве."
+          }
+        }
+      }
+    },
     "Suggestions send what you type to the search engine." : {
       "localizations" : {
         "de" : {
@@ -15649,46 +15689,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Для подсказок введённый текст отправляется в поисковую систему."
-          }
-        }
-      }
-    },
-    "Suggestions send what you type to the search engine. History matches stay on this device." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Für Vorschläge wird Ihre Eingabe an die Suchmaschine gesendet. Treffer aus dem Verlauf bleiben auf diesem Gerät."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las sugerencias envían lo que escribes al buscador. Las coincidencias del historial se quedan en este dispositivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les suggestions envoient votre saisie au moteur de recherche. Les correspondances de l’historique restent sur cet appareil."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I suggerimenti inviano al motore di ricerca ciò che digiti. Le corrispondenze nella cronologia restano su questo dispositivo."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "As sugestões enviam o que você digita ao buscador. As correspondências do histórico ficam neste dispositivo."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Для подсказок введённый текст отправляется в поисковую систему. Совпадения из истории остаются на этом устройстве."
           }
         }
       }

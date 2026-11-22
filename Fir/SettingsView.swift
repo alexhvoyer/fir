@@ -191,7 +191,7 @@ private struct SearchSettingsView: View {
                 Toggle("Search Engine Suggestions", isOn: $searchSuggestions)
                 Toggle("Pages from History", isOn: $historySuggestions)
             } footer: {
-                Text("Suggestions send what you type to the search engine. History matches stay on this device.")
+                Text("Suggestions send what you type to the search engine, also to one picked by keyword. History matches stay on this device.")
             }
             if IntelligenceSearch.isSupported {
                 Section {

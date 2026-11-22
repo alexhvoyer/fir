@@ -38,6 +38,8 @@ struct NewTabView: View {
     /// Set when the chip is removed, so "b 52" can be searched as typed until the field is cleared.
     @State private var keywordsOff = false
     @State private var suggestions: [String] = []
+    /// The engine the shown suggestions came from: kept while new ones load, they mustn't pass for another's.
+    @State private var suggestionsSource = ""
     @State private var historyMatches: [HistoryStore.Entry] = []
     /// The rest of a visited site's address the query starts, shown after the typed text; Go opens it.
     @State private var autofill: HistoryStore.Completion?
@@ -334,12 +336,12 @@ struct NewTabView: View {
                 .foregroundStyle(.primary)
                 .listRowBackground(Color.clear)
             }
-            if !suggestions.isEmpty, chip == nil {
+            if !suggestions.isEmpty, suggestionsSource == (chip?.id ?? engine.rawValue) {
                 Section {
-                    header("\(engine.name) Suggestions")
+                    header("\(chip?.title ?? engine.name) Suggestions")
                     ForEach(suggestions, id: \.self) { text in
                         HStack(spacing: 12) {
-                            Button { open(engine.url(for: text)) } label: {
+                            Button { open(searchURL(for: text)) } label: {
                                 ResultRow(symbol: "magnifyingglass", title: text)
                             }
                             // Into the field without searching, as in Safari: a start to keep typing from.
@@ -395,15 +397,18 @@ struct NewTabView: View {
     /// suggestions vanished until the network answered and everything below jumped up and back.
     private func loadSuggestions() async {
         let text = query.trimmingCharacters(in: .whitespaces)
-        // A keyword search goes to its own engine: the default engine's suggestions and history don't apply.
-        guard !text.isEmpty, text != browser.selected.url?.absoluteString, chip == nil else {
+        guard !text.isEmpty, text != browser.selected.url?.absoluteString else {
             (suggestions, historyMatches, autofill) = ([], [], nil)
             return
         }
         // A completion the new text no longer starts would be drawn wrong; it goes at once.
         if let autofill, !autofill.text.lowercased().hasPrefix(text.lowercased()) { self.autofill = nil }
-        // The sheet's own privacy, not the tab behind it: a private new tab from a regular page showed history.
-        if historyEnabled, !isPrivate {
+        // A keyword search goes to its own engine: history and address completion don't apply, its suggestions do.
+        let site = chip
+        if site != nil {
+            (historyMatches, autofill) = ([], nil)
+        } else if historyEnabled, !isPrivate {
+            // The sheet's own privacy, not the tab behind it: a private new tab from a regular page showed history.
             let (matches, completion) = await Task.detached {
                 (HistoryStore.shared?.search(text, limit: 4) ?? [], HistoryStore.shared?.autofill(text))
             }.value
@@ -416,10 +421,16 @@ struct NewTabView: View {
         guard suggestionsEnabled else { suggestions = []; return }
         try? await Task.sleep(for: .milliseconds(150))
         guard !Task.isCancelled else { return }
-        let result = await engine.suggestions(for: text)
+        let result = if let site { await site.suggestions(for: text) } else { await engine.suggestions(for: text) }
         guard !Task.isCancelled else { return }
         // Four, as in Safari: six pushed the tab and history matches under the keyboard.
-        suggestions = Array(result.prefix(4))
+        (suggestions, suggestionsSource) = (Array(result.prefix(4)), site?.id ?? engine.rawValue)
+    }
+
+    /// A suggestion searches with the engine that gave it.
+    private func searchURL(for text: String) -> URL? {
+        guard let chip else { return engine.url(for: text) }
+        return SearchEngine.url(fromTemplate: chip.template, query: text)
     }
 
     /// "wiki fir": the engine with that keyword, and what to search with it.

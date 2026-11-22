@@ -79,7 +79,12 @@ enum SearchEngine: String, CaseIterable, Identifiable {
     private static let suggestionSession = URLSession(configuration: .ephemeral)
 
     func suggestions(for query: String) async -> [String] {
-        guard let url = suggestionsURL(for: query),
+        await Self.suggestions(from: suggestionsURL(for: query), query: query)
+    }
+
+    /// Reads an OpenSearch answer, which Wikipedia's API also gives.
+    static func suggestions(from url: URL?, query: String) async -> [String] {
+        guard let url,
               let (data, _) = try? await Self.suggestionSession.data(from: url),
               let json = try? JSONSerialization.jsonObject(with: data) as? [Any],
               json.count > 1, let list = json[1] as? [String],
@@ -108,6 +113,31 @@ struct SearchSite: Codable, Identifiable, Hashable {
     var trigger: String? {
         let word = keyword.trimmingCharacters(in: .whitespaces).lowercased()
         return quickSearch && !word.isEmpty ? word : nil
+    }
+
+    /// Built-ins only: an added engine names no suggestions address, and its template mustn't pick one.
+    func suggestionsURL(for query: String) -> URL? {
+        guard isBuiltIn else { return nil }
+        if let engine = SearchEngine(rawValue: id) { return engine.suggestionsURL(for: query) }
+        var components: URLComponents
+        switch id {
+        case "wikipedia":
+            guard let host else { return nil }
+            components = URLComponents(string: "https://\(host)/w/api.php")!
+            components.queryItems = [URLQueryItem(name: "action", value: "opensearch"), URLQueryItem(name: "format", value: "json"),
+                                     URLQueryItem(name: "search", value: query)]
+        case "youtube":
+            components = URLComponents(string: "https://suggestqueries.google.com/complete/search")!
+            components.queryItems = [URLQueryItem(name: "client", value: "firefox"), URLQueryItem(name: "ds", value: "yt"),
+                                     URLQueryItem(name: "q", value: query)]
+        default:
+            return nil
+        }
+        return components.url
+    }
+
+    func suggestions(for query: String) async -> [String] {
+        await SearchEngine.suggestions(from: suggestionsURL(for: query), query: query)
     }
 }
 
