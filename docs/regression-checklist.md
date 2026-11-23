@@ -102,6 +102,8 @@ timing, sync.
 - `sim` Lift the page with the bar into the tab overview. Fling it back down to call it off.
 - `sim` A second swipe during the first one's landing still counts.
 - `sim` Edge swipe goes back and forward in history, using WebKit's own gesture.
+- `phone` **(was broken)** Right after the bar settles collapsed, flick a page with a fixed header (dtf.ru) to the
+  top: the bar expands while the page moves, and the header stays through the bounce.
 
 ## Tab overview: Cards
 

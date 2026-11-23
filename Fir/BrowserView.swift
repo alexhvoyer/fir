@@ -2482,7 +2482,11 @@ private struct PageView: View {
 
     /// The bar follows the scroll both ways; once the page stops, it settles at the nearer end.
     private func handleScroll(from old: CGFloat, to new: CGFloat) {
-        guard collapseOnScroll, Date.now.timeIntervalSince(collapseToggled) > 0.4 else { return }
+        // The guard skips the inset's own shift, which has no finger or fling. Skipping a quick flick up left
+        // the bar collapsed, and WebKit hid dtf.ru's header at the top.
+        let tab = browser.selected
+        let userScroll = tab.isTouching || tab.existingWebView?.scrollView.isDecelerating == true
+        guard collapseOnScroll, userScroll || Date.now.timeIntervalSince(collapseToggled) > 0.4 else { return }
         // At the end the bar's own inset moves the offset, and following it flipped the bar back and forth.
         guard !browser.selected.scrolledToEnd else { return }
         guard new > 0 else {
@@ -2612,7 +2616,10 @@ final class InsetAnimator {
         let current = webView.obscuredContentInsets
         // Only the bottom changes with the bar; a new tab or rotation takes the insets at once.
         // A step of a scroll that the bar follows goes in at once; easing it would trail the bar.
+        // Growing during a scroll too: a flick reached the top before the eased inset, and dtf.ru's header vanished.
+        let scrolling = webView.scrollView.isTracking || webView.scrollView.isDecelerating
         guard self.webView === webView, current.top == insets.top, current != .zero,
+              !(scrolling && insets.bottom > current.bottom),
               link != nil || abs(insets.bottom - current.bottom) > 12 else {
             link?.invalidate()
             link = nil
