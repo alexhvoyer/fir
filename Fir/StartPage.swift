@@ -35,6 +35,7 @@ struct StartPage: View {
     @AppStorage(SettingsKey.signInCardHidden) private var signInCardHidden = false
     @AppStorage(SettingsKey.startPageBookmarks) private var showsBookmarks = true
     @AppStorage(SettingsKey.startPageFrequent) private var showsFrequent = true
+    @State private var showsAllBookmarks = false
 
     init(spaceID: String?, onPullUp: @escaping () -> Void, onOpen: @escaping (URL) -> Void,
          onOpenPin: @escaping (LocalPin) -> Void, onOpenTile: @escaping (String, URL) -> Void,
@@ -61,6 +62,19 @@ struct StartPage: View {
     var body: some View {
         scrolling
         .sheet(isPresented: $showSignIn) { SignInView() }
+        .sheet(isPresented: $showsAllBookmarks) {
+            NavigationStack {
+                BookmarksView { url in
+                    showsAllBookmarks = false
+                    onOpen(url)
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Close", systemImage: "xmark") { showsAllBookmarks = false }
+                    }
+                }
+            }
+        }
         .task(id: spaceID) {
             defer { loaded = true }
             guard !isPrivate else { return }
@@ -129,7 +143,13 @@ struct StartPage: View {
             // The newest ten: Fir adds at the folder's end.
             let favorites = Bookmarks.shared.favorites.suffix(10)
             if showsBookmarks, !favorites.isEmpty {
-                section("Bookmarks") {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Bookmarks").font(.brandHeading(.title3))
+                        Spacer()
+                        Button("Show All") { showsAllBookmarks = true }
+                            .font(.subheadline)
+                    }
                     PinGrid(urls: favorites.map { ($0.id, $0.url) },
                             removeTitle: { _ in String(localized: "Remove Bookmark") },
                             removeSymbol: "bookmark.slash",

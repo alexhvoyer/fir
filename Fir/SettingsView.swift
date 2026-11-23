@@ -41,9 +41,6 @@ struct SettingsView: View {
                     link("History", icon: "clock", color: .teal) {
                         HistoryView { dismiss(); onOpenPage() }
                     }
-                    link("Bookmarks", icon: "bookmark.fill", color: .blue) {
-                        BookmarksView { dismiss(); onOpenPage() }
-                    }
                     link("Passwords", icon: "key.fill", color: .gray) { PasswordsView() }
                     link("Downloads", icon: "arrow.down.circle.fill", color: .blue) { DownloadsView() }
                 }

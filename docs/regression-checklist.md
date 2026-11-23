@@ -188,8 +188,8 @@ timing, sync.
 - `sim` Send a tab to a computer: it arrives there.
 - `sim` A new-tab search opens in the workspace it was started from, even after the keyboard hides.
 - `sim` Sign out: local passwords, history and bookmarks are wiped before sync disconnects; Zen keeps its bookmarks.
-- `sim` Bookmarks from Zen appear in Settings > Bookmarks under Toolbar, Menu and Other after sync; one added in Fir
-  shows in Zen's Mobile Bookmarks.
+- `sim` Bookmarks from Zen appear under Toolbar, Menu and Other in the start page's Bookmarks > Show All after sync;
+  one added in Fir shows in Zen's Mobile Bookmarks. A bookmark opened from Show All loads where the start page would.
 - `sim` The page menu's bookmark icon fills on tap and empties on a second tap; the card menu offers Add/Remove
   Bookmark. The start page grid shows the newest ten Mobile bookmarks; Settings > Tabs hides it and Frequently Visited.
 - `sim` Typing a bookmarked page's name in the search sheet lists it with Bookmarks beside its host; not with a

@@ -4,8 +4,7 @@ import SwiftUI
 struct BookmarksView: View {
     /// A folder deeper in, looked up afresh so deletions show; nil lists the top folders.
     var folderID: String?
-    let onOpen: () -> Void
-    @Environment(BrowserModel.self) private var browser
+    let onOpen: (URL) -> Void
     @State private var query = ""
     private var bookmarks: Bookmarks { .shared }
     private var folder: BookmarkFolder? { folderID.flatMap(bookmarks.folder) }
@@ -44,8 +43,7 @@ struct BookmarksView: View {
 
     private func row(_ bookmark: Bookmark) -> some View {
         Button {
-            browser.open(bookmark.url)
-            onOpen()
+            onOpen(bookmark.url)
         } label: {
             HStack(spacing: 12) {
                 SiteIcon(host: bookmark.url.host(), size: 28)
