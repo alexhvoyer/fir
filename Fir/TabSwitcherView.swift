@@ -637,7 +637,14 @@ struct TabSwitcherView: View {
     }
 
     private var newTabButton: some View {
-        Button("New Tab", systemImage: "plus", action: onNewTab)
+        Button("New Tab", systemImage: "plus") {
+            // The switcher shows its target at once but commits it when its spring stops; a tab opened
+            // before that went to the workspace being left.
+            if let scrub, switcherItems.indices.contains(Int(scrub.rounded())) {
+                select(switcherItems[Int(scrub.rounded())].id)
+            }
+            onNewTab()
+        }
             .labelStyle(.iconOnly)
             .font(.title3)
             .frame(width: 48, height: 48)
@@ -834,6 +841,12 @@ struct TabMenuItems: View {
                 }
             }
         }
+        if !tab.isPrivate, let url = tab.url, Bookmarks.isOpenable(url) {
+            let saved = Bookmarks.shared.contains(url)
+            Button(saved ? "Remove Bookmark" : "Add Bookmark", systemImage: saved ? "bookmark.slash" : "bookmark") {
+                Task { if saved { await Bookmarks.shared.remove(url) } else { await Bookmarks.shared.add(url, title: tab.title) } }
+            }
+        }
         if let space {
             FolderMenuItems(tab: tab, space: space, editor: menu.editor) { menu.newFolder(tab) }
             Divider()
@@ -989,6 +1002,9 @@ struct PinGrid: View {
     let urls: [(id: String, url: URL?)]
     /// For Zen's pins and essentials: the long-press title that removes the one with this record id.
     var removeTitle: ((String) -> String?)? = nil
+    /// Set for other lists, such as bookmarks: the remove item calls this instead of editing Zen.
+    var removeSymbol: String? = nil
+    var onRemove: ((String) -> Void)? = nil
     /// Pinned tabs, whose menu says Unpin; no badge, the essentials/pinned switch already tells them apart.
     var pinnedIDs: Set<String> = []
     /// One row that scrolls sideways once there are more than four, for tight places like the deck.
@@ -1055,9 +1071,9 @@ struct PinGrid: View {
                             Button("Copy Link", systemImage: "link") { UIPasteboard.general.url = url }
                         }
                         if let title = removeTitle?(item.id) {
-                            Button(title, systemImage: pinnedIDs.contains(item.id) ? "pin.slash" : "star.slash",
+                            Button(title, systemImage: removeSymbol ?? (pinnedIDs.contains(item.id) ? "pin.slash" : "star.slash"),
                                    role: .destructive) {
-                                Task { await account.removeFromZen(item.id) }
+                                if let onRemove { onRemove(item.id) } else { Task { await account.removeFromZen(item.id) } }
                             }
                         }
                     }

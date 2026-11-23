@@ -1,7 +1,8 @@
 import Foundation
 import MozillaAppServices
 
-/// Browsing history in Mozilla's Places database; the Sync "history" engine shares it with Zen.
+/// Browsing history and bookmarks in Mozilla's Places database; the Sync "history" and "bookmarks"
+/// engines share them with Zen.
 /// Calls block on SQLite, so callers stay off the main actor.
 final class HistoryStore: @unchecked Sendable {
     /// The database can't be read while the phone is locked, so the open waits for it.
@@ -97,6 +98,38 @@ final class HistoryStore: @unchecked Sendable {
 
     func deleteAll() {
         try? api.getWriter().deleteEverythingHistory()
+    }
+
+    // MARK: - Bookmarks
+
+    /// Firefox's top folders, Mobile first: Fir adds there, as Firefox for iOS does.
+    static let bookmarkRoots = [BookmarkRoots.MobileFolderGUID, BookmarkRoots.ToolbarFolderGUID,
+                                BookmarkRoots.MenuFolderGUID, BookmarkRoots.UnfiledFolderGUID]
+
+    /// Each top folder with everything under it; nil while the database can't be read.
+    func bookmarkTree() -> [BookmarkFolderData]? {
+        guard let reader = try? api.openReader() else { return nil }
+        return Self.bookmarkRoots.compactMap { try? reader.getBookmarksTree(rootGUID: $0, recursive: true) as? BookmarkFolderData }
+    }
+
+    func addBookmark(_ url: URL, title: String?) {
+        _ = try? api.getWriter().createBookmark(
+            parentGUID: BookmarkRoots.MobileFolderGUID, url: url.absoluteString, title: title?.isEmpty == false ? title : nil
+        )
+    }
+
+    func deleteBookmark(_ guid: String) {
+        _ = try? api.getWriter().deleteBookmarkNode(guid: guid)
+    }
+
+    /// For sign-out: everything under the top folders, which themselves can't be deleted.
+    func wipeBookmarks() {
+        guard let reader = try? api.openReader() else { return }
+        let writer = api.getWriter()
+        for root in Self.bookmarkRoots {
+            let children = (try? reader.getBookmarksTree(rootGUID: root, recursive: false) as? BookmarkFolderData)?.childGUIDs ?? []
+            for guid in children { _ = try? writer.deleteBookmarkNode(guid: guid) }
+        }
     }
 
     struct Entry: Identifiable, Hashable {

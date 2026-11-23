@@ -43,12 +43,26 @@ enum LockWindow {
     private static var window: UIWindow?
     static var isShown: Bool { window != nil }
 
+    /// The cover fading out; gone at once if the cover is needed again meanwhile.
+    private static var leaving: UIWindow?
+
     static func show(_ shown: Bool, lock: AppLock, tint: Color?, title: LocalizedStringKey) {
         guard shown else {
-            window?.isHidden = true
-            window = nil
+            // Only the way out fades: the way in must be opaque at once, before the app switcher's snapshot.
+            guard let window else { return }
+            Self.window = nil
+            leaving = window
+            window.isUserInteractionEnabled = false
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+                window.alpha = 0
+            } completion: { _ in
+                window.isHidden = true
+                if leaving === window { leaving = nil }
+            }
             return
         }
+        leaving?.isHidden = true
+        leaving = nil
         guard window == nil,
               let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
         // A keyboard already up stays above any window; it goes, or it types into the page behind.

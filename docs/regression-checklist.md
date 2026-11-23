@@ -21,7 +21,7 @@ Tabs in a Zen workspace sync to the real account. Close tabs in tests only in Pr
 | Sheets (`NewTabView`, `PageSheet`, settings) | Page and bar, Accessibility |
 | Navigation, `BrowserModel`, links | Page and bar, Links in and out, Private and locks, then `fir-security-reviewer` |
 | `FirShare`, `OpenInFir` | Links in and out, then `fir-security-reviewer` |
-| Sync, `ZenSpaces`, `AccountService` | Workspaces and sync |
+| Sync, `ZenSpaces`, `AccountService`, `Bookmarks` | Workspaces and sync |
 | `PasswordAutofill`, `PasswordStore` | Passwords |
 | `Extensions` | Add-ons |
 | Onboarding, What's New, settings | Onboarding and settings |
@@ -109,6 +109,8 @@ timing, sync.
 - `sim` Tap a card: the page grows out of it. Close the page: it shrinks back onto the same card.
 - `sim` A Zen folder shows as a stack. Tap it to fan it out. Its title menu collapses it again.
 - `sim` A card's title menu offers pin, essentials and folder actions, and close.
+- `sim` **(was broken)** Tap another workspace in the switcher (or swipe to Private) and press + at once: the new tab
+  opens in that workspace, not the one being left. Same in Grid.
 - `sim` Essentials and pinned tiles are pale until opened. Tap one: a tab opens and the tile goes full. Switch away,
   tap it again: the same tab comes back, even after it navigated elsewhere, and no new tab is added. Close that tab:
   the tile is pale again. A relaunch keeps the tie. In a private tab's start page an essential opens privately.
@@ -183,14 +185,21 @@ timing, sync.
 - `sim` Adding a tab to a Zen folder or removing it from Fir shows up in Zen.
 - `sim` Send a tab to a computer: it arrives there.
 - `sim` A new-tab search opens in the workspace it was started from, even after the keyboard hides.
-- `sim` Sign out: local passwords and history are wiped before sync disconnects.
+- `sim` Sign out: local passwords, history and bookmarks are wiped before sync disconnects; Zen keeps its bookmarks.
+- `sim` Bookmarks from Zen appear in Settings > Bookmarks under Toolbar, Menu and Other after sync; one added in Fir
+  shows in Zen's Mobile Bookmarks.
+- `sim` The page menu's bookmark icon fills on tap and empties on a second tap; the card menu offers Add/Remove
+  Bookmark. The start page grid shows the newest ten Mobile bookmarks; Settings > Tabs hides it and Frequently Visited.
+- `sim` Typing a bookmarked page's name in the search sheet lists it with Bookmarks beside its host; not with a
+  keyword chip.
 - `phone` Settings > Sync > Device Name: a new name shows in Zen's Send Tab to Device within a minute; an emptied
   field comes back with the current name; offline, the old name returns on reopening Sync.
 
 ## Private and locks
 
 - `phone` Private tabs lock with Face ID when the app goes to the background. The lock covers sheets.
-- `sim` Nothing from a private tab shows in history, Spotlight, Handoff, snapshots or Live Activities.
+- `sim` Nothing from a private tab shows in history, Spotlight, Handoff, snapshots or Live Activities. A private
+  tab offers no bookmark action, in the page menu or the card menu.
 - `sim` Privacy & Security > Remember History off: new pages don't appear in Settings > History; older entries stay.
   History > Clear offers Last 15 Minutes, 30 Minutes, Last Hour, Today and All History; each removes only that span.
 - `sim` Closing the last private tab clears its data. The Private section shows its empty page.
@@ -198,6 +207,8 @@ timing, sync.
   Browsing, as a private tab does. It used to show the private cards.
 - `phone` The app lock, when on, shows over everything on launch and on return.
 - `phone` Turning a lock off asks for Face ID.
+- `sim` Leaving with a private tab or the Private overview shows the cover in the app switcher at once; coming back
+  fades it out. Leaving again mid-fade covers at once.
 
 ## Links in and out
 
@@ -319,6 +330,8 @@ Record each Duo screen on its own: `xcrun simctl io <udid> recordVideo --display
   out of that button and back into it.
 - `sim` **(was broken)** On the Duo outer screen the camera column takes the page's colour, dark and light, and the
   error page's; a blank tab keeps the start page's grey.
+- `sim` **(was broken)** A blank tab's sprig sits a little above the middle on both Duo screens, as on an iPhone, and
+  at the same place in its card. It used to sit low on the outer screen and off the inner one.
 - `sim` Settings > General > Full-Width Pages shows only on the Duo and starts on. On: pages and the start page run under the
   camera column, and so do the deck's cards; + and Tabs (Settings and + on the deck) float over them, the bottom bars
   stay clear of the column, and shrinking into the deck and back has no jump. Off: page and deck stop at the column.

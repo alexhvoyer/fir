@@ -41,6 +41,9 @@ struct SettingsView: View {
                     link("History", icon: "clock", color: .teal) {
                         HistoryView { dismiss(); onOpenPage() }
                     }
+                    link("Bookmarks", icon: "bookmark.fill", color: .blue) {
+                        BookmarksView { dismiss(); onOpenPage() }
+                    }
                     link("Passwords", icon: "key.fill", color: .gray) { PasswordsView() }
                     link("Downloads", icon: "arrow.down.circle.fill", color: .blue) { DownloadsView() }
                 }
@@ -377,6 +380,7 @@ private struct SyncSettingsView: View {
     @State private var confirmSignOut = false
     @AppStorage(SettingsKey.syncTabs) private var syncTabs = true
     @AppStorage(SettingsKey.syncHistory) private var syncHistory = true
+    @AppStorage(SettingsKey.syncBookmarks) private var syncBookmarks = true
     @AppStorage(SettingsKey.syncWorkspaces) private var syncWorkspaces = true
     @AppStorage(SettingsKey.syncPasswords) private var syncPasswords = true
     @State private var showSignIn = false
@@ -416,6 +420,7 @@ private struct SyncSettingsView: View {
                 Section {
                     Toggle("Open Tabs", isOn: $syncTabs)
                     Toggle("History", isOn: $syncHistory)
+                    Toggle("Bookmarks", isOn: $syncBookmarks)
                     Toggle("Zen Workspaces", isOn: $syncWorkspaces)
                     Toggle("Passwords", isOn: $syncPasswords)
                 } header: {
@@ -430,7 +435,7 @@ private struct SyncSettingsView: View {
                         .confirmationDialog("Sign out?", isPresented: $confirmSignOut, titleVisibility: .visible) {
                             Button("Sign Out", role: .destructive) { Task { await account.signOut() } }
                         } message: {
-                            Text("Passwords and history are removed from this iPhone. What has synced stays in your Mozilla account.")
+                            Text("Passwords, history and bookmarks are removed from this iPhone. What has synced stays in your Mozilla account.")
                         }
                 }
             } else {
@@ -458,7 +463,7 @@ private struct SyncSettingsView: View {
             if deviceName.trimmingCharacters(in: .whitespaces).isEmpty { deviceName = account.deviceName ?? "" }
         }
         .onDisappear { account.rename(deviceName) }
-        .onChange(of: [syncTabs, syncHistory, syncWorkspaces, syncPasswords]) { Task { await account.sync() } }
+        .onChange(of: [syncTabs, syncHistory, syncBookmarks, syncWorkspaces, syncPasswords]) { Task { await account.sync() } }
         .sheet(isPresented: $showSignIn) { SignInView() }
     }
 }

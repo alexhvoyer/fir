@@ -76,6 +76,8 @@ struct TabsSettingsView: View {
     @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
     @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     @AppStorage(SettingsKey.cornerButton) private var cornerButton = CornerButton.tabs
+    @AppStorage(SettingsKey.startPageBookmarks) private var startPageBookmarks = true
+    @AppStorage(SettingsKey.startPageFrequent) private var startPageFrequent = true
 
     var body: some View {
         List {
@@ -85,6 +87,14 @@ struct TabsSettingsView: View {
                 }
             } footer: {
                 Text("Search Sheet opens search at once. Start Page shows your pinned and frequent sites and history; tap the address bar to search, and the keyboard comes up right away.")
+            }
+            Section {
+                Toggle("Bookmarks", isOn: $startPageBookmarks)
+                Toggle("Frequently Visited", isOn: $startPageFrequent)
+            } header: {
+                Text("On the Start Page")
+            } footer: {
+                Text("Bookmarks shows the Mobile Bookmarks folder, where Fir saves new ones.")
             }
             Section {
                 Picker("Tabs Button", selection: $cornerButton) {

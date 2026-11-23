@@ -1,7 +1,7 @@
 import Foundation
 import MozillaAppServices
 
-/// Runs Firefox Sync engines ("tabs", "history", "passwords") and reads back other devices' open tabs.
+/// Runs Firefox Sync engines ("tabs", "history", "bookmarks", "passwords") and reads back other devices' open tabs.
 final class RemoteTabsSync: @unchecked Sendable {
     private static let persistedStateKey = "syncPersistedState"
     private let store: TabsStore
@@ -21,6 +21,7 @@ final class RemoteTabsSync: @unchecked Sendable {
         await Task.detached { [syncManager] in
             PasswordStore.shared?.wipeLocal()
             HistoryStore.shared?.wipeLocal()
+            HistoryStore.shared?.wipeBookmarks()
             syncManager.disconnect()
             UserDefaults.standard.removeObject(forKey: Self.persistedStateKey)
         }.value

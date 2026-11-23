@@ -87,6 +87,7 @@ struct FirApp: App {
                 }
                 #endif
                 .task { await ContentBlocker.shared.start() }
+                .task { await Bookmarks.shared.reload() }
                 .task { await ExtensionManager.shared.start(browser: browser) }
                 // Each Zen folder's tabs become tabs of its workspace, kept in step with Zen.
                 .onChange(of: account.zenWorkspaces?.foldersBySpace, initial: true) {
@@ -108,6 +109,7 @@ struct FirApp: App {
                 // Data protection can lift after the app is already active: a locked launch restores then.
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)) { _ in
                     browser.restoreIfPending()
+                    Task { await Bookmarks.shared.reload() }
                 }
                 .onOpenURL { url in
                     switch url.scheme?.lowercased() {

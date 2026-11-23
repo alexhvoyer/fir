@@ -1040,6 +1040,9 @@
         }
       }
     },
+    "99+" : {
+      "shouldTranslate" : false
+    },
     "A + for new tabs" : {
       "localizations" : {
         "de" : {
@@ -1527,6 +1530,46 @@
         }
       }
     },
+    "Add Bookmark" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir marcador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un marque-page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi segnalibro"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Favorito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить в закладки"
+          }
+        }
+      }
+    },
     "Add Filter List" : {
       "localizations" : {
         "de" : {
@@ -1969,6 +2012,12 @@
     },
     "All History" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesamter Verlauf"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1981,28 +2030,22 @@
             "value" : "Tout l’historique"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gesamter Verlauf"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tutta la cronologia"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всю историю"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Todo o Histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всю историю"
           }
         }
       }
@@ -2883,6 +2926,166 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Блокировать содержимое на любой странице"
+          }
+        }
+      }
+    },
+    "Bookmarks" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marque-pages"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segnalibri"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoritos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закладки"
+          }
+        }
+      }
+    },
+    "Bookmarks Menu" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen-Menü"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menú de marcadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu des marque-pages"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu segnalibri"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menu de Favoritos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Меню закладок"
+          }
+        }
+      }
+    },
+    "Bookmarks Toolbar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen-Symbolleiste"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barra de marcadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barre personnelle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barra dei segnalibri"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barra de Favoritos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Панель закладок"
+          }
+        }
+      }
+    },
+    "Bookmarks shows the Mobile Bookmarks folder, where Fir saves new ones." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen zeigt den Ordner „Mobile Lesezeichen“, in dem Fir neue speichert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcadores muestra la carpeta Marcadores del móvil, donde Fir guarda los nuevos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marque-pages affiche le dossier Marque-pages mobiles, où Fir enregistre les nouveaux."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segnalibri mostra la cartella Segnalibri da dispositivi mobili, dove Fir salva i nuovi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoritos mostra a pasta Favoritos do Celular, onde o Fir salva os novos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«Закладки» показывают папку «Мобильные закладки», куда Fir сохраняет новые."
           }
         }
       }
@@ -6653,6 +6856,46 @@
         }
       }
     },
+    "Folders" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordner"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carpetas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dossiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartelle"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pastas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Папки"
+          }
+        }
+      }
+    },
     "For %@." : {
       "localizations" : {
         "de" : {
@@ -8455,6 +8698,12 @@
     },
     "Last 15 Minutes" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzte 15 Minuten"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8467,22 +8716,10 @@
             "value" : "15 dernières minutes"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Letzte 15 Minuten"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ultimi 15 minuti"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Последние 15 минут"
           }
         },
         "pt-BR" : {
@@ -8490,11 +8727,23 @@
             "state" : "translated",
             "value" : "Últimos 15 Minutos"
           }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последние 15 минут"
+          }
         }
       }
     },
     "Last 30 Minutes" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzte 30 Minuten"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8507,28 +8756,22 @@
             "value" : "30 dernières minutes"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Letzte 30 Minuten"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ultimi 30 minuti"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Последние 30 минут"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Últimos 30 Minutos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последние 30 минут"
           }
         }
       }
@@ -8575,6 +8818,12 @@
     },
     "Last Hour" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzte Stunde"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8587,28 +8836,22 @@
             "value" : "Dernière heure"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Letzte Stunde"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ultima ora"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Последний час"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Última Hora"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последний час"
           }
         }
       }
@@ -8969,6 +9212,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сообщения, которые оставило дополнение. Многие безобидны; если оно не работает, причина обычно здесь."
+          }
+        }
+      }
+    },
+    "Mobile Bookmarks" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mobile Lesezeichen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcadores del móvil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marque-pages mobiles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segnalibri da dispositivi mobili"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoritos do Celular"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мобильные закладки"
           }
         }
       }
@@ -9773,6 +10056,46 @@
         }
       }
     },
+    "No Bookmarks" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Lesezeichen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay marcadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun marque-page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun segnalibro"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum Favorito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закладок нет"
+          }
+        }
+      }
+    },
     "No Extensions" : {
       "localizations" : {
         "de" : {
@@ -10415,6 +10738,12 @@
     },
     "Off, pages you open in regular tabs aren't added to History. What's there now stays until you clear it." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus: Seiten in normalen Tabs werden nicht zum Verlauf hinzugefügt. Was schon drin ist, bleibt, bis du es löschst."
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -10427,28 +10756,22 @@
             "value" : "Désactivé, les pages ouvertes dans les onglets normaux ne sont pas ajoutées à l’historique. Ce qui s’y trouve reste jusqu’à ce que vous l’effaciez."
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aus: Seiten in normalen Tabs werden nicht zum Verlauf hinzugefügt. Was schon drin ist, bleibt, bis du es löschst."
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Se disattivato, le pagine aperte nei pannelli normali non vengono aggiunte alla cronologia. Quello che c’è già resta finché non lo cancelli."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Если выключено, страницы из обычных вкладок не попадают в историю. То, что уже есть, остаётся, пока вы её не очистите."
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desativado, as páginas abertas em abas normais não entram no histórico. O que já existe fica até você limpar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если выключено, страницы из обычных вкладок не попадают в историю. То, что уже есть, остаётся, пока вы её не очистите."
           }
         }
       }
@@ -10529,6 +10852,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Вкл."
+          }
+        }
+      }
+    },
+    "On the Start Page" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf der Startseite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En la página de inicio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur la page de démarrage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nella pagina iniziale"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na Página Inicial"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На стартовой странице"
           }
         }
       }
@@ -11173,6 +11536,46 @@
         }
       }
     },
+    "Other Bookmarks" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere Lesezeichen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otros marcadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres marque-pages"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altri segnalibri"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outros Favoritos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другие закладки"
+          }
+        }
+      }
+    },
     "Other Tabs" : {
       "localizations" : {
         "de" : {
@@ -11413,6 +11816,46 @@
         }
       }
     },
+    "Pages you bookmark, and those from Zen, show here." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hier erscheinen Seiten, die Sie als Lesezeichen speichern, und die aus Zen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aquí aparecen las páginas que guardas como marcador y las de Zen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pages que vous ajoutez aux marque-pages, et celles de Zen, s’affichent ici."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui compaiono le pagine che salvi nei segnalibri e quelle di Zen."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As páginas que você salva nos favoritos, e as do Zen, aparecem aqui."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здесь появятся страницы, которые вы добавите в закладки, и закладки из Zen."
+          }
+        }
+      }
+    },
     "Pages you open here aren't saved, and their cookies and site data are gone when you close the last private tab." : {
       "localizations" : {
         "de" : {
@@ -11573,42 +12016,42 @@
         }
       }
     },
-    "Passwords and history are removed from this iPhone. What has synced stays in your Mozilla account." : {
+    "Passwords, history and bookmarks are removed from this iPhone. What has synced stays in your Mozilla account." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passwörter und Verlauf werden von diesem iPhone entfernt. Bereits Synchronisiertes bleibt in Ihrem Mozilla-Konto."
+            "value" : "Passwörter, Verlauf und Lesezeichen werden von diesem iPhone entfernt. Bereits Synchronisiertes bleibt in Ihrem Mozilla-Konto."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las contraseñas y el historial se eliminan de este iPhone. Lo que se ha sincronizado se queda en tu cuenta de Mozilla."
+            "value" : "Las contraseñas, el historial y los marcadores se eliminan de este iPhone. Lo que se ha sincronizado se queda en tu cuenta de Mozilla."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les mots de passe et l’historique sont supprimés de cet iPhone. Ce qui a été synchronisé reste dans votre compte Mozilla."
+            "value" : "Les mots de passe, l’historique et les marque-pages sont supprimés de cet iPhone. Ce qui a été synchronisé reste dans votre compte Mozilla."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Password e cronologia vengono rimosse da questo iPhone. Ciò che è stato sincronizzato resta nel tuo account Mozilla."
+            "value" : "Password, cronologia e segnalibri vengono rimossi da questo iPhone. Ciò che è stato sincronizzato resta nel tuo account Mozilla."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "As senhas e o histórico são removidos deste iPhone. O que já foi sincronizado fica na sua conta Mozilla."
+            "value" : "As senhas, o histórico e os favoritos são removidos deste iPhone. O que já foi sincronizado fica na sua conta Mozilla."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Пароли и история удалятся с этого iPhone. Всё, что уже синхронизировано, останется в аккаунте Mozilla."
+            "value" : "Пароли, история и закладки удалятся с этого iPhone. Всё, что уже синхронизировано, останется в аккаунте Mozilla."
           }
         }
       }
@@ -12855,6 +13298,12 @@
     },
     "Remember History" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf speichern"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -12867,28 +13316,22 @@
             "value" : "Mémoriser l’historique"
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verlauf speichern"
-          }
-        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ricorda cronologia"
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запоминать историю"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lembrar Histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запоминать историю"
           }
         }
       }
@@ -12929,6 +13372,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Убрать"
+          }
+        }
+      }
+    },
+    "Remove Bookmark" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen entfernen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar marcador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer le marque-page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi segnalibro"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover Favorito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить из закладок"
           }
         }
       }
@@ -16814,6 +17297,7 @@
       }
     },
     "The model couldn't read the pages: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

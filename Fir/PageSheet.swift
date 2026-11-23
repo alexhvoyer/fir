@@ -25,6 +25,7 @@ struct PageSheet: View {
     @State private var confirmForget = false
     @State private var copied = false
     @State private var reloads = 0
+    @State private var bookmarking = false
     @State private var detent = PresentationDetent.medium
     /// The sheet height that shows all the content.
     @State private var fit: CGFloat?
@@ -153,6 +154,22 @@ struct PageSheet: View {
                 Button("Share", systemImage: "square.and.arrow.up") { PageShare.present(url, of: tab) }
                     .accessibilityIdentifier("pageMenuShare")
                     .frame(width: 36, height: 40)
+            }
+            // In the capsule, not the tiles below: a fifth tile broke its title over two lines. Never for a
+            // private tab, which leaves nothing on disk.
+            if !tab.isPrivate, let url = tab.pageURL, Bookmarks.isOpenable(url) {
+                let saved = Bookmarks.shared.contains(url)
+                Button(saved ? "Remove Bookmark" : "Add Bookmark", systemImage: saved ? "bookmark.fill" : "bookmark") {
+                    guard !bookmarking else { return }
+                    bookmarking = true
+                    Task {
+                        if saved { await Bookmarks.shared.remove(url) } else { await Bookmarks.shared.add(url, title: tab.title) }
+                        bookmarking = false
+                    }
+                }
+                .contentTransition(.symbolEffect(.replace))
+                .sensoryFeedback(.success, trigger: saved)
+                .frame(width: 36, height: 40)
             }
             // The sheet stays open after both, so each answers with a haptic and its own symbol change.
             Button("Copy Link", systemImage: copied ? "checkmark" : "link") {

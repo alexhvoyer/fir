@@ -90,8 +90,9 @@ Do not undo these. `fir-security-reviewer` checks a change against them.
 - During a released swipe `swipeX` already holds its target. Anything derived from it sees the end value unless it
   animates: do not branch view structure on it.
 - Glass inside a `GlassEffectContainer` draws even at zero width, and a mask has no effect on it.
-- Sign-out wipes local passwords and history, then disconnects sync, in that order: disconnecting drops anything the
-  wipes queued for upload, so the deletions cannot reach the account.
+- Sign-out waits for a running sync, wipes local passwords, history and bookmarks, then disconnects sync, in that
+  order: disconnecting drops anything the wipes queued for upload (bookmark tombstones included), so the deletions
+  cannot reach the account.
 - `BrowserTab.isBlank` drops one-colour snapshots that WebKit returns on real phones. Keep it.
 
 ## Simulator testing traps

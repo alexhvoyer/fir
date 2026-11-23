@@ -2,7 +2,7 @@ import MozillaAppServices
 import SwiftUI
 
 /// The search sheet before anything is typed, like Safari's start page: the workspace's Zen essentials
-/// and pinned tabs, the newest tabs from Zen and recent history. A private tab shows only pins.
+/// and pinned tabs, bookmarks, the newest tabs from Zen and recent history. A private tab shows no history.
 struct StartPage: View {
     /// The workspace whose pins are shown; `BrowserModel.privateSpace` for a private tab.
     let spaceID: String?
@@ -33,6 +33,8 @@ struct StartPage: View {
     @State private var loaded = Self.cache != nil
     @State private var showSignIn = false
     @AppStorage(SettingsKey.signInCardHidden) private var signInCardHidden = false
+    @AppStorage(SettingsKey.startPageBookmarks) private var showsBookmarks = true
+    @AppStorage(SettingsKey.startPageFrequent) private var showsFrequent = true
 
     init(spaceID: String?, onPullUp: @escaping () -> Void, onOpen: @escaping (URL) -> Void,
          onOpenPin: @escaping (LocalPin) -> Void, onOpenTile: @escaping (String, URL) -> Void,
@@ -124,7 +126,18 @@ struct StartPage: View {
                 if let space { pinned(space) }
             }
             if spaceID == nil { localPins }
-            if account.zenWorkspaces == nil || fillsPage, !frequent.isEmpty {
+            // The newest ten: Fir adds at the folder's end.
+            let favorites = Bookmarks.shared.favorites.suffix(10)
+            if showsBookmarks, !favorites.isEmpty {
+                section("Bookmarks") {
+                    PinGrid(urls: favorites.map { ($0.id, $0.url) },
+                            removeTitle: { _ in String(localized: "Remove Bookmark") },
+                            removeSymbol: "bookmark.slash",
+                            onRemove: { id in Task { await Bookmarks.shared.delete([id]) } },
+                            onOpen: onOpen)
+                }
+            }
+            if showsFrequent, account.zenWorkspaces == nil || fillsPage, !frequent.isEmpty {
                 section("Frequently Visited") {
                     PinGrid(urls: frequent, onOpen: onOpen)
                 }
@@ -370,9 +383,18 @@ struct EmptyTab: View {
                 .onTapGesture { taps += 1 }
                 .allowsHitTesting(swaysOnTap)
                 .sensoryFeedback(.impact(weight: .light, intensity: 0.6), trigger: taps)
-                .position(x: geo.size.width / 2, y: geo.size.width * 0.95)
+                .position(x: geo.size.width / 2, y: min(geo.size.width * 0.95, pageHeight(geo.size.width) * 0.44))
         }
         .background(Color(.systemGroupedBackground))
+    }
+}
+
+extension EmptyTab {
+    /// Page height at this width, from the screen's shape: cards, cut by width, then place the sprig as the
+    /// page does. Width alone put it low on short screens.
+    fileprivate func pageHeight(_ width: CGFloat) -> CGFloat {
+        let screen = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.keyWindow?.bounds.size ?? .zero
+        return screen.width > 0 ? width * screen.height / screen.width : .infinity
     }
 }
 

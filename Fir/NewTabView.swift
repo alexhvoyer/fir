@@ -41,6 +41,8 @@ struct NewTabView: View {
     /// The engine the shown suggestions came from: kept while new ones load, they mustn't pass for another's.
     @State private var suggestionsSource = ""
     @State private var historyMatches: [HistoryStore.Entry] = []
+    /// Found per keystroke, not per render: thousands of synced bookmarks made each frame filter them all.
+    @State private var bookmarkMatches: [Bookmark] = []
     /// The rest of a visited site's address the query starts, shown after the typed text; Go opens it.
     @State private var autofill: HistoryStore.Completion?
     @State private var showSignIn = false
@@ -70,6 +72,7 @@ struct NewTabView: View {
             case tab(BrowserTab)
             case zen(space: String, name: String)
             case device(name: String, mobile: Bool)
+            case bookmark
             case history
         }
 
@@ -83,6 +86,7 @@ struct NewTabView: View {
             case .tab: "square.on.square"
             case .zen: "rectangle.stack"
             case .device(_, let mobile): mobile ? "iphone" : "laptopcomputer"
+            case .bookmark: "bookmark"
             case .history: "clock"
             }
         }
@@ -92,6 +96,7 @@ struct NewTabView: View {
             case .tab: String(localized: "Open Tab")
             case .zen(_, let name): name
             case .device(let name, _): name
+            case .bookmark: String(localized: "Bookmarks")
             case .history: String(localized: "History")
             }
         }
@@ -398,13 +403,14 @@ struct NewTabView: View {
     private func loadSuggestions() async {
         let text = query.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty, text != browser.selected.url?.absoluteString else {
-            (suggestions, historyMatches, autofill) = ([], [], nil)
+            (suggestions, historyMatches, bookmarkMatches, autofill) = ([], [], [], nil)
             return
         }
         // A completion the new text no longer starts would be drawn wrong; it goes at once.
         if let autofill, !autofill.text.lowercased().hasPrefix(text.lowercased()) { self.autofill = nil }
         // A keyword search goes to its own engine: history and address completion don't apply, its suggestions do.
         let site = chip
+        bookmarkMatches = site == nil ? Bookmarks.shared.matches(text) : []
         if site != nil {
             (historyMatches, autofill) = ([], nil)
         } else if historyEnabled, !isPrivate {
@@ -611,6 +617,7 @@ struct NewTabView: View {
         }
         // Tabs first, as in Safari, but never so many that history drops out.
         found = Array(found.prefix(8))
+        for bookmark in bookmarkMatches { add(bookmark.title, bookmark.url, .bookmark, filter: false) }
         // Places matched these by its own rules, which a plain substring test would undo.
         for entry in historyMatches { add(entry.title, entry.url, .history, filter: false) }
         return found

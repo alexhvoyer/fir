@@ -152,7 +152,11 @@ final class AccountService {
         spacesError = nil
         lastSynced = nil
         SyncCache.clear()
+        // A running sync still holds its token: a bookmarks engine merging after the wipe would upload every
+        // deletion to the account.
+        while isSyncing { try? await Task.sleep(for: .milliseconds(100)) }
         await tabsSync?.wipeLocalData()
+        Bookmarks.shared.clear()
     }
 
     /// A request during a sync runs once more after it: edits rely on the sync that follows them.
@@ -176,6 +180,7 @@ final class AccountService {
         if defaults.bool(forKey: SettingsKey.syncTabs, default: true) { engines.append("tabs") }
         // The history engine exists only once Places has registered it.
         if defaults.bool(forKey: SettingsKey.syncHistory, default: true), HistoryStore.shared != nil { engines.append("history") }
+        if defaults.bool(forKey: SettingsKey.syncBookmarks, default: true), HistoryStore.shared != nil { engines.append("bookmarks") }
         if defaults.bool(forKey: SettingsKey.syncPasswords, default: true), PasswordStore.shared != nil {
             engines.append(PasswordStore.engine)
         }
@@ -195,6 +200,7 @@ final class AccountService {
             }
             lastError = failure
             if failure == nil { lastSynced = .now }
+            if engines.contains("bookmarks") { await Bookmarks.shared.reload() }
             // The profile fetch kicked off at sign-in has usually landed by now.
             email = manager.accountProfile()?.email
         } catch {
