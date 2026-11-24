@@ -113,6 +113,14 @@ struct BrowserView: View {
         insets.trailing >= 40 && insets.leading < 20
     }
 
+    /// A narrow Split View column stays as on an iPhone.
+    private var padToolbar: Bool { UIDevice.current.userInterfaceIdiom == .pad && widthClass == .regular }
+
+    /// An iPad keeps the bar at the top upright too, as Safari does there.
+    private func barAtTop(_ safeInsets: EdgeInsets) -> Bool {
+        (screen.width > screen.height || padToolbar) && !Self.sideRail(safeInsets)
+    }
+
     /// In start-page mode the address is edited in the bar, as in Safari, with no sheet to present first.
     /// Landscape keeps the sheet: its bar is at the top.
     static func searchIsInline(_ mode: NewTabView.Mode?, style: NewTabStyle, landscape: Bool) -> Bool {
@@ -259,8 +267,11 @@ struct BrowserView: View {
         // upright layout, as the HIG asks: the buttons stay put when the phone opens.
         .environment(\.isLandscape, screen.width > screen.height && !Self.sideRail(safeInsets))
         .environment(\.isWideScreen, screen.width > screen.height)
-        .environment(\.sheetsCentered, UIDevice.current.userInterfaceIdiom == .pad && widthClass == .regular)
-        .onChange(of: screen.width > screen.height && !Self.sideRail(safeInsets), initial: true) { barOnTop = $1 }
+        // Read in the same pass, not from barOnTop: that state lags a frame behind a turn.
+        .environment(\.isBarOnTop, barAtTop(safeInsets))
+        .environment(\.isPadToolbar, padToolbar)
+        .environment(\.sheetsCentered, padToolbar)
+        .onChange(of: barAtTop(safeInsets), initial: true) { barOnTop = $1 }
         .onChange(of: Self.sideRail(safeInsets) ? safeInsets.trailing : 0, initial: true) { railWidth = $1 }
         .onChange(of: [safeInsets.top, safeInsets.leading, Self.sideRail(safeInsets) ? 0 : safeInsets.trailing],
                   initial: true) {
@@ -775,6 +786,10 @@ struct BrowserView: View {
 extension EnvironmentValues {
     /// Wider than tall, from the root's own size: the size class read compact on a portrait iPhone.
     @Entry var isLandscape = false
+    /// The page's bar sits at the top: a phone on its side, or an iPad either way.
+    @Entry var isBarOnTop = false
+    /// An iPad's full-width window: the bar is a toolbar across the top, as Safari's there.
+    @Entry var isPadToolbar = false
     /// Sheets open as a centered form, an iPad's full-width window, not from the bottom: heights
     /// tuned for the bottom cut them short there. A big iPhone on its side is regular width too, so not that alone.
     @Entry var sheetsCentered = false
@@ -1164,6 +1179,21 @@ extension BrowserTab {
     /// For pictures of the page in transitions: before its first paint WebKit reports default white, which flashed
     /// over the deck as a page grew.
     var drawnSideFill: Color { hasPainted || loadFailure != nil ? sideFill : Color(.systemGroupedBackground) }
+
+    /// Behind the iPad's top bar: the theme-color, else what is beside the page.
+    private var toolbarColor: UIColor? {
+        guard hasPainted, loadFailure == nil, url != nil else { return nil }
+        return pageThemeColor ?? pageBackground
+    }
+
+    var toolbarFill: Color { toolbarColor.map(Color.init(uiColor:)) ?? drawnSideFill }
+
+    /// The bar follows its fill: left to adapt, its glass stayed light over a dark one after the deck.
+    var toolbarScheme: ColorScheme? {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard let toolbarColor, toolbarColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5 ? .dark : .light
+    }
 }
 
 /// In place of a page that couldn't load; WebKit shows no error page of its own.
@@ -1342,8 +1372,10 @@ private struct PageView: View {
     @State private var trailingButtonsMinX: CGFloat = .infinity
     /// True while the finger is down; resets on its own when the system cancels the drag.
     @GestureState private var dragging = false
-    /// The phone on its side: as in Safari, the bar moves to the top with a strip of the tabs under it.
-    @Environment(\.isLandscape) private var landscape
+    /// A phone on its side or an iPad: as in Safari, the bar is at the top with a strip of the tabs under it.
+    @Environment(\.isBarOnTop) private var landscape
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isPadToolbar) private var padToolbar
     @Environment(\.isWideScreen) private var wideScreen
     private static let stripHeight: CGFloat = 36
     /// The strip lists the workspace's tabs; one tab needs no strip.
@@ -1351,6 +1383,11 @@ private struct PageView: View {
     /// Landscape: the top chrome's height under the safe area, the page's top inset. Collapsed, the pill.
     private var topChromeHeight: CGFloat {
         collapsed ? 44 : Self.barHeight + (showsStrip ? Self.stripHeight + 6 : 0)
+    }
+
+    /// The iPad band behind the bar, following the collapse as the pill does rather than snapping.
+    private var padToolbarHeight: CGFloat {
+        Self.barHeight - 12 * collapse + (showsStrip && !collapsed ? Self.stripHeight + 6 : 0)
     }
 
     /// The bar's height (48) plus its top padding (8); with the home indicator, the page's bottom inset.
@@ -1405,8 +1442,18 @@ private struct PageView: View {
                 transitionLayer
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 if landscape {
+                    if padToolbar {
+                        // A toolbar in the page's colour, as Safari's on iPad: content scrolled under the bar showed through.
+                        tab.toolbarFill
+                            .frame(height: insets.top + padToolbarHeight)
+                            .frame(maxHeight: .infinity, alignment: .top)
+                            .opacity(chromeOpacity)
+                    }
                     VStack(spacing: 6) {
                         bar
+                            .environment(\.colorScheme, padToolbar ? tab.toolbarScheme ?? colorScheme : colorScheme)
+                            // Collapsed, the pill rises into the 44 pt band; centred in the bar it hung 6 pt below.
+                            .offset(y: padToolbar ? -10 * collapse : 0)
                         if showsStrip, !collapsed {
                             tabStrip
                                 .padding(.leading, max(16, insets.leading))
@@ -1893,7 +1940,9 @@ private struct PageView: View {
         // A page apart, pills sit side by side with a gap, however long their addresses; the current
         // one counts at its present width, as it is still narrowing early in a swipe.
         let tab = browser.selected
-        let full = max(0, width - historyWidth(tab) - trailingWidth - 12)
+        let full = padToolbar
+            ? capsuleFrame(p: 0, s: 0, compact: 0, leading: historyWidth(tab), width: width).full
+            : max(0, width - historyWidth(tab) - trailingWidth - 12)
         let current = full + (min(compactWidth(tab), full) - full) * s
         let spacing = max(width * 0.45, (current + (swipeNeighbour.map(compactWidth) ?? 220)) / 2 + 16)
         return swipeRel(pageOffset) * spacing
@@ -1982,9 +2031,11 @@ private struct PageView: View {
     private func capsuleFrame(p: CGFloat, s: CGFloat, compact: CGFloat, leading: CGFloat,
                               width: CGFloat) -> (x: CGFloat, width: CGFloat, full: CGFloat) {
         // The 12 pt gap swipeOffsets keeps before the tabs button: with 10 it pushed the capsule 2 pt left.
-        let available = max(0, width - leading - trailingWidth - 12)
+        // On an iPad it is centred on the screen, as in Safari, not in the space the buttons leave.
+        let side = padToolbar ? max(leading, trailingWidth + 12) : 0
+        let available = padToolbar ? max(0, width - side * 2) : max(0, width - leading - trailingWidth - 12)
         let full = landscape ? min(available, 560) : available
-        let fullX = leading + (available - full) / 2
+        let fullX = (padToolbar ? side : leading) + (available - full) / 2
         let open = full + (min(compact, full) - full) * s
         let openX = fullX + (full - open) / 2
         return (openX + ((width - pillWidth) / 2 - openX) * p, open + (pillWidth - open) * p, full)

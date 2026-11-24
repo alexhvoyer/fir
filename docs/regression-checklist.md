@@ -316,6 +316,9 @@ timing, sync.
   Control-Tab moves to the next tab in the workspace. None of them act while Fir or a private tab is locked.
 - `sim` Fir opens only one window: two would share one browser, and the lock covers one window.
 - `sim` In Split View beside another app, Fir in a narrow column behaves as on an iPhone.
+- `sim` Full-width iPad, upright and on its side: the bar is a toolbar across the top, back and forward left, the
+  address centered on the screen, + and tabs right. The band behind it takes the page's theme colour (dark on
+  GitHub, light on Wikipedia), hides content scrolled under it, and its glass stays dark on GitHub after the deck.
 
 ## iPhone Duo and landscape
 

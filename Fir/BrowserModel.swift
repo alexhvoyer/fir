@@ -46,6 +46,8 @@ final class BrowserTab: NSObject, Identifiable {
     private(set) var estimatedProgress = 0.0
     /// What shows around the page while WebKit's swipe moves it, so a hard flick shows no other colour.
     private(set) var pageBackground: UIColor?
+    /// The page's theme-color, which Safari tints its iPad toolbar with.
+    private(set) var pageThemeColor: UIColor?
     private(set) var canGoBack = false
     private(set) var canGoForward = false
     /// The page looks like an article, so the bar offers Reader, as Safari and Lens do.
@@ -261,6 +263,9 @@ final class BrowserTab: NSObject, Identifiable {
                     web.backgroundColor = web.underPageBackgroundColor
                     self?.pageBackground = web.underPageBackgroundColor
                 }
+            },
+            webView.observe(\.themeColor, options: [.initial]) { [weak self] web, _ in
+                MainActor.assumeIsolated { self?.pageThemeColor = web.themeColor }
             },
             webView.observe(\.estimatedProgress) { [weak self] web, _ in
                 MainActor.assumeIsolated { self?.estimatedProgress = web.estimatedProgress }
