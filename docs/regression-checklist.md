@@ -168,7 +168,6 @@ timing, sync.
 - `sim` Swipe a cell left past a third of its width: it slides off and closes. A shorter swipe returns it.
 - `sim` A flick back to the right keeps the tab, however far the cell went.
 - `sim` A cell dragged right follows with growing resistance and springs back; it never closes that way.
-- `sim` A finger on a cell lifts it a little; scrolling or lifting the finger settles it back. The long-press menu still opens.
 - `sim` The close button sends the cell off to the left like a swipe, then the cells after it slide into place, from
   one row up to the previous one. A quick second tap closes nothing more.
 - `sim` **(was broken)** Close a cell and tap Undo while it is still leaving, by button and by swipe: it comes back in its
@@ -179,6 +178,8 @@ timing, sync.
 - `sim` A closed folder is one cell with a pile behind it. Tap it to open; the folder name's menu collapses it.
 - `sim` A Zen folder tab shows the unload button (moon) only once it has been opened. Unloading keeps the cell.
 - `sim` Grid scrolls vertically while a horizontal swipe is not in progress.
+- `sim` **(was broken)** Touch and hold a cell: the menu lifts the card alone in its rounded shape, nothing cut and no
+  grey box around the title. The cell's own 4% press growth and a menu over card and title both clipped the lift.
 
 ## Workspaces and sync
 
@@ -319,6 +320,7 @@ timing, sync.
 - `sim` Full-width iPad, upright and on its side: the bar is a toolbar across the top, back and forward left, the
   address centered on the screen, + and tabs right. The band behind it takes the page's theme colour (dark on
   GitHub, light on Wikipedia), hides content scrolled under it, and its glass stays dark on GitHub after the deck.
+  With several tabs, scrolling down slides the tab strip up under the address as the band shrinks to the pill.
 
 ## iPhone Duo and landscape
 

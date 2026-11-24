@@ -1387,7 +1387,8 @@ private struct PageView: View {
 
     /// The iPad band behind the bar, following the collapse as the pill does rather than snapping.
     private var padToolbarHeight: CGFloat {
-        Self.barHeight - 12 * collapse + (showsStrip && !collapsed ? Self.stripHeight + 6 : 0)
+        // The strip's share shrinks as it fades out, not when it is removed once settled.
+        Self.barHeight - 12 * collapse + (showsStrip && !collapsed ? (Self.stripHeight + 6) * (1 - collapse) : 0)
     }
 
     /// The bar's height (48) plus its top padding (8); with the home indicator, the page's bottom inset.
@@ -1451,7 +1452,6 @@ private struct PageView: View {
                     }
                     VStack(spacing: 6) {
                         bar
-                            .environment(\.colorScheme, padToolbar ? tab.toolbarScheme ?? colorScheme : colorScheme)
                             // Collapsed, the pill rises into the 44 pt band; centred in the bar it hung 6 pt below.
                             .offset(y: padToolbar ? -10 * collapse : 0)
                         if showsStrip, !collapsed {
@@ -1459,10 +1459,15 @@ private struct PageView: View {
                                 .padding(.leading, max(16, insets.leading))
                                 .padding(.trailing, max(16, insets.trailing))
                                 .opacity(chromeOpacity * (1 - collapse))
+                                // On iPad it rides up under the bar with the shrinking band, not fading over the page.
+                                .offset(y: padToolbar ? -(Self.stripHeight + 6) * collapse : 0)
+                                .zIndex(-1)
                                 .transition(.opacity)
                         }
                         Spacer(minLength: 0)
                     }
+                    // The bar and the strip follow the band's colour, not the page under it.
+                    .environment(\.colorScheme, padToolbar ? tab.toolbarScheme ?? colorScheme : colorScheme)
                     .padding(.top, insets.top)
                 } else {
                     VStack(spacing: 0) {
