@@ -255,9 +255,6 @@ private struct GridCell: View {
     @State private var dragX: CGFloat = 0
     /// Over its neighbours from the first move until it has slid back, not only while the finger is down.
     @State private var lifted = false
-    /// A finger is on it: it rises a little, as Safari's cells do.
-    @State private var pressed = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let flightTime = 0.3
 
@@ -266,8 +263,7 @@ private struct GridCell: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            // The press lift scales the cell; the page grows from, and shrinks onto, its resting frame.
-            GridPicture(tab: tab, width: width, height: height, hidden: hidden, live: live) { if !pressed { onFrame($0) } }
+            GridPicture(tab: tab, width: width, height: height, hidden: hidden, live: live, onFrame: onFrame)
                 .overlay {
                     if selected, !hidden {
                         RoundedRectangle(cornerRadius: TabGrid.radius, style: .continuous)
@@ -287,6 +283,14 @@ private struct GridCell: View {
                             .padding(8)
                     }
                 }
+                // The menu lifts the card alone, in its shape: around the title too, it took the card's shadow
+                // into the lift and cut it square.
+                .contentShape(.contextMenuPreview, .rect(cornerRadius: TabGrid.radius, style: .continuous))
+                .contextMenu {
+                    if let tabMenu {
+                        TabMenuItems(tab: tab, space: space, local: tab.spaceID == nil, menu: tabMenu)
+                    }
+                }
             HStack(spacing: 6) {
                 SiteIcon(host: tab.url?.host(), size: 16, fetch: !tab.isPrivate)
                 Text(tab.title.isEmpty ? tab.url?.host() ?? String(localized: "New Tab") : tab.title)
@@ -301,21 +305,14 @@ private struct GridCell: View {
             .opacity(max(0, 1 - abs(dragX) / 30))
         }
         .frame(width: width)
-        .scaleEffect(pressed && !reduceMotion ? 1.04 : 1)
-        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: pressed)
         .offset(x: dragX)
         .zIndex(lifted ? 1 : 0)
         .contentShape(.rect)
         // On its way out it opens nothing: the tab is about to close.
         .allowsHitTesting(!leaving)
         .onTapGesture(perform: onSelect)
-        .gesture(SidewaysPan(enabled: swipes, pressed: { pressed = $0 },
-                             changed: { lifted = true; dragX = Self.follow($0) }, ended: endSwipe))
-        .contextMenu {
-            if let tabMenu {
-                TabMenuItems(tab: tab, space: space, local: tab.spaceID == nil, menu: tabMenu)
-            }
-        }
+        // No press effect of its own: a grown cell overflowed the snapshot the menu lifts, which cut it.
+        .gesture(SidewaysPan(enabled: swipes, changed: { lifted = true; dragX = Self.follow($0) }, ended: endSwipe))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("gridCell")
         .onChange(of: leaving) { fly() }
@@ -350,30 +347,26 @@ private struct GridCell: View {
     }
 }
 
-/// Starts only on a sideways move, either way, so the grid still scrolls. It also reports presses: a second
-/// gesture for that took every touch from this one.
+/// Starts only on a sideways move, either way, so the grid still scrolls.
 private struct SidewaysPan: UIGestureRecognizerRepresentable {
     let enabled: Bool
-    let pressed: (Bool) -> Void
     let changed: (CGFloat) -> Void
     let ended: (_ translation: CGFloat, _ velocity: CGFloat) -> Void
 
-    func makeUIGestureRecognizer(context: Context) -> PressPan {
-        let pan = PressPan()
+    func makeUIGestureRecognizer(context: Context) -> TouchDownPan {
+        let pan = TouchDownPan()
         pan.delegate = context.coordinator
         pan.swipes = enabled
-        pan.pressed = pressed
         return pan
     }
 
-    func updateUIGestureRecognizer(_ pan: PressPan, context: Context) {
+    func updateUIGestureRecognizer(_ pan: TouchDownPan, context: Context) {
         pan.swipes = enabled
-        pan.pressed = pressed
     }
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
 
-    func handleUIGestureRecognizerAction(_ pan: PressPan, context: Context) {
+    func handleUIGestureRecognizerAction(_ pan: TouchDownPan, context: Context) {
         let translation = pan.travel
         switch pan.state {
         case .changed: changed(translation)
@@ -385,19 +378,16 @@ private struct SidewaysPan: UIGestureRecognizerRepresentable {
 
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
-            guard let pan = recognizer as? PressPan, pan.swipes else { return false }
+            guard let pan = recognizer as? TouchDownPan, pan.swipes else { return false }
             let velocity = pan.velocity(in: pan.view)
             return abs(velocity.x) > abs(velocity.y)
         }
     }
 }
 
-/// Says when a finger is on it, swipe or not. A scroll taking the touch cancels it and a failed pan
-/// resets, so the cell always settles back.
-private final class PressPan: UIPanGestureRecognizer {
+/// A pan that measures from where the finger came down.
+private final class TouchDownPan: UIPanGestureRecognizer {
     var swipes = true
-    var pressed: (Bool) -> Void = { _ in }
-    private var down = false
     private var start: CGPoint?
 
     /// From where the finger came down, not translation: a pan recognized late, after a busy main
@@ -409,32 +399,12 @@ private final class PressPan: UIPanGestureRecognizer {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesBegan(touches, with: event)
-        guard !down else { return }
-        down = true
-        start = touches.first?.location(in: view)
-        pressed(true)
-    }
-
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
-        super.touchesEnded(touches, with: event)
-        lift()
-    }
-
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
-        super.touchesCancelled(touches, with: event)
-        lift()
+        if start == nil { start = touches.first?.location(in: view) }
     }
 
     override func reset() {
         super.reset()
         start = nil
-        lift()
-    }
-
-    private func lift() {
-        guard down else { return }
-        down = false
-        pressed(false)
     }
 }
 
