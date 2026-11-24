@@ -191,7 +191,9 @@ timing, sync.
 - `sim` Bookmarks from Zen appear under Toolbar, Menu and Other in the start page's Bookmarks > Show All after sync;
   one added in Fir shows in Zen's Mobile Bookmarks. A bookmark opened from Show All loads where the start page would.
 - `sim` The page menu's bookmark icon fills on tap and empties on a second tap; the card menu offers Add/Remove
-  Bookmark. The start page grid shows the newest ten Mobile bookmarks; Settings > Tabs hides it and Frequently Visited.
+  Bookmark. The start page grid shows the newest ten Mobile bookmarks.
+- `sim` Edit at the end of the start page and of the search sheet switches Bookmarks, Frequently Visited and Recently
+  Visited; with all three off Edit still shows. Settings > Tabs has the same switches and they stay in step.
 - `sim` Typing a bookmarked page's name in the search sheet lists it with Bookmarks beside its host; not with a
   keyword chip.
 - `phone` Settings > Sync > Device Name: a new name shows in Zen's Send Tab to Device within a minute; an emptied

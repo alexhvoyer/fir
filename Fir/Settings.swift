@@ -385,6 +385,7 @@ enum SettingsKey {
     static let rememberHistory = "rememberHistory"
     static let startPageBookmarks = "startPageBookmarks"
     static let startPageFrequent = "startPageFrequent"
+    static let startPageRecent = "startPageRecent"
     static let barActions = "barActions"
     static let translateTarget = "translateTarget"
     static let intelligenceSearch = "intelligenceSearch"

@@ -35,7 +35,9 @@ struct StartPage: View {
     @AppStorage(SettingsKey.signInCardHidden) private var signInCardHidden = false
     @AppStorage(SettingsKey.startPageBookmarks) private var showsBookmarks = true
     @AppStorage(SettingsKey.startPageFrequent) private var showsFrequent = true
+    @AppStorage(SettingsKey.startPageRecent) private var showsRecent = true
     @State private var showsAllBookmarks = false
+    @State private var editsRows = false
 
     init(spaceID: String?, onPullUp: @escaping () -> Void, onOpen: @escaping (URL) -> Void,
          onOpenPin: @escaping (LocalPin) -> Void, onOpenTile: @escaping (String, URL) -> Void,
@@ -74,6 +76,25 @@ struct StartPage: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $editsRows) {
+            NavigationStack {
+                Form {
+                    Section {
+                        StartPageRowToggles()
+                    } footer: {
+                        Text("Bookmarks shows the Mobile Bookmarks folder, where Fir saves new ones.")
+                    }
+                }
+                .navigationTitle("Start Page")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", systemImage: "checkmark") { editsRows = false }
+                    }
+                }
+            }
+            .presentationDetents([.medium])
         }
         .task(id: spaceID) {
             defer { loaded = true }
@@ -175,12 +196,16 @@ struct StartPage: View {
                             }, onSelect: onOpen)
                     }
                 }
-                if !recent.isEmpty {
+                if showsRecent, !recent.isEmpty {
                     section("Recently Visited") {
                         rows(recent.map { ($0.title, $0.url) }, onSelect: onOpen)
                     }
                 }
             }
+            // Always shown: with every row hidden, it is the way back.
+            Button("Edit") { editsRows = true }
+                .buttonStyle(.glass)
+                .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 20)
         .padding(.top, 24)
@@ -421,4 +446,17 @@ extension EmptyTab {
 /// The live scroll offset, kept off SwiftUI's books: a state change on every scrolled point redrew the page.
 private final class ScrolledBy {
     var y: CGFloat = 0
+}
+
+/// The start page's optional rows, switched from Settings > Tabs and the start page's Edit sheet.
+struct StartPageRowToggles: View {
+    @AppStorage(SettingsKey.startPageBookmarks) private var bookmarks = true
+    @AppStorage(SettingsKey.startPageFrequent) private var frequent = true
+    @AppStorage(SettingsKey.startPageRecent) private var recent = true
+
+    var body: some View {
+        Toggle("Bookmarks", isOn: $bookmarks)
+        Toggle("Frequently Visited", isOn: $frequent)
+        Toggle("Recently Visited", isOn: $recent)
+    }
 }
