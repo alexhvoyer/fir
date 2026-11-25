@@ -104,6 +104,10 @@ timing, sync.
 - `sim` Edge swipe goes back and forward in history, using WebKit's own gesture.
 - `phone` **(was broken)** Right after the bar settles collapsed, flick a page with a fixed header (dtf.ru) to the
   top: the bar expands while the page moves, and the header stays through the bounce.
+- `sim` **(was broken)** A tab left for over a minute stops counting as visible: a page writing
+  `document.visibilityState` into its title shows `hidden` meanwhile, and swiping back shows it without a reload
+  or white flash. Hidden tabs used to run as visible, and each one slowed every return to the app by 30-45 ms.
+- `sim` Audio playing in a tab left for over a minute keeps playing.
 
 ## Tab overview: Cards
 

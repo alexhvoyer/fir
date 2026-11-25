@@ -2615,6 +2615,41 @@ private struct WebHost: UIViewRepresentable {
             pending?.task.cancel()
             pending = nil
         }
+
+        /// WebKit treats a hidden page in the window as visible: timers run, and each app return waits on it.
+        /// After a minute it leaves the window; the page stays loaded.
+        private var detaching: [ObjectIdentifier: Task<Void, Never>] = [:]
+        private static let detachAfter: Duration = .seconds(60)
+
+        func detachLater(_ webView: WKWebView) {
+            let id = ObjectIdentifier(webView)
+            guard detaching[id] == nil else { return }
+            detaching[id] = Task { [weak self, weak webView] in
+                while true {
+                    try? await Task.sleep(for: Self.detachAfter)
+                    guard !Task.isCancelled, self != nil else { return }
+                    guard let page = webView, page.isHidden else { break }
+                    // Hidden, a page may lose its sound; one still playing stays until it stops.
+                    let playing = await page.requestMediaPlaybackState() == .playing
+                    // A coordinator SwiftUI replaced no longer owns the container.
+                    guard !Task.isCancelled, self != nil else { return }
+                    if playing { continue }
+                    if page.isHidden { page.removeFromSuperview() }
+                    break
+                }
+                self?.detaching[id] = nil
+            }
+        }
+
+        func keep(_ webView: WKWebView) {
+            detaching.removeValue(forKey: ObjectIdentifier(webView))?.cancel()
+        }
+
+        /// A web view taken out another way, as a closed tab's, leaves no timer whose key a new one could reuse.
+        func forgetAbsent(from container: UIView) {
+            let present = Set(container.subviews.map(ObjectIdentifier.init))
+            for id in detaching.keys where !present.contains(id) { detaching.removeValue(forKey: id)?.cancel() }
+        }
     }
 
     func updateUIView(_ container: UIView, context: Context) {
@@ -2624,6 +2659,7 @@ private struct WebHost: UIViewRepresentable {
         for case let webView as WKWebView in container.subviews where !live.contains(ObjectIdentifier(webView)) {
             webView.removeFromSuperview()
         }
+        context.coordinator.forgetAbsent(from: container)
         if selected.superview !== container {
             selected.frame = container.bounds
             selected.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -2636,6 +2672,8 @@ private struct WebHost: UIViewRepresentable {
             let shows = webView === selected && (inFront || !webView.isHidden)
             if shows, webView.isHidden { FrameMeter.mark("web view shown \(webView.url?.host() ?? "-")") }
             webView.isHidden = !shows
+            // The selected page stays in the window behind the deck, ready to show.
+            if webView === selected { context.coordinator.keep(webView) } else { context.coordinator.detachLater(webView) }
             if webView.minimumViewportInset != viewport.min || webView.maximumViewportInset != viewport.max {
                 webView.setMinimumViewportInset(viewport.min, maximumViewportInset: viewport.max)
             }
