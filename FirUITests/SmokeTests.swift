@@ -177,9 +177,10 @@ final class SmokeTests: XCTestCase {
     /// with a dead close button.
     func testGridQuickClosesAndEarlyUndo() {
         launch(layout: "grid")
-        // A closed cell's followers slide up, under a tap already aimed at them. So o goes first and stays
-        // selected, and the closes run from the last cell back.
-        open("o")
+        // A closed cell's followers slide up, under a tap already aimed at them. So o goes early and stays
+        // selected, and the closes run from the last cell back. k stays, so no close empties the workspace.
+        open("k")
+        newTab("o")
         newTab("m")
         newTab("n")
         showTabs()
