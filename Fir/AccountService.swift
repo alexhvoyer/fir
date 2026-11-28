@@ -506,7 +506,14 @@ private enum SyncCache {
         return (json["spaces"] as? [[String: Any]] ?? [], clients)
     }
 
+    /// Writing took ~45 ms on the main thread. Clearing shares the queue, so a pending write can't outlive sign-out.
+    private static let queue = DispatchQueue(label: "Fir.syncCache", qos: .utility)
+
     static func save(spaces: [[String: Any]], clients: [ClientRemoteTabs]) {
+        queue.async { write(spaces: spaces, clients: clients) }
+    }
+
+    private static func write(spaces: [[String: Any]], clients: [ClientRemoteTabs]) {
         let json: [String: Any] = [
             "spaces": spaces,
             "clients": clients.map { client in
@@ -524,5 +531,5 @@ private enum SyncCache {
         try? data.write(to: url, options: .atomic)
     }
 
-    static func clear() { try? FileManager.default.removeItem(at: url) }
+    static func clear() { queue.async { try? FileManager.default.removeItem(at: url) } }
 }
