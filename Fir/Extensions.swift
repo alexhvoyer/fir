@@ -23,6 +23,8 @@ final class ExtensionManager: NSObject {
     @ObservationIgnored let controller = WKWebExtensionController(configuration: .default())
     @ObservationIgnored weak var browser: BrowserModel?
     @ObservationIgnored private lazy var window = ExtensionWindow(manager: self)
+    /// Add-on pages showing in their sheets, each a tab to its add-on.
+    @ObservationIgnored fileprivate(set) var pageTabs: [ExtensionPageTab] = []
     private(set) var installed: [Installed] = []
 
     private static let indexKey = "extensions"
@@ -56,7 +58,7 @@ final class ExtensionManager: NSObject {
             // a large add-on froze the screen.
             try await Task.detached(priority: .userInitiated) {
                 try ZipExtractor.extract(temp, to: folder)
-                try Self.adaptManifest(in: folder)
+                try Self.adapt(in: folder)
             }.value
             guard await Self.confirm(try await WKWebExtension(resourceBaseURL: folder)) else {
                 try? FileManager.default.removeItem(at: folder)
@@ -173,8 +175,9 @@ final class ExtensionManager: NSObject {
 
     /// An add-on's own page (options, welcome) in a sheet. Only a web view made from the add-on's
     /// configuration loads its pages; a tab's failed with "resource unavailable".
-    private static func showPage(_ url: URL, of context: WKWebExtensionContext) {
-        guard let configuration = context.webViewConfiguration, let presenter = topViewController() else { return }
+    @discardableResult
+    private static func showPage(_ url: URL, of context: WKWebExtensionContext) -> ExtensionPageTab? {
+        guard let configuration = context.webViewConfiguration, let presenter = topViewController() else { return nil }
         let page = ExtensionPageController(url: url, base: context.baseURL, configuration: configuration)
         page.navigationItem.title = context.webExtension.displayName
         let sheet = UINavigationController(rootViewController: page)
@@ -182,6 +185,23 @@ final class ExtensionManager: NSObject {
             sheet?.dismiss(animated: true)
         })
         presenter.present(sheet, animated: true)
+        let tab = ExtensionPageTab(page: page, context: context)
+        page.extensionTab = tab
+        shared.pageTabs.append(tab)
+        // Only its owner hears of it.
+        context.didOpenTab(tab)
+        return tab
+    }
+
+    /// Only its own: another add-on's page is none of its business.
+    func pageTabs(of context: WKWebExtensionContext) -> [ExtensionPageTab] {
+        pageTabs.filter { $0.context === context }
+    }
+
+    fileprivate func pageClosed(_ tab: ExtensionPageTab) {
+        guard let index = pageTabs.firstIndex(where: { $0 === tab }) else { return }
+        pageTabs.remove(at: index)
+        tab.context?.didCloseTab(tab, windowIsClosing: false)
     }
 
     private static func topViewController() -> UIViewController? {
@@ -199,7 +219,11 @@ final class ExtensionManager: NSObject {
     }
 
     private func add(id: String, enabled: Bool, deniedSites: Set<String> = []) async throws {
-        let webExtension = try await WKWebExtension(resourceBaseURL: file(id))
+        let folder = file(id)
+        // Add-ons installed before an adaptation existed get it once, off the main thread.
+        // A failure leaves it as it was installed, still loading.
+        if !Self.isAdapted(folder) { try? await Task.detached(priority: .userInitiated) { try Self.adapt(in: folder) }.value }
+        let webExtension = try await WKWebExtension(resourceBaseURL: folder)
         let context = WKWebExtensionContext(for: webExtension)
         // Stable across launches, so the extension keeps its storage.
         context.uniqueIdentifier = id
@@ -223,17 +247,77 @@ final class ExtensionManager: NSObject {
 
     private func file(_ id: String) -> URL { Self.folder.appending(path: id, directoryHint: .isDirectory) }
 
-    /// iOS runs background pages only non-persistent. A Manifest V2 background is persistent unless
-    /// it says otherwise, and WebKit rejects that outright.
-    nonisolated private static func adaptManifest(in folder: URL) throws {
+    /// Bumped when `adapt` learns something new, so installed add-ons get it once more.
+    private static let adaptation = "1"
+    private static let adaptationMarker = ".fir-adapted"
+
+    nonisolated private static func isAdapted(_ folder: URL) -> Bool {
+        (try? String(contentsOf: folder.appending(path: adaptationMarker), encoding: .utf8)) == adaptation
+    }
+
+    /// Makes a Firefox add-on fit WebKit: rewritten files only, never new permissions.
+    nonisolated private static func adapt(in folder: URL) throws {
         let url = folder.appending(path: "manifest.json")
-        guard var manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any],
-              manifest["manifest_version"] as? Int == 2,
-              var background = manifest["background"] as? [String: Any],
-              background["persistent"] as? Bool != false else { return }
-        background["persistent"] = false
-        manifest["background"] = background
+        guard var manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any] else { return }
+        if manifest["manifest_version"] as? Int == 2, var background = manifest["background"] as? [String: Any] {
+            // iOS runs background pages only non-persistent, and WebKit rejects a persistent one outright.
+            if background["persistent"] as? Bool != false { background["persistent"] = false }
+            // Stand-ins for Firefox APIs WebKit lacks, loaded before the add-on's own background code.
+            if let shims = Bundle.main.url(forResource: "ExtensionShims", withExtension: "js") {
+                let target = folder.appending(path: shimsFile)
+                try? FileManager.default.removeItem(at: target)
+                try FileManager.default.copyItem(at: shims, to: target)
+                if var scripts = background["scripts"] as? [String] {
+                    if !scripts.contains(shimsFile) { scripts.insert(shimsFile, at: 0) }
+                    background["scripts"] = scripts
+                } else if let page = background["page"] as? String {
+                    // Only a page inside the add-on: a manifest's "../" must not reach another add-on's files.
+                    let target = folder.appending(path: page).standardizedFileURL
+                    if target.path.hasPrefix(folder.standardizedFileURL.path + "/") { try insertShims(intoPage: target) }
+                }
+            }
+            manifest["background"] = background
+        }
+        // WebKit reports an empty list as a broken manifest; Firefox add-ons that register scripts later ship one.
+        if (manifest["content_scripts"] as? [Any])?.isEmpty == true { manifest["content_scripts"] = nil }
         try JSONSerialization.data(withJSONObject: manifest).write(to: url)
+
+        let gecko = ((manifest["browser_specific_settings"] ?? manifest["applications"]) as? [String: Any])?["gecko"] as? [String: Any]
+        let isTampermonkey = gecko?["id"] as? String == "firefox@tampermonkey.net"
+        try rewriteSources(in: folder) { text in
+            // Firefox add-ons recognise their own pages by Firefox's scheme.
+            var text = text.replacingOccurrences(of: "moz-extension:", with: "webkit-extension:")
+            // Its default needs Firefox's userScripts API; content mode runs through the stand-in above.
+            if isTampermonkey {
+                text = text.replacingOccurrences(of: #"runtime_content_mode:"userscripts""#, with: #"runtime_content_mode:"content""#)
+            }
+            return text
+        }
+        try adaptation.write(to: folder.appending(path: adaptationMarker), atomically: true, encoding: .utf8)
+    }
+
+    private static let shimsFile = "fir-shims.js"
+
+    nonisolated private static func insertShims(intoPage url: URL) throws {
+        var html = try String(contentsOf: url, encoding: .utf8)
+        guard !html.contains(shimsFile) else { return }
+        let tag = "<script src=\"/\(shimsFile)\"></script>"
+        if let head = html.range(of: "<head[^>]*>", options: [.regularExpression, .caseInsensitive]) {
+            html.insert(contentsOf: tag, at: head.upperBound)
+        } else {
+            html = tag + html
+        }
+        try html.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    /// Rewrites the add-on's scripts and pages in place; files that aren't UTF-8 text stay as they are.
+    nonisolated private static func rewriteSources(in folder: URL, _ change: (String) -> String) throws {
+        guard let files = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: nil) else { return }
+        for case let file as URL in files where ["js", "html", "htm"].contains(file.pathExtension.lowercased()) {
+            guard file.lastPathComponent != shimsFile, let text = try? String(contentsOf: file, encoding: .utf8) else { continue }
+            let changed = change(text)
+            if changed != text { try changed.write(to: file, atomically: true, encoding: .utf8) }
+        }
     }
 
     private func saveIndex() {
@@ -289,10 +373,9 @@ extension ExtensionManager: WKWebExtensionControllerDelegate {
     func webExtensionController(_ controller: WKWebExtensionController, openNewTabUsing configuration: WKWebExtension.TabConfiguration,
                                 for extensionContext: WKWebExtensionContext,
                                 completionHandler: @escaping ((any WKWebExtensionTab)?, (any Error)?) -> Void) {
-        // Its own pages can't load in a tab; they open in the add-on's sheet instead.
+        // Its own pages can't load in a tab; they open in the add-on's sheet, which stands in as the tab.
         if let url = configuration.url, url.scheme == extensionContext.baseURL.scheme, url.host() == extensionContext.baseURL.host() {
-            Self.showPage(url, of: extensionContext)
-            completionHandler(nil, nil)
+            completionHandler(Self.showPage(url, of: extensionContext), nil)
             return
         }
         browser?.open(configuration.url, in: nil)
@@ -318,7 +401,8 @@ extension ExtensionManager: WKWebExtensionControllerDelegate {
 /// HTTPS-only and the blocker; anything else is dropped.
 private final class ExtensionPageController: UIViewController, WKNavigationDelegate, WKUIDelegate {
     private let base: URL
-    private let webView: WKWebView
+    let webView: WKWebView
+    weak var extensionTab: ExtensionPageTab?
 
     init(url: URL, base: URL, configuration: WKWebViewConfiguration) {
         self.base = base
@@ -332,6 +416,14 @@ private final class ExtensionPageController: UIViewController, WKNavigationDeleg
     required init?(coder: NSCoder) { fatalError() }
 
     override func loadView() { view = webView }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if let tab = extensionTab, navigationController?.isBeingDismissed ?? isBeingDismissed { ExtensionManager.shared.pageClosed(tab) }
+    }
+
+    /// `window.close()` from the page.
+    func webViewDidClose(_ webView: WKWebView) { dismiss(animated: true) }
 
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let url = action.request.url else { return .cancel }
@@ -367,10 +459,11 @@ final class ExtensionWindow: NSObject, WKWebExtensionWindow {
     }
 
     func tabs(for context: WKWebExtensionContext) -> [any WKWebExtensionTab] {
-        manager.browser?.tabs.filter { !$0.isPrivate } ?? []
+        (manager.browser?.tabs.filter { !$0.isPrivate } ?? []) + manager.pageTabs(of: context)
     }
 
     func activeTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
+        if let page = manager.pageTabs(of: context).last { return page }
         guard let selected = manager.browser?.selected, !selected.isPrivate else { return nil }
         return selected
     }
@@ -423,4 +516,34 @@ extension BrowserTab: WKWebExtensionTab {
 
 extension ExtensionManager {
     var focusedWindow: (any WKWebExtensionWindow)? { window }
+}
+
+/// An add-on page in its sheet, as a tab: Tampermonkey's install page gave up when `tabs.create`
+/// returned none, and closing the tab closes the sheet.
+final class ExtensionPageTab: NSObject, WKWebExtensionTab {
+    fileprivate weak var page: ExtensionPageController?
+    fileprivate weak var context: WKWebExtensionContext?
+
+    fileprivate init(page: ExtensionPageController, context: WKWebExtensionContext) {
+        self.page = page
+        self.context = context
+    }
+
+    func window(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? { ExtensionManager.shared.focusedWindow }
+    // Another add-on gets nothing from it.
+    func webView(for context: WKWebExtensionContext) -> WKWebView? { context === self.context ? page?.webView : nil }
+    func title(for context: WKWebExtensionContext) -> String? { context === self.context ? page?.webView.title : nil }
+    func url(for context: WKWebExtensionContext) -> URL? { context === self.context ? page?.webView.url : nil }
+    func isLoadingComplete(for context: WKWebExtensionContext) -> Bool { !(page?.webView.isLoading ?? false) }
+    func isSelected(for context: WKWebExtensionContext) -> Bool { ExtensionManager.shared.pageTabs.last === self }
+
+    func close(for context: WKWebExtensionContext, completionHandler: @escaping ((any Error)?) -> Void) {
+        if context === self.context { page?.navigationController?.dismiss(animated: true) }
+        completionHandler(nil)
+    }
+
+    func reload(fromOrigin: Bool, for context: WKWebExtensionContext, completionHandler: @escaping ((any Error)?) -> Void) {
+        if fromOrigin { page?.webView.reloadFromOrigin() } else { page?.webView.reload() }
+        completionHandler(nil)
+    }
 }

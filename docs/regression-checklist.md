@@ -284,6 +284,9 @@ timing, sync.
 - `sim` **(was broken)** An add-on's settings open in a sheet from Settings > Extensions > the add-on > Extension
   Settings, and from the page menu. A link out of that sheet opens in a tab.
 - `sim` Disabling and removing an add-on takes effect without restarting.
+- `sim` **(was broken)** Install Tampermonkey (`tampermonkey`). Opening a `.user.js` link shows its install page in
+  one sheet with the script and Install; Install closes the sheet, and the script runs once on a matching page. Turned
+  off for that site, it doesn't run there. Its settings (Extension Settings) open with content.
 - `sim` Page menu > Extensions opens a page in the sheet listing every add-on, switched-off ones too. Each opens the
   same page as in Settings, with Open for add-ons that have a settings page. Back and swipe back return; removing
   the last add-on shows No Extensions.
