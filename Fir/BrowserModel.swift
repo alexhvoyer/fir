@@ -191,6 +191,7 @@ final class BrowserTab: NSObject, Identifiable {
     private static func makeWebView(dataStore: WKWebsiteDataStore) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = dataStore
+        config.applicationNameForUserAgent = userAgentSuffix
         // Extensions never see private tabs.
         if dataStore.isPersistent { config.webExtensionController = ExtensionManager.shared.controller }
         config.allowsInlineMediaPlayback = true
@@ -202,6 +203,16 @@ final class BrowserTab: NSObject, Identifiable {
         CameraClearance.shared.attach(webView)
         return configure(webView)
     }
+
+    /// Shaped like Edge on iOS. Without `Safari/` sites take Fir for an app's embedded view; a bare Safari
+    /// string lacks Safari's page globals. X bounces both to Safari.
+    static let userAgentSuffix = "\(versionTokens) Mobile/15E148 Safari/604.1"
+    static let desktopUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) \(versionTokens) Safari/605.1.15"
+    private static let versionTokens: String = {
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        let app = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+        return "Version/\(os.majorVersion).\(os.minorVersion) Fir/\(app)"
+    }()
 
     /// A video that went picture in picture comes back into the page when the page shows again, as in
     /// Safari; WebKit leaves that to the app. In every frame, so embedded players come back too.
@@ -661,6 +672,8 @@ extension BrowserTab: WKNavigationDelegate {
         if isMainFrame, let url = navigationAction.request.url {
             let site = SiteSettings.shared.entry(for: url, isPrivate: isPrivate)
             preferences.preferredContentMode = site.desktop ? .desktop : .mobile
+            // WebKit appends the app name to its Mac string too, and a Mobile token there undid the desktop layout.
+            webView.customUserAgent = site.desktop ? Self.desktopUserAgent : nil
             if #available(iOS 27.0, *) {
                 preferences.globalPrivacyControlEnabled = UserDefaults.standard.bool(forKey: SettingsKey.globalPrivacyControl, default: true)
             }
@@ -1811,6 +1824,7 @@ final class LinkPreviewController: UIViewController, WKNavigationDelegate, WKUID
         view.backgroundColor = .systemBackground
         let config = WKWebViewConfiguration()
         config.websiteDataStore = dataStore
+        config.applicationNameForUserAgent = BrowserTab.userAgentSuffix
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isUserInteractionEnabled = false
         ContentBlocker.shared.attach(webView)

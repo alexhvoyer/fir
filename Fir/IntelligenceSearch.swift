@@ -440,6 +440,7 @@ private final class HiddenPageLoader: NSObject, WKNavigationDelegate, WKUIDelega
     override init() {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
+        config.applicationNameForUserAgent = BrowserTab.userAgentSuffix
         webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 402, height: 874), configuration: config)
         super.init()
         ContentBlocker.shared.attach(webView)
