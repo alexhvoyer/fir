@@ -1386,8 +1386,9 @@ final class BrowserModel {
             selectedID = next?.id
             // Left on the emptied workspace, a page's next new tab would open there, even as private.
             if rest.isEmpty, !inPlace, let next { space = next.spaceID }
-        } else if let placeholder {
-            // The emptied workspace was in view without its tab selected: its new tab opens all the same.
+        } else if let placeholder, inPlace {
+            // Closed in the overview with its workspace in view: its new tab opens all the same. Not for an add-on's
+            // or a page's own close elsewhere.
             selectedID = placeholder
         }
         SessionStore.deleteSnapshot(for: tab.id)
@@ -1406,7 +1407,7 @@ final class BrowserModel {
         HTTPSOnly.forgetTemporary()
     }
 
-    /// Closes every tab of a workspace, leaving one new tab if that empties the browser.
+    /// Closes every tab of a workspace, leaving one new tab in it.
     func closeAll(in space: String?) {
         for tab in tabs(in: space) { close(tab) }
         undo = nil
