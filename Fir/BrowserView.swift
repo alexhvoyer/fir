@@ -323,6 +323,16 @@ struct BrowserView: View {
         }
         // A restored tab's snapshot is held over it until it paints; another tab must not show under it.
         .onChange(of: browser.selectedID) { veil = nil }
+        // Like Safari: closing the last tab in the deck goes on into the new tab left in its place.
+        .onChange(of: browser.undo?.placeholder) { _, placeholder in
+            guard let placeholder, !pageShown, browser.selectedID == placeholder else { return }
+            Task {
+                // After the closed card has left.
+                try? await Task.sleep(for: .milliseconds(400))
+                guard !pageShown, browser.selectedID == placeholder, browser.selected.url == nil else { return }
+                openPage()
+            }
+        }
         // On arrival only: a dismissed search stays down, leaving the deck and settings reachable.
         .onChange(of: blankShown, initial: true) {
             if blankShown, search == nil, settings == nil { search = .newTab(space: browser.space) }

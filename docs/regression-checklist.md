@@ -152,6 +152,8 @@ timing, sync.
 - `sim` After a cold launch, a tab not opened yet loads when its card is tapped or it is swiped to, with its bar buttons.
   Restored tabs get their web view only then; closing one that never loaded works and Undo brings it back.
 - `sim` **(was broken)** Close a blank tab and tap Undo with Recently Closed empty: the tab comes back. It crashed.
+- `sim` **(was broken)** With one tab, close it from the tab overview (cards and grid): Fir goes on into the new tab
+  left in its place, as Safari does; Undo brings the closed tab back. It used to stay in the overview.
 - `sim` **(was broken)** Signed in, with a Zen folder in the workspace: quit Fir, open it, and tap the tabs button at once.
   The page shrinks straight onto its card. The sync's new layout used to send it one card aside first.
 
