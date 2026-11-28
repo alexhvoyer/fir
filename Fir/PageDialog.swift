@@ -47,8 +47,10 @@ enum PageShare {
         let page = !tab.isPrivate && BrowserTab.sameOrigin(tab.webView.url, tab.pageURL)
         let link = SharedLink(url: url, isPrivate: tab.isPrivate)
         let items: [Any] = page ? [link, tab.webView] : [link]
-        PageDialog.topViewController()?.present(UIActivityViewController(activityItems: items, applicationActivities: nil),
-                                                animated: true)
+        guard let top = PageDialog.topViewController() else { return }
+        let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        sheet.anchorPopover(centredIn: top)
+        top.present(sheet, animated: true)
     }
 
     /// Closes an open share sheet, which would keep showing a private page above its lock.
@@ -84,5 +86,15 @@ private final class DialogController: UIAlertController {
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         onDisappear?()
+    }
+}
+
+extension UIViewController {
+    /// On iPad a share sheet or add-on popup is a popover, and one with no anchor crashed the app: centred, without an arrow.
+    func anchorPopover(centredIn presenter: UIViewController) {
+        guard let popover = popoverPresentationController else { return }
+        popover.sourceView = presenter.view
+        popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+        popover.permittedArrowDirections = []
     }
 }

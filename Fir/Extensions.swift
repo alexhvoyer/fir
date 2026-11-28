@@ -392,6 +392,8 @@ extension ExtensionManager: WKWebExtensionControllerDelegate {
                                 for context: WKWebExtensionContext, completionHandler: @escaping ((any Error)?) -> Void) {
         guard let popup = action.popupViewController, let top = Self.topViewController() else { completionHandler(nil); return }
         popup.modalPresentationStyle = .pageSheet
+        // On iPad WebKit keeps it a popover whatever the style.
+        popup.anchorPopover(centredIn: top)
         top.present(popup, animated: true)
         completionHandler(nil)
     }

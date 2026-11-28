@@ -349,6 +349,11 @@ timing, sync.
   GitHub, light on Wikipedia), hides content scrolled under it, and its glass stays dark on GitHub after the deck.
   With several tabs, scrolling down slides the tab strip up under the address as the band shrinks to the pill.
 
+- `sim` **(was crashing)** On iPad, Share from the toolbar and from the page menu opens the share sheet. It crashed the
+  app: an unanchored popover.
+- `sim` **(was crashing)** On iPad, install Dark Reader and open Extension Settings (its popup): it shows centred. It
+  crashed the app the same way.
+
 ## iPhone Duo and landscape
 
 Record each Duo screen on its own: `xcrun simctl io <udid> recordVideo --display=<display UUID>` (outer: `--display=1`).
