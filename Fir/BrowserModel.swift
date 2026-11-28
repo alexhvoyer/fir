@@ -299,6 +299,8 @@ final class BrowserTab: NSObject, Identifiable {
     }
 
     @objc private func panChanged(_ pan: UIPanGestureRecognizer) {
+        // Scrolling under the saved snapshot moved a page nobody could see.
+        if pan.state == .began, !hasPainted { hasPainted = true }
         let touching = pan.state == .began || pan.state == .changed
         if touching != isTouching { isTouching = touching }
     }
