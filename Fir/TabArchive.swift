@@ -109,7 +109,7 @@ struct TabsSettingsView: View {
                     ForEach(TabOrder.allCases) { Text($0.name).tag($0) }
                 }
             } footer: {
-                Text("Cards shows one tab at a time to swipe through. Grid shows a workspace's tabs side by side. Recently Used puts the tabs you viewed last first; swiping the address bar still goes in the order they were opened.")
+                Text("Cards shows one tab at a time to swipe through. Grid shows a workspace's tabs side by side. Recently Used puts the tab you viewed last at the end; swiping the address bar still goes in the order they were opened.")
             }
             Section {
                 Picker("Archive Tabs After", selection: $archive) {

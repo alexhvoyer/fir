@@ -154,6 +154,8 @@ timing, sync.
 - `sim` **(was broken)** Close a blank tab and tap Undo with Recently Closed empty: the tab comes back. It crashed.
 - `sim` **(was broken)** With one tab, close it from the tab overview (cards and grid): Fir goes on into the new tab
   left in its place, as Safari does; Undo brings the closed tab back. It used to stay in the overview.
+- `phone` **(was broken)** Signed in, close every tab of one Zen workspace from the overview: a new tab opens in that
+  workspace; Undo brings the closed tab back and drops the blank one. It used to jump to another workspace's tab.
 - `sim` **(was broken)** Signed in, with a Zen folder in the workspace: quit Fir, open it, and tap the tabs button at once.
   The page shrinks straight onto its card. The sync's new layout used to send it one card aside first.
 
@@ -189,13 +191,13 @@ timing, sync.
 
 ## Tab overview: order
 
-- `sim` Settings > Tabs > Order Tabs By, Recently Used: open A, B, C in order; the overview shows C, B, A in both
-  Cards and Grid. Swiping the bar still goes A, B, C.
+- `sim` Settings > Tabs > Order Tabs By, Recently Used: open A, B, C in order, then go back to A; the overview shows
+  B, C, A in both Cards and Grid, the tab in use last. Swiping the bar still goes A, B, C.
 - `sim` **(was broken)** With Recently Used, tap the last card or cell: the others stay still while the page grows. The
-  grid used to reshuffle under the growing page. Back in the overview, that tab is first.
+  grid used to reshuffle under the growing page. Back in the overview, that tab is last.
 - `sim` **(was broken)** Relaunch with Recently Used in Cards: the deck opens on the selected card, not another slot.
-- `sim` With Recently Used, close the first card in the overview: the card next to it is selected, not the next one in
-  opened order.
+- `sim` With Recently Used, close the selected (last) card in the overview: the card before it is selected, not a
+  neighbour in opened order.
 - `sim` Switch Order Tabs By from the overview's Settings: the deck still shows the selected card in front.
 
 ## Workspaces and sync

@@ -1045,11 +1045,12 @@ final class BrowserModel {
         return placed + rest
     }
 
-    /// The tab overview's order. Recently Used keeps folders leading and puts the rest newest first.
+    /// The tab overview's order. Recently Used keeps folders leading and puts the rest oldest first, so the
+    /// tab in use is last, on the right, as cards slide in over the ones before them.
     func overviewTabs(in space: String?) -> [BrowserTab] {
         let (placed, rest) = foldersFirst(in: space)
         guard UserDefaults.standard.string(forKey: SettingsKey.tabOrder) == TabOrder.recent.rawValue else { return placed + rest }
-        // Tabs opened since the last settle go last, as in Opened order.
+        // Tabs opened since the last settle are the newest: last, as in Opened order.
         return placed + rest.enumerated()
             .sorted { (recentRanks[$0.1.id] ?? .max, $0.0) < (recentRanks[$1.1.id] ?? .max, $1.0) }.map(\.1)
     }
@@ -1062,7 +1063,7 @@ final class BrowserModel {
     func settleOverviewOrder() {
         // The open tab is the one in use now; the tab it replaced was stamped as it was left.
         let ranks = Dictionary(uniqueKeysWithValues: tabs
-            .sorted { ($0.id == selectedID ? .distantFuture : $0.lastViewed) > ($1.id == selectedID ? .distantFuture : $1.lastViewed) }
+            .sorted { ($0.id == selectedID ? .distantFuture : $0.lastViewed) < ($1.id == selectedID ? .distantFuture : $1.lastViewed) }
             .enumerated().map { ($1.id, $0) })
         if ranks != recentRanks { recentRanks = ranks }
     }
@@ -1349,7 +1350,7 @@ final class BrowserModel {
         let tab: BrowserTab
         let index: Int
         let wasSelected: Bool
-        /// The blank tab added because closing emptied the browser.
+        /// The blank tab added because closing emptied its workspace or the browser.
         let placeholder: BrowserTab.ID?
     }
 
@@ -1370,9 +1371,11 @@ final class BrowserModel {
         tabs.removeAll { $0.id == tab.id }
         detach(tab)
         var placeholder: BrowserTab.ID?
-        // Closing a regular tab must not bring up a private one, so one regular tab always remains.
-        if tabs.isEmpty || (!tab.isPrivate && tabs.allSatisfy(\.isPrivate)) {
-            tabs.append(BrowserTab())
+        // A workspace keeps one regular tab, as Safari's tab groups do: closing its last one must not bring up
+        // another workspace's tab, or a private one.
+        if tabs.isEmpty || (!tab.isPrivate && !tabs.contains { $0.spaceID == tab.spaceID }) {
+            let space = tab.isPrivate ? nil : tab.spaceID
+            tabs.append(BrowserTab(url: nil, spaceID: space, dataStore: dataStore(for: space)))
             placeholder = tabs.last?.id
         }
         undo = Undo(tab: tab, index: position, wasSelected: selectedID == tab.id, placeholder: placeholder)
@@ -1383,6 +1386,9 @@ final class BrowserModel {
             selectedID = next?.id
             // Left on the emptied workspace, a page's next new tab would open there, even as private.
             if rest.isEmpty, !inPlace, let next { space = next.spaceID }
+        } else if let placeholder {
+            // The emptied workspace was in view without its tab selected: its new tab opens all the same.
+            selectedID = placeholder
         }
         SessionStore.deleteSnapshot(for: tab.id)
         save()
@@ -1416,12 +1422,12 @@ final class BrowserModel {
             tab.localPinID = nil
             tab.isPinned = false
         }
-        if let placeholder = undo.placeholder, tabs.count == 1, tabs[0].id == placeholder, tabs[0].url == nil {
-            tabs = []
-        }
+        // The blank tab closing left, unless it has been used since.
+        let blank = tabs.first { $0.id == undo.placeholder && $0.url == nil }
+        if let blank { tabs.removeAll { $0.id == blank.id } }
         tabs.insert(tab, at: min(undo.index, tabs.count))
         if tab.isPrivate { privateStore = tab.webView.configuration.websiteDataStore }
-        if undo.wasSelected { select(tab) }
+        if undo.wasSelected || (blank != nil && selectedID == blank?.id) { select(tab) }
         // Only what `remember` added: a blank tab has no address, and nil matched an empty list's nil.
         if !tab.isPrivate, let url = tab.url, recentlyClosed.first?.url == url {
             recentlyClosed.removeFirst()
