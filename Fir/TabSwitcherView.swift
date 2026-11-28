@@ -173,6 +173,9 @@ struct TabSwitcherView: View {
     private var selectionID: String { device.map { Self.devicePrefix + $0 } ?? browser.space ?? Self.localSpace }
 
     private func select(_ id: String) {
+        // A switcher spring ending after a tap opened a page: under the page the overview shows that tab's workspace,
+        // or it shrinks onto no card.
+        guard hiddenTab == nil else { return }
         if id.hasPrefix(Self.devicePrefix) {
             device = String(id.dropFirst(Self.devicePrefix.count))
         } else {

@@ -219,6 +219,9 @@ timing, sync.
 - `phone` Settings > Sync > Device Name: a new name shows in Zen's Send Tab to Device within a minute; an emptied
   field comes back with the current name; offline, the old name returns on reopening Sync.
 
+- `phone` **(was broken)** Swipe the switcher to another device's tabs and tap a tab at once, before the switcher
+  settles; close the page: it shrinks onto its card in its workspace. It used to fade out over the device's list.
+
 ## Private and locks
 
 - `phone` Private tabs lock with Face ID when the app goes to the background. The lock covers sheets.
