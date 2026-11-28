@@ -226,8 +226,10 @@ timing, sync.
 - `sim` **(was broken)** Offline, Try Again keeps the error page up while it retries. It used to flash a blank page on
   every tap. Back online, Try Again loads the page.
 - `phone` With Fir as the default browser, a link from another app opens in a new tab in front of any open sheet.
-- `sim` A link to another app (for example the App Store) asks first. `tel`, `mailto`, `sms` and `facetime` links
-  don't ask.
+- `sim` A link to another app (for example the App Store) asks first. Tapped `tel` and `facetime` links don't ask:
+  iOS confirms the call itself.
+- `sim` **(was broken)** A tapped `mailto` or `sms` link asks before opening Mail or Messages. It used to open them
+  at once.
 - `phone` Share on a page offers Add to Home Screen. Private tabs share only the URL.
 - `sim` Long-press a link: the preview opens, and tapping it opens a glance.
 - `sim` Spotlight text and Shortcuts input are always searched, never opened as an address.

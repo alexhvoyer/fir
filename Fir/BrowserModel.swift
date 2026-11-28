@@ -717,15 +717,14 @@ extension BrowserTab: WKNavigationDelegate {
         if scheme == "webkit-extension" { return (.cancel, preferences) }
         // Fir's own scheme is for its widget and share extension; a page could bounce a private tab's link through it.
         if scheme == "firbrowser" { return (.cancel, preferences) }
-        // Like Safari: only the page itself may hand off, after asking; a tapped call or draft link
-        // skips the question, since iOS confirms calls and drafts need a tap to send.
+        // Only the page itself may hand off, after asking. Tapped call links skip it: iOS confirms calls itself.
         // No target frame is a new window, decided for the frame that opened it.
         // Optional: nil at runtime for a load the app started, whatever the API says.
         let source: WKFrameInfo? = navigationAction.sourceFrame
         guard !openedBySubframe, source?.isMainFrame != false, navigationAction.targetFrame?.isMainFrame ?? true else {
             return (.cancel, preferences)
         }
-        let quiet = ["tel", "facetime", "facetime-audio", "mailto", "sms"].contains(scheme)
+        let quiet = ["tel", "facetime", "facetime-audio"].contains(scheme)
         // WebKit reports a scripted click as a link click too, so a real tap is checked as well.
         if !(quiet && navigationAction.navigationType == .linkActivated && Date.now.timeIntervalSince(lastTap) < 1) {
             guard mayShowDialog(), await PageDialog.present(String(localized: "Open this page in another app?"), host: pageURL?.host() ?? scheme,
