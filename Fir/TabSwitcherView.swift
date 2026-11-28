@@ -52,6 +52,8 @@ struct TabSwitcherView: View {
     @State private var folderFor: BrowserTab?
     @State private var folderName = ""
     @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
+    // Read by the overview's order through the model; here so a change redraws the deck.
+    @AppStorage(SettingsKey.tabOrder) private var tabOrder = TabOrder.created
 
     private static let localSpace = "local"
 
@@ -132,10 +134,14 @@ struct TabSwitcherView: View {
                 jumpedFolder = false
                 return
             }
+            // Under the page, Recently Used reorders without a new selection: the deck follows the selected card.
+            if hiddenTab != nil {
+                if !holdsPosition { centerSelected(animated: false) }
+                return
+            }
             // Only when a card joined or left a stack. A reorder keeps the count, and following the old
             // slot's card then landed on the wrong one.
-            // Under the page, centerSelected has already placed the deck for the new layout.
-            guard hiddenTab == nil, Set(old.values).count != Set(new.values).count else { return }
+            guard Set(old.values).count != Set(new.values).count else { return }
             let focused = Int(progress.rounded())
             // The lowest of a stack's cards: where the stack stood.
             guard let slot = old.filter({ $0.value == focused }).compactMap({ new[$0.key] }).min() else {
@@ -188,7 +194,7 @@ struct TabSwitcherView: View {
             }
         } else {
             let space: String? = id == Self.localSpace ? nil : id
-            let tabs = browser.tabs(in: space)
+            let tabs = browser.overviewTabs(in: space)
             // Tabs of a workspace Zen no longer reports (or not loaded yet) still show, without its pins.
             let current = zen?.spaces.first { $0.id == space }
             if space == BrowserModel.privateSpace, browser.privateLocked {
@@ -222,7 +228,7 @@ struct TabSwitcherView: View {
                                 }
                                 .scrollIndicators(.hidden)
                             } else if tabLayout == .grid {
-                                TabGrid(tabs: live ? browser.spaceTabs : tabs, live: live, hiddenTab: hiddenTab,
+                                TabGrid(tabs: live ? browser.overviewTabs : tabs, live: live, hiddenTab: hiddenTab,
                                         holdsPosition: holdsPosition, expandedFolder: $expandedFolder,
                                         folderJump: live ? folderJump : nil,
                                         folderMenu: folderMenu, tabMenu: tabMenu, space: zenSpace(of:),
@@ -304,7 +310,7 @@ struct TabSwitcherView: View {
 
             ZStack {
                 // Over (offset, tab) pairs: ForEach straight over the tabs left the deck frozen mid-swipe.
-                ForEach(Array(browser.spaceTabs.enumerated()), id: \.element.id) { _, tab in
+                ForEach(Array(browser.overviewTabs.enumerated()), id: \.element.id) { _, tab in
                     let slot = layout.slot[tab.id] ?? 0
                     let depth = layout.depth[tab.id] ?? 0
                     let stack = layout.stacks[slot]
@@ -341,6 +347,8 @@ struct TabSwitcherView: View {
             .contentShape(.rect)
             .gesture(deckGesture(step: step, height: geo.size.height))
             .haptic(.impact(weight: .light), trigger: pullOpens)
+            // A new order keeps the selection, so nothing else brings its card back to the front.
+            .onChange(of: tabOrder) { centerSelected(animated: false) }
         }
     }
 
@@ -372,7 +380,7 @@ struct TabSwitcherView: View {
     }
 
     private var deckLayout: DeckLayout {
-        DeckLayout(browser.spaceTabs, folder: browser.folder, expanded: expandedFolder)
+        DeckLayout(browser.overviewTabs, folder: browser.folder, expanded: expandedFolder)
     }
 
     /// Under the page, the selected card's slot from the layout: the stored position lagged an update behind

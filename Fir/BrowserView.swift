@@ -310,6 +310,7 @@ struct BrowserView: View {
             withAnimation(cardMorph) { swipeX = 0 } completion: { endTransition() }
         }
         .onAppear {
+            browser.settleOverviewOrder()
             // The tab shown at launch is restored and still loading.
             if !browser.selected.hasPainted, let image = browser.selected.snapshot { reveal(browser.selected, showing: image) }
         }
@@ -322,7 +323,10 @@ struct BrowserView: View {
             showPageAtOnce()
         }
         // A restored tab's snapshot is held over it until it paints; another tab must not show under it.
-        .onChange(of: browser.selectedID) { veil = nil }
+        .onChange(of: browser.selectedID) {
+            veil = nil
+            if pageShown, !transitioning { browser.settleOverviewOrder() }
+        }
         // Like Safari: closing the last tab in the deck goes on into the new tab left in its place.
         .onChange(of: browser.undo?.placeholder) { _, placeholder in
             guard let placeholder, !pageShown, browser.selectedID == placeholder else { return }
@@ -491,6 +495,8 @@ struct BrowserView: View {
         follow = .zero
         heldCard = nil
         growingFromTile = false
+        // The overview's order moves only under the page.
+        if pageShown { browser.settleOverviewOrder() }
     }
 
     // MARK: - Deck transitions
@@ -502,7 +508,7 @@ struct BrowserView: View {
         guard transitioning, swipeX == 0, !swipeOpensNewTab, tabLayout != .grid, !growingFromTile else { return [] }
         let card = currentCard
         // Deck order puts a stack's front card first, then its deeper ones.
-        return Array(browser.tabs(in: browser.selected.spaceID)
+        return Array(browser.overviewTabs(in: browser.selected.spaceID)
             .compactMap { tab in cardFrames[tab.id].map { (tab: tab, frame: $0) } }
             .filter { $0.tab.id != browser.selectedID && $0.frame.minX > card.minX + 1 && $0.frame.minX < card.maxX }
             .prefix(4))

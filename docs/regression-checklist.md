@@ -187,6 +187,17 @@ timing, sync.
 - `sim` **(was broken)** Touch and hold a cell: the menu lifts the card alone in its rounded shape, nothing cut and no
   grey box around the title. The cell's own 4% press growth and a menu over card and title both clipped the lift.
 
+## Tab overview: order
+
+- `sim` Settings > Tabs > Order Tabs By, Recently Used: open A, B, C in order; the overview shows C, B, A in both
+  Cards and Grid. Swiping the bar still goes A, B, C.
+- `sim` **(was broken)** With Recently Used, tap the last card or cell: the others stay still while the page grows. The
+  grid used to reshuffle under the growing page. Back in the overview, that tab is first.
+- `sim` **(was broken)** Relaunch with Recently Used in Cards: the deck opens on the selected card, not another slot.
+- `sim` With Recently Used, close the first card in the overview: the card next to it is selected, not the next one in
+  opened order.
+- `sim` Switch Order Tabs By from the overview's Settings: the deck still shows the selected card in front.
+
 ## Workspaces and sync
 
 - `sim` Sign in with the Mozilla account. Zen workspaces, essentials, pinned tabs and folders appear.

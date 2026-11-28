@@ -320,6 +320,20 @@ enum TabLayout: String, CaseIterable, Identifiable {
     }
 }
 
+/// The order the tab overview shows a workspace's tabs in; swiping the bar keeps the order they were opened in.
+enum TabOrder: String, CaseIterable, Identifiable {
+    case created, recent
+
+    var id: Self { self }
+
+    var name: String {
+        switch self {
+        case .created: String(localized: "Opened")
+        case .recent: String(localized: "Recently Used")
+        }
+    }
+}
+
 /// A button the address bar can show right of the address, in the order the user put them.
 enum BarAction: String, CaseIterable, Identifiable {
     case share, reload, find, translate
@@ -381,6 +395,7 @@ enum SettingsKey {
     static let swipeAnywhere = "swipeAnywhere"
     static let newTabStyle = "newTabStyle"
     static let tabLayout = "tabLayout"
+    static let tabOrder = "tabOrder"
     static let cornerButton = "cornerButton"
     static let rememberHistory = "rememberHistory"
     static let startPageBookmarks = "startPageBookmarks"

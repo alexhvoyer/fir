@@ -1041,22 +1041,49 @@ final class BrowserModel {
     var spaceTabs: [BrowserTab] { tabs(in: space) }
 
     func tabs(in space: String?) -> [BrowserTab] {
+        let (placed, rest) = foldersFirst(in: space)
+        return placed + rest
+    }
+
+    /// The tab overview's order. Recently Used keeps folders leading and puts the rest newest first.
+    func overviewTabs(in space: String?) -> [BrowserTab] {
+        let (placed, rest) = foldersFirst(in: space)
+        guard UserDefaults.standard.string(forKey: SettingsKey.tabOrder) == TabOrder.recent.rawValue else { return placed + rest }
+        // Tabs opened since the last settle go last, as in Opened order.
+        return placed + rest.enumerated()
+            .sorted { (recentRanks[$0.1.id] ?? .max, $0.0) < (recentRanks[$1.1.id] ?? .max, $1.0) }.map(\.1)
+    }
+
+    var overviewTabs: [BrowserTab] { overviewTabs(in: space) }
+
+    /// Recently Used ranks, taken only while the page covers the overview: a tap on a card reshuffled the grid under the growing page.
+    private var recentRanks: [BrowserTab.ID: Int] = [:]
+
+    func settleOverviewOrder() {
+        // The open tab is the one in use now; the tab it replaced was stamped as it was left.
+        let ranks = Dictionary(uniqueKeysWithValues: tabs
+            .sorted { ($0.id == selectedID ? .distantFuture : $0.lastViewed) > ($1.id == selectedID ? .distantFuture : $1.lastViewed) }
+            .enumerated().map { ($1.id, $0) })
+        if ranks != recentRanks { recentRanks = ranks }
+    }
+
+    private func foldersFirst(in space: String?) -> (placed: [BrowserTab], rest: [BrowserTab]) {
         let all = tabs.filter { $0.spaceID == space }
         // Folders lead, in Zen's order (as at the top of Zen's sidebar) or the order they were made in.
         let place: (BrowserTab) -> Int?
         if let space {
-            guard let folders = zenFolders[space] else { return all }
+            guard let folders = zenFolders[space] else { return ([], all) }
             let rank = Dictionary(folders.flatMap(\.tabs).enumerated().map { ($1.id, $0) }) { first, _ in first }
             place = { $0.fromZenFolder ? $0.zenPinID.flatMap { rank[$0] } : nil }
         } else {
-            guard !localFolders.isEmpty else { return all }
+            guard !localFolders.isEmpty else { return ([], all) }
             let rank = Dictionary(uniqueKeysWithValues: localFolders.enumerated().map { ($1.id, $0) })
             place = { $0.localFolderID.flatMap { rank[$0] } }
         }
         // Stable: within a folder, tabs keep the order they joined in.
         let placed = all.enumerated().compactMap { offset, tab in place(tab).map { ($0, offset, tab) } }
             .sorted { ($0.0, $0.1) < ($1.0, $1.1) }.map(\.2)
-        return placed + all.filter { place($0) == nil }
+        return (placed, all.filter { place($0) == nil })
     }
 
     /// Zen's folders per workspace, as last synced.
@@ -1154,7 +1181,7 @@ final class BrowserModel {
     /// page the neighbour comes to the front; in the deck the card stays, so the deck doesn't move.
     private func unload(_ tab: BrowserTab, to zenTab: ZenWorkspaces.Tab, url: URL, inPlace: Bool) {
         guard let space = tab.spaceID, let position = tabs.firstIndex(where: { $0.id == tab.id }) else { return }
-        let siblings = tabs(in: space)
+        let siblings = neighbours(in: space, inPlace: inPlace)
         let index = siblings.firstIndex { $0.id == tab.id } ?? 0
         let fresh = BrowserTab(zenFolderTab: zenTab, url: url, spaceID: space, id: tab.id)
         tabs[position] = fresh
@@ -1337,7 +1364,7 @@ final class BrowserModel {
             return
         }
         remember(tab)
-        let siblings = tabs(in: tab.spaceID)
+        let siblings = neighbours(in: tab.spaceID, inPlace: inPlace)
         guard let index = siblings.firstIndex(where: { $0.id == tab.id }),
               let position = tabs.firstIndex(where: { $0.id == tab.id }) else { return }
         tabs.removeAll { $0.id == tab.id }
@@ -1351,7 +1378,7 @@ final class BrowserModel {
         undo = Undo(tab: tab, index: position, wasSelected: selectedID == tab.id, placeholder: placeholder)
         endPrivateSessionIfDone()
         if selectedID == tab.id {
-            let rest = tabs(in: tab.spaceID)
+            let rest = neighbours(in: tab.spaceID, inPlace: inPlace)
             let next = rest.isEmpty ? tabs.last { !$0.isPrivate } ?? tabs.last : rest[min(index, rest.count - 1)]
             selectedID = next?.id
             // Left on the emptied workspace, a page's next new tab would open there, even as private.
@@ -1359,6 +1386,11 @@ final class BrowserModel {
         }
         SessionStore.deleteSnapshot(for: tab.id)
         save()
+    }
+
+    /// Closed in the overview, the next card there is selected; closed from the page, the next one a bar swipe reaches.
+    private func neighbours(in space: String?, inPlace: Bool) -> [BrowserTab] {
+        inPlace ? overviewTabs(in: space) : tabs(in: space)
     }
 
     private func endPrivateSessionIfDone() {

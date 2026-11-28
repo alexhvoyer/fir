@@ -74,6 +74,7 @@ struct TabsSettingsView: View {
     @AppStorage(SettingsKey.archiveTabsAfter) private var archive = TabLifetime.week
     @AppStorage(SettingsKey.clearTabsAfter) private var clear = TabLifetime.never
     @AppStorage(SettingsKey.tabLayout) private var tabLayout = TabLayout.deck
+    @AppStorage(SettingsKey.tabOrder) private var tabOrder = TabOrder.created
     @AppStorage(SettingsKey.newTabStyle) private var newTabStyle = NewTabStyle.sheet
     @AppStorage(SettingsKey.cornerButton) private var cornerButton = CornerButton.tabs
 
@@ -104,8 +105,11 @@ struct TabsSettingsView: View {
                 Picker("Tab Overview", selection: $tabLayout) {
                     ForEach(TabLayout.allCases) { Text($0.name).tag($0) }
                 }
+                Picker("Order Tabs By", selection: $tabOrder) {
+                    ForEach(TabOrder.allCases) { Text($0.name).tag($0) }
+                }
             } footer: {
-                Text("Cards shows one tab at a time to swipe through. Grid shows a workspace's tabs side by side.")
+                Text("Cards shows one tab at a time to swipe through. Grid shows a workspace's tabs side by side. Recently Used puts the tabs you viewed last first; swiping the address bar still goes in the order they were opened.")
             }
             Section {
                 Picker("Archive Tabs After", selection: $archive) {
